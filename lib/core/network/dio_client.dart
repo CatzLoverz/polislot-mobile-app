@@ -1,0 +1,81 @@
+import 'package:dio/dio.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../constants/api_constants.dart';
+
+part 'dio_client.g.dart';
+
+@Riverpod(keepAlive: true)
+class DioClientService extends _$DioClientService {
+  @override
+  Dio build() {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        connectTimeout: const Duration(milliseconds: ApiConstants.connectionTimeout),
+        receiveTimeout: const Duration(milliseconds: ApiConstants.receiveTimeout),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+
+    dio.interceptors.add(LogInterceptor(
+      requestBody: true, 
+      responseBody: true,
+    ));
+
+    return dio;
+  }
+}
+
+// ✅ HELPER: CLASS KHUSUS HANDLING ERROR
+class DioErrorHandler {
+  static String parse(Object e) {
+    if (e is DioException) {
+      String errorMsg = "Terjadi kesalahan koneksi";
+      
+      // 1. Cek Response dari Server
+      if (e.response != null && e.response?.data != null) {
+        final data = e.response?.data;
+        
+        if (data is Map) {
+          // Prioritas 1: Pesan error standar Laravel ('message')
+          if (data['message'] != null) {
+            errorMsg = data['message'];
+          } 
+          // Prioritas 2: Pesan error custom ('error')
+          else if (data['error'] != null) {
+            errorMsg = data['error'];
+          }
+          
+          // Prioritas 3: Validation Errors (422)
+          // Jika ada field 'errors', ambil pesan pertama
+          if (data['errors'] != null && data['errors'] is Map) {
+             final errors = data['errors'] as Map;
+             if (errors.isNotEmpty) {
+               final firstKey = errors.keys.first;
+               final firstErrorList = errors[firstKey];
+               if (firstErrorList is List && firstErrorList.isNotEmpty) {
+                 errorMsg = firstErrorList.first; // Contoh: "Email sudah terdaftar"
+               }
+             }
+          }
+        }
+      } 
+      // 2. Cek Error Koneksi (Timeout, No Internet)
+      else if (e.type == DioExceptionType.connectionTimeout || 
+               e.type == DioExceptionType.receiveTimeout ||
+               e.type == DioExceptionType.sendTimeout) {
+        errorMsg = "Koneksi timeout. Periksa internet Anda.";
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMsg = "Tidak dapat terhubung ke server.";
+      }
+
+      return errorMsg;
+    } 
+    
+    // Error generic lainnya
+    return e.toString().replaceAll('Exception: ', '');
+  }
+}
