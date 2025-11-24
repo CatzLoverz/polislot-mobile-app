@@ -96,9 +96,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
       confirmPassword: _confirmController.text,
     );
 
-    if (success && mounted) {
+    // ✅ FIX ASYNC GAP: Cek mounted sebelum pakai context
+    if (!mounted) return;
+
+    if (success) {
       AppSnackBars.show(context, "Pendaftaran Berhasil! Cek email Anda untuk kode OTP.");
-      
       
       Navigator.pushNamed(
         context, 

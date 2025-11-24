@@ -95,6 +95,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
 
+    if (!mounted) return;
+
     if (token != null && token.isNotEmpty) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {

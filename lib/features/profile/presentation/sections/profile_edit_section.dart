@@ -117,8 +117,9 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
       newPassword: _newPassController.text.isNotEmpty ? _newPassController.text : null,
       confirmPassword: _confirmPassController.text.isNotEmpty ? _confirmPassController.text : null,
     );
-
-    if (success && mounted) {
+    if (!mounted) return;
+    
+    if (success) {
       AppSnackBars.show(context, "Profil berhasil diperbarui!");
       widget.onCancel();
     } else {

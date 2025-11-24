@@ -62,8 +62,9 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
       success = await notifier.forgotPasswordOtpVerify(email: _email, otp: _otpController.text);
     }
 
-    if (success && mounted) {
-      // ✅ Gunakan Helper SnackBar (Sukses)
+    if (!mounted) return;
+
+    if (success) {
       AppSnackBars.show(context, "Verifikasi Berhasil!");
       
       if (widget.otpType == OtpType.register) {
