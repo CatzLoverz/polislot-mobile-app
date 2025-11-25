@@ -118,7 +118,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
       confirmPassword: _confirmPassController.text.isNotEmpty ? _confirmPassController.text : null,
     );
     if (!mounted) return;
-    
+
     if (success) {
       AppSnackBars.show(context, "Profil berhasil diperbarui!");
       widget.onCancel();
@@ -215,7 +215,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Expanded(child: _RuleItem("Simbol (!@#\$)", _hasSymbol)),
+                    Expanded(child: _RuleItem("Simbol", _hasSymbol)),
                     Expanded(child: _RuleItem("Beda dari lama", _isNotSameAsCurrent)),
                   ],
                 ),
