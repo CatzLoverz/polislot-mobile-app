@@ -203,7 +203,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () {},
+                                onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
                                 child: const Text("Lupa kata sandi?", style: TextStyle(color: Colors.white70, decoration: TextDecoration.underline)),
                               ),
                             ),

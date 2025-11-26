@@ -228,6 +228,14 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                       ),
               ),
             ),
+
+            Center(
+              child: Text(
+                "Belum menerima kode? Periksa folder spam email Anda.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              ),
+            ),
           ],
         ),
       ),

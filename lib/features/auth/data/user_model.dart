@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../../../core/constants/api_constants.dart'; // ✅ Import Constants
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 part 'user_model.g.dart';
 
@@ -39,14 +39,32 @@ class User {
   // --- ✅ HELPER METHODS: AUTO JOIN URL ---
   
   String get fullAvatarUrl {
-    // 1. Jika tidak ada avatar, return string kosong (nanti UI handle pakai default icon)
+    // 1. Jika avatar kosong, return string kosong (UI akan pakai icon default)
     if (avatar == null || avatar!.isEmpty) return ''; 
     
-    // 2. Jika avatar sudah berupa URL lengkap (misal dari Google Login), kembalikan langsung
+    // 2. Jika sudah URL lengkap (misal dari Google), return langsung
     if (avatar!.startsWith('http')) return avatar!;
     
-    // 3. Jika avatar cuma nama file (misal "avatars/foto.jpg"), gabungkan dengan Base Storage URL
-    // ApiConstants.storageUrl sudah berisi "http://.../storage/"
-    return '${ApiConstants.storageUrl}$avatar'; 
+    // 3. Ambil Base URL dari .env
+    // Default ke localhost jika .env gagal load (tapi ini pasti gagal di HP)
+    String baseUrl = dotenv.env['API_STORAGE_URL'] ?? '';
+
+    // 🛡️ FIX SLASH: Pastikan tidak ada double slash atau missing slash
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1); // Hapus slash akhir
+    }
+    
+    String cleanAvatar = avatar!;
+    if (cleanAvatar.startsWith('/')) {
+      cleanAvatar = cleanAvatar.substring(1); // Hapus slash awal
+    }
+
+    // Gabungkan: http://192.168.1.x:8000/storage + / + avatars/file.jpg
+    final finalUrl = '$baseUrl/$cleanAvatar';
+    
+    // 🔍 Debugging: Cek di console URL apa yang terbentuk
+    // print("🖼️ Generated Image URL: $finalUrl"); 
+    
+    return finalUrl; 
   }
 }

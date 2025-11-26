@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../constants/api_constants.dart';
+// import '../constants/api_constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../security/encryption_interceptor.dart';
 
 part 'dio_client.g.dart';
 
@@ -10,7 +12,7 @@ class DioClientService extends _$DioClientService {
   Dio build() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
+        baseUrl: dotenv.env['API_BASE_URL'] ?? 'http://192.168.137.1/api',
         connectTimeout: const Duration(milliseconds: 15000),
         receiveTimeout: const Duration(milliseconds: 15000),
         headers: {
@@ -20,10 +22,13 @@ class DioClientService extends _$DioClientService {
       ),
     );
 
-    dio.interceptors.add(LogInterceptor(
-      requestBody: true, 
-      responseBody: true,
-    ));
+    dio.interceptors.addAll([
+      LogInterceptor(
+        requestBody: true, 
+        responseBody: true,
+      ),
+      EncryptionInterceptor(),
+    ]);
 
     return dio;
   }

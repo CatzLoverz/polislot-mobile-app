@@ -48,3 +48,6 @@ app.*.map.json
 # Riverpod & Code Generation
 *.g.dart
 *.freezed.dart
+
+# Environment variables
+.env

@@ -62,7 +62,7 @@ class AuthRepository {
     }
   }
 
-  // --- REGISTER OTP VERIFY (NAMING SESUAI CONTROLLER LARAVEL) ---
+  // --- REGISTER OTP VERIFY ---
   Future<User> registerOtpVerify({required String email, required String otp}) async {
     try {
       // URL sesuai api.php
@@ -73,7 +73,7 @@ class AuthRepository {
     }
   }
 
-  // --- REGISTER OTP RESEND (NAMING SESUAI CONTROLLER LARAVEL) ---
+  // --- REGISTER OTP RESEND ---
   Future<void> registerOtpResend({required String email}) async {
     try {
       // URL sesuai api.php
@@ -83,7 +83,24 @@ class AuthRepository {
     }
   }
 
-  // --- FORGOT PASSWORD OTP VERIFY (UNTUK SCREEN REUSABLE) ---
+  // --- FORGOT PASSWORD VERIFY ---
+  Future<void> forgotPasswordVerify({required String email}) async {
+    try {
+      // Endpoint: /forgot-attempt (Sesuai api.php)
+      final response = await _dio.post('/forgot-attempt', data: {'email': email});
+      
+      final data = response.data;
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        return;
+      } else {
+        throw Exception(data['message'] ?? "Gagal mengirim kode OTP.");
+      }
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
+  }
+
+  // --- FORGOT PASSWORD OTP VERIFY ---
   Future<void> forgotPasswordOtpVerify({required String email, required String otp}) async {
     try {
       // URL sesuai api.php
@@ -104,6 +121,31 @@ class AuthRepository {
     try {
       // URL sesuai api.php
       await _dio.post('/forgot-otp-resend', data: {'email': email});
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
+  }
+
+  // --- RESET PASSWORD ---
+  Future<void> resetPassword({
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    try {
+      // Endpoint: /reset-pass-attempt (Sesuai api.php)
+      final response = await _dio.post('/reset-pass-attempt', data: {
+        'email': email,
+        'password': password,
+        'password_confirmation': confirmPassword,
+      });
+
+      final data = response.data;
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        return;
+      } else {
+        throw Exception(data['message'] ?? "Gagal mereset password.");
+      }
     } catch (e) {
       throw Exception(DioErrorHandler.parse(e));
     }

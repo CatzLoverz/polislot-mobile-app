@@ -117,6 +117,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
       newPassword: _newPassController.text.isNotEmpty ? _newPassController.text : null,
       confirmPassword: _confirmPassController.text.isNotEmpty ? _confirmPassController.text : null,
     );
+    
     if (!mounted) return;
 
     if (success) {

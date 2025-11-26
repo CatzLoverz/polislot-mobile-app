@@ -218,14 +218,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
                         ),
                         
                         // Helper Text
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                          child: Align(
-                            alignment: Alignment.centerLeft, 
-                            child: Text(
-                              'Min. 8 karakter, mengandung huruf besar/kecil, angka, dan simbol.', 
-                              style: TextStyle(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic)
-                            )
+                          child: RichText(
+                            text: TextSpan(
+                              style: TextStyle(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic),
+                              children: const [
+                                TextSpan(
+                                  text: '* ', 
+                                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)
+                                ),
+                                TextSpan(
+                                  text: 'Min. 8 karakter, mengandung huruf besar/kecil, angka dan simbol.'
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         

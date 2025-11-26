@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'home_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
+import '../../mission/presentation/mission_screen.dart';
 import '../../profile/presentation/providers/profile_ui_provider.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
@@ -22,7 +23,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    const _PlaceholderScreen(title: "Misi Screen", icon: Icons.flag),
+    const MissionScreen(),
     const _PlaceholderScreen(title: "Reward Screen", icon: Icons.card_giftcard),
     const ProfileScreen(),
   ];

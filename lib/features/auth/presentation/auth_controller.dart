@@ -61,6 +61,22 @@ class AuthController extends _$AuthController {
     } catch (e) { return false; }
   }
 
+  // 🟡 KIRIM OTP (Forgot Password)
+  Future<bool> forgotPasswordVerify({required String email}) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() async {
+      await ref.read(authRepositoryInstanceProvider).forgotPasswordVerify(email: email);
+      return state.value;
+    });
+    
+    if (result.hasError) {
+      state = AsyncError(result.error!, result.stackTrace!);
+      return false;
+    }
+    state = AsyncData(state.value);
+    return true;
+  }
+
   // 🟡 FORGOT PASSWORD OTP VERIFY (Hanya Cek, Tidak Login)
   Future<bool> forgotPasswordOtpVerify({required String email, required String otp}) async {
     state = const AsyncLoading();
@@ -83,6 +99,30 @@ class AuthController extends _$AuthController {
       await ref.read(authRepositoryInstanceProvider).forgotPasswordOtpResend(email: email);
       return true;
     } catch (e) { return false; }
+  }
+
+  // 🟡 RESET PASSWORD
+  Future<bool> resetPassword({
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() async {
+      await ref.read(authRepositoryInstanceProvider).resetPassword(
+        email: email, 
+        password: password, 
+        confirmPassword: confirmPassword
+      );
+      return state.value;
+    });
+
+    if (result.hasError) {
+      state = AsyncError(result.error!, result.stackTrace!);
+      return false;
+    }
+    state = AsyncData(state.value);
+    return true;
   }
 
   // Update User Manual

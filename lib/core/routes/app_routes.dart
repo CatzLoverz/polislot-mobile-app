@@ -8,6 +8,8 @@ import '../../features/auth/presentation/login_regis_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/verify_otp_screen.dart';
+import '../../features/auth/presentation/forgot_password_screen.dart';
+import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/home/presentation/main_screen.dart';
 
 class AppRoutes {
@@ -22,7 +24,7 @@ class AppRoutes {
   // Route OTP (Reusable untuk Register & Forgot Password)
   static const String verifyOtp = '/verifyOtp';
   
-  // Flow Forgot Password (Placeholder dulu)
+  // Forgot Password 
   static const String forgotPassword = '/forgotPassword';
   static const String resetPassword = '/resetPassword';
 
@@ -61,15 +63,17 @@ class AppRoutes {
           otpType: args?['type'] ?? OtpType.register, 
         ));
 
-      // --- FORGOT PASSWORD (Placeholder) ---
+      // --- FORGOT PASSWORD ---
       case forgotPassword:
-        return _slideRoute(_buildPlaceholder("Lupa Kata Sandi"));
+        return _slideRoute(const ForgotPasswordScreen());
 
-      // --- RESET PASSWORD (Placeholder) ---
+      // --- RESET PASSWORD ---
       case resetPassword:
         final args = settings.arguments as Map<String, dynamic>?;
         // Nanti bisa kirim email/token ke sini
-        return _slideRoute(_buildPlaceholder("Reset Password untuk: ${args?['email']}"));
+        return _slideRoute(ResetPasswordScreen(
+          email: args?['email'],
+        ));
 
       // --- MAIN / HOME ---
       case main:
@@ -115,27 +119,27 @@ class AppRoutes {
   }
 
   // Halaman Sementara untuk fitur yang belum jadi
-  static Widget _buildPlaceholder(String title) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title, style: const TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF1565C0),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.construction, size: 80, color: Colors.grey),
-            const SizedBox(height: 20),
-            Text(
-              "$title\n(Sedang dalam pengembangan)",
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // static Widget _buildPlaceholder(String title) {
+  //   return Scaffold(
+  //     appBar: AppBar(
+  //       title: Text(title, style: const TextStyle(color: Colors.white)),
+  //       backgroundColor: const Color(0xFF1565C0),
+  //       iconTheme: const IconThemeData(color: Colors.white),
+  //     ),
+  //     body: Center(
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           const Icon(Icons.construction, size: 80, color: Colors.grey),
+  //           const SizedBox(height: 20),
+  //           Text(
+  //             "$title\n(Sedang dalam pengembangan)",
+  //             textAlign: TextAlign.center,
+  //             style: const TextStyle(fontSize: 16, color: Colors.grey),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }
