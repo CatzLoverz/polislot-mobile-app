@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:polislot_mobile_catz/core/utils/snackbar_utils.dart';
 
 class ProfileFeedbackSection extends StatefulWidget {
-  final VoidCallback onCancel;
-  const ProfileFeedbackSection({super.key, required this.onCancel});
+  const ProfileFeedbackSection({super.key});
 
   @override
   State<ProfileFeedbackSection> createState() => _ProfileFeedbackSectionState();
 }
 
 class _ProfileFeedbackSectionState extends State<ProfileFeedbackSection> {
-  final TextEditingController _judulCtrl = TextEditingController();
-  final TextEditingController _deskripsiCtrl = TextEditingController();
+  final _judulCtrl = TextEditingController();
+  final _deskripsiCtrl = TextEditingController();
   String? _selectedKategori;
   String? _selectedJenis;
 
@@ -19,31 +19,57 @@ class _ProfileFeedbackSectionState extends State<ProfileFeedbackSection> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text("Masukan Pengguna", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1565C0))),
-        const SizedBox(height: 16),
-        _dropdownField("Kategori", kategoriList, _selectedKategori, (val) => setState(() => _selectedKategori = val)),
-        _dropdownField("Jenis Masukan", jenisList, _selectedJenis, (val) => setState(() => _selectedJenis = val)),
-        _inputField("Judul", _judulCtrl),
-        _inputField("Deskripsi", _deskripsiCtrl, maxLines: 4),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Masukan dikirim"), backgroundColor: Colors.green));
-            widget.onCancel();
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1565C0), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          child: const Text("Kirim Masukan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F6FB),
+      appBar: AppBar(
+        title: const Text("Masukan Pengguna", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF2196F3)])
+          )
         ),
-        const SizedBox(height: 10),
-        OutlinedButton(
-          onPressed: widget.onCancel,
-          style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFF1565C0)), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          child: const Text("Kembali", style: TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
-        )
-      ],
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const Text("Kirim Masukan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1565C0))),
+          const SizedBox(height: 16),
+          
+          _dropdownField("Kategori", kategoriList, _selectedKategori, (val) => setState(() => _selectedKategori = val)),
+          _dropdownField("Jenis Masukan", jenisList, _selectedJenis, (val) => setState(() => _selectedJenis = val)),
+          _inputField("Judul Masukan", _judulCtrl),
+          _inputField("Deskripsi Detail", _deskripsiCtrl, maxLines: 4),
+          
+          const SizedBox(height: 20),
+          
+          ElevatedButton(
+            onPressed: () {
+              AppSnackBars.show(context, "Masukan berhasil dikirim");
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1565C0),
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+            ),
+            child: const Text("Kirim Masukan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+          
+          const SizedBox(height: 10),
+          
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFF1565C0)),
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+            ),
+            child: const Text("Kembali", style: TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
     );
   }
 
@@ -57,8 +83,16 @@ class _ProfileFeedbackSectionState extends State<ProfileFeedbackSection> {
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 6, offset: Offset(0, 3))]),
-            child: TextField(controller: controller, maxLines: maxLines, decoration: const InputDecoration(border: InputBorder.none)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 6, offset: Offset(0, 3))]
+            ),
+            child: TextField(
+              controller: controller,
+              maxLines: maxLines,
+              decoration: const InputDecoration(border: InputBorder.none)
+            ),
           ),
         ],
       ),
@@ -75,9 +109,19 @@ class _ProfileFeedbackSectionState extends State<ProfileFeedbackSection> {
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 6, offset: Offset(0, 3))]),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 6, offset: Offset(0, 3))]
+            ),
             child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(value: value, isExpanded: true, hint: const Text("Pilih"), onChanged: onChanged, items: list.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList()),
+              child: DropdownButton<String>(
+                value: value,
+                isExpanded: true,
+                hint: const Text("Pilih"),
+                onChanged: onChanged,
+                items: list.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              ),
             ),
           ),
         ],

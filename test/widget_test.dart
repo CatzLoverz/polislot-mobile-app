@@ -1,30 +1,33 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'package:polislot_mobile_catz/main.dart';
+// ✅ IMPORT YANG BENAR:
+import 'package:polislot_mobile_catz/main.dart'; 
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const PoliSlotApp());
+  setUpAll(() async {
+    // Mocking Environment Variables agar tidak error saat aplikasi baca .env
+    // Kita isi dummy data saja karena ini cuma test UI
+    dotenv.load(
+      mergeWith: {
+        'API_BASE_URL': 'http://localhost/api',
+        'API_STORAGE_URL': 'http://localhost/storage/',
+        'API_SECRET_KEY': '12345678901234567890123456789012',
+        'API_SECRET_IV': '1234567890123456',
+      },
+    );
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Aplikasi bisa dijalankan (Smoke Test)', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: PoliSlotApp(), // ✅ Sekarang ini sudah dikenali
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 5));
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/dio_client.dart';
-import '../../auth/data/user_model.dart';
+import '../../auth/data/user_model.dart'; // Reuse User Model
 
 part 'profile_repository.g.dart';
 
@@ -28,44 +28,53 @@ class ProfileRepository {
     String? confirmPassword,
   }) async {
     try {
+      // 1. Siapkan Data
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
 
       final formData = FormData.fromMap({
-        '_method': 'PUT', // Spoofing method
+        '_method': 'PUT', // Trik Laravel untuk update data via POST Multipart
         'name': name,
+        
         if (currentPassword != null && currentPassword.isNotEmpty)
           'current_password': currentPassword,
         if (newPassword != null && newPassword.isNotEmpty)
           'new_password': newPassword,
         if (confirmPassword != null && confirmPassword.isNotEmpty)
           'new_password_confirmation': confirmPassword,
+        
+        // Upload File
         if (avatar != null)
-          'avatar': await MultipartFile.fromFile(avatar.path, filename: 'avatar.jpg'),
+          'avatar': await MultipartFile.fromFile(
+            avatar.path, 
+            filename: avatar.path.split('/').last
+          ),
       });
 
+      // 2. Kirim Request
       final response = await _dio.post(
         '/profile',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-            'Accept': 'application/json', // Wajib agar Laravel return JSON jika error
+            'Content-Type': 'multipart/form-data', // Wajib
+            'Accept': 'application/json',
           },
         ),
       );
 
-      final data = response.data; // Response mentah
-
-      // Cek status sukses standar (dari helper sendSuccess di PHP)
+      // 3. Parsing Response
+      final data = response.data;
+      
+      // Cek status sukses (Format standar: { status: 'success', data: { user: ... } })
       if (response.statusCode == 200 && data['status'] == 'success') {
         
-        // Struktur: { "status": "success", "data": { "user": {...} } }
-        // Jadi kita harus ambil data['data']['user']
+        // Ambil object user dari dalam 'data'
         final userData = data['data']['user'];
         
-        // Update Local Storage (PENTING: Agar saat restart app, data baru tetap ada)
+        // 4. Update Local Storage (PENTING!)
+        // Agar saat user restart aplikasi, data baru (foto/nama) tetap muncul
         await prefs.setString('user_data', jsonEncode(userData));
         
         return User.fromJson(userData);
@@ -74,21 +83,8 @@ class ProfileRepository {
       }
 
     } on DioException catch (e) {
-      // 🛡️ Error Handling Anti-Null
-      String errorMsg = "Gagal terhubung ke server";
-      
-      if (e.response != null && e.response?.data != null) {
-        final errData = e.response?.data;
-        if (errData is Map) {
-          // Prioritas pesan error: message -> error
-          if (errData['message'] != null) {
-            errorMsg = errData['message'];
-          } else if (errData['error'] != null) {
-            errorMsg = errData['error'];
-          }
-        }
-      }
-      throw Exception(errorMsg);
+      // Gunakan Helper Error yang sama dengan AuthRepository
+      throw Exception(DioErrorHandler.parse(e));
     } catch (e) {
       throw Exception("Terjadi kesalahan: $e");
     }

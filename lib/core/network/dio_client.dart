@@ -1,10 +1,13 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-// import '../constants/api_constants.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../security/encryption_interceptor.dart';
+import 'auth_interceptor.dart';
 
 part 'dio_client.g.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 @Riverpod(keepAlive: true)
 class DioClientService extends _$DioClientService {
@@ -28,6 +31,7 @@ class DioClientService extends _$DioClientService {
         responseBody: true,
       ),
       EncryptionInterceptor(),
+      AuthInterceptor(),
     ]);
 
     return dio;

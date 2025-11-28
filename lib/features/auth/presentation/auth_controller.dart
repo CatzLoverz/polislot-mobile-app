@@ -1,15 +1,73 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import '../../../../main.dart';
 import '../data/auth_repository.dart';
 import '../data/user_model.dart';
 
 part 'auth_controller.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class AuthController extends _$AuthController {
   
   @override
   Future<User?> build() async {
     return await ref.read(authRepositoryInstanceProvider).getUserLocal();
+  }
+
+  Future<bool> checkAuthSession() async {
+    try {
+      final repo = ref.read(authRepositoryInstanceProvider);
+      
+      // 1. Cek Data Lokal (Prioritas Utama agar UI cepat)
+      final localUser = await repo.getUserLocal();
+      
+      if (localUser == null) {
+        return false; // Tidak ada data -> Login
+      }
+
+      // Update state UI dengan data lokal (Optimistic)
+      state = AsyncData(localUser); 
+      
+      // 2. Validasi ke Server (Background)
+      // Kita jalankan ini tapi jangan await response-nya untuk memblokir UI Splash Screen
+      // Biarkan dia berjalan, kalau 401 nanti dia force logout sendiri.
+      _validateTokenInBackground(repo);
+
+      return true; // Loloskan ke Home karena data lokal ada
+
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> _validateTokenInBackground(AuthRepository repo) async {
+    try {
+      // Request ke server
+      final freshUser = await repo.fetchUserProfile();
+      
+      // Jika sukses, update state dengan data terbaru
+      state = AsyncData(freshUser);
+      debugPrint("✅ Token Valid. Data User diperbarui.");
+      
+    } catch (e) {
+      // 🚨 HANYA LOGOUT JIKA 401 (Token Salah/Expired)
+      if (e is DioException && e.response?.statusCode == 401) {
+        debugPrint("⛔ Token Expired (401). Force Logout.");
+        
+        // Hapus data
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        
+        // Redirect paksa ke LoginRegis menggunakan Global Key
+        navigatorKey.currentState?.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
+      } 
+      // Jika error lain (koneksi putus), biarkan saja (tetap di Home mode Offline)
+      else {
+        debugPrint("⚠️ Validasi Server Gagal (Offline Mode): $e");
+      }
+    }
   }
 
   // Login

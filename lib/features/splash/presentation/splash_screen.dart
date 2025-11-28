@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -89,15 +89,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
   }
 
   Future<void> _startApp() async {
+    // Tunggu animasi selesai
     await Future.delayed(const Duration(seconds: 4));
-    if (!mounted) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
+    // ✅ Cek sesi via Controller
+    // Controller akan return TRUE jika ada data lokal (cepat)
+    // Validasi server berjalan di background tanpa menahan splash screen terlalu lama (jika internet lambat)
+    final hasSession = await ref.read(authControllerProvider.notifier).checkAuthSession();
+
+    if (!mounted) return;
+
+    if (hasSession) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.loginRegis);

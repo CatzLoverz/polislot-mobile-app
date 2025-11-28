@@ -16,16 +16,14 @@ class MissionScreen extends StatefulWidget {
 
 class _MissionScreenState extends State<MissionScreen> with SingleTickerProviderStateMixin {
   late bool isMissionTab;
-  
-  // Animation Controllers
   late AnimationController _animController;
   late Animation<double> _validasiAnim;
   late Animation<double> _koinAnim;
 
-  // Dummy Data (Nanti bisa dipindah ke Repository)
   int totalValidasi = 24;
   int totalKoin = 480;
 
+  // Dummy Data
   final List<Map<String, dynamic>> _missions = [
     {
       "title": "Validasi Parkiran",
@@ -99,15 +97,12 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  // ✅ Navigasi ke Parkir menggunakan Named Route
   void _navigateToParkir() {
-    // Pastikan AppRoutes.parkir sudah didaftarkan (jika belum, buat placeholder atau screen parkir)
-    // Untuk sementara, jika screen parkir belum direfactor, kita bisa tampilkan snackbar
-    // Atau jika sudah ada, gunakan: Navigator.pushNamed(context, AppRoutes.parkir);
+    // Placeholder Navigasi
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Menuju Halaman Validasi Parkir...")));
   }
 
-  // Helper Animasi Staggered
+  // Helper Animasi
   Widget _fadeSlide(Widget child, int index, {double offsetY = 0.08}) {
     final slide = Tween<Offset>(begin: Offset(0, offsetY), end: Offset.zero).animate(
       CurvedAnimation(
@@ -117,9 +112,13 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
     );
     final fade = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
 
+    // ✅ OPTIMASI 1: Gunakan RepaintBoundary pada animasi per-item
     return SlideTransition(
       position: slide,
-      child: FadeTransition(opacity: fade, child: child),
+      child: FadeTransition(
+        opacity: fade, 
+        child: RepaintBoundary(child: child),
+      ),
     );
   }
 
@@ -131,7 +130,7 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         centerTitle: true,
-        elevation: 0, // Hilangkan shadow appbar agar clean
+        elevation: 0,
         title: const Text(
           "Misi & Leaderboard",
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
@@ -148,11 +147,12 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
             _fadeSlide(_animatedTabs(), 1),
             const SizedBox(height: 20),
             
-            // Content Switcher
-            _fadeSlide(
-              isMissionTab ? _buildMissionsList() : _buildLeaderboard(),
-              2,
-              offsetY: 0.12,
+            // ✅ OPTIMASI 2: Gunakan AnimatedSwitcher untuk transisi halus antar tab (Misi <-> Leaderboard)
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: isMissionTab 
+                  ? _buildMissionsList() 
+                  : _buildLeaderboard(),
             ),
           ],
         ),
@@ -160,7 +160,7 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
     );
   }
 
-  // 📊 STATS CARD
+  // 📊 STATS CARD (HEAVY UI - Shadow & Gradient)
   Widget _topStatsCard() {
     return Container(
       decoration: BoxDecoration(
@@ -185,7 +185,6 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
               value: _validasiAnim.value.toInt().toString(),
             ),
           ),
-          // Garis Pemisah Vertical
           Container(width: 1, height: 50, color: Colors.white24),
           AnimatedBuilder(
             animation: _koinAnim,
@@ -253,9 +252,93 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
     );
   }
 
+  // 🎯 MISSIONS LIST
+  Widget _buildMissionsList() {
+    // Key penting untuk AnimatedSwitcher agar tahu widget berubah
+    return Column(
+      key: const ValueKey('MissionsList'), 
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Daftar Misi Kamu", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 14),
+        // Render List Item dengan RepaintBoundary
+        for (int i = 0; i < _missions.length; i++)
+          _fadeSlide(_missionCard(i, _missions[i]), i + 1),
+      ],
+    );
+  }
+
+  Widget _missionCard(int index, Map<String, dynamic> m) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: (m['color'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(m['icon'] as IconData, color: m['color'] as Color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(m['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              ),
+              Text(m['points'] as String, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(m['desc'] as String, style: const TextStyle(color: Colors.black54, fontSize: 13, height: 1.4)),
+          const SizedBox(height: 12),
+          
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: m['progress'] as double,
+                    backgroundColor: const Color(0xFFE0E0E0),
+                    color: m['color'] as Color,
+                    minHeight: 6,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text("${((m['progress'] as double) * 100).toInt()}%", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: m['color'] as Color)),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _navigateToParkir,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1352C8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text("Mulai Validasi", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // 🏆 LEADERBOARD
   Widget _buildLeaderboard() {
     return Column(
+      key: const ValueKey('LeaderboardList'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text("Peringkat Teratas", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -314,7 +397,6 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          // Rank Badge
           SizedBox(
             width: 40,
             child: Column(
@@ -325,103 +407,19 @@ class _MissionScreenState extends State<MissionScreen> with SingleTickerProvider
             ),
           ),
           const SizedBox(width: 10),
-          // Avatar
           CircleAvatar(
             radius: 18,
             backgroundColor: tierColor.withValues(alpha: 0.2),
             child: Text(user['name'][0], style: TextStyle(color: tierColor, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 12),
-          // Name
           Expanded(
             child: Text(user['name'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           ),
-          // Score
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
             child: Text("${user['validasi']} Poin", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 🎯 MISSIONS LIST
-  Widget _buildMissionsList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Daftar Misi Kamu", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        const SizedBox(height: 14),
-        for (int i = 0; i < _missions.length; i++)
-          _fadeSlide(_missionCard(i, _missions[i]), i + 1),
-      ],
-    );
-  }
-
-  Widget _missionCard(int index, Map<String, dynamic> m) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: (m['color'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: Icon(m['icon'] as IconData, color: m['color'] as Color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(m['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              ),
-              Text(m['points'] as String, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(m['desc'] as String, style: const TextStyle(color: Colors.black54, fontSize: 13, height: 1.4)),
-          const SizedBox(height: 12),
-          
-          // Progress Bar
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: m['progress'] as double,
-                    backgroundColor: const Color(0xFFE0E0E0),
-                    color: m['color'] as Color,
-                    minHeight: 6,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text("${((m['progress'] as double) * 100).toInt()}%", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: m['color'] as Color)),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _navigateToParkir,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1352C8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text("Mulai Validasi", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
           ),
         ],
       ),
