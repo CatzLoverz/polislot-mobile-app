@@ -21,24 +21,21 @@ class AuthRepository {
   final Dio _dio;
   AuthRepository(this._dio);
 
-  // ✅ 1. CEK KONEKSI SERVER (PING)
-  // Menggunakan timeout pendek (3 detik) agar UI cepat merespon
+  // ✅ CEK KONEKSI SERVER NYATA
   Future<bool> checkConnectivity() async {
     try {
+      // Tembak endpoint ringan dengan timeout CEPAT (3 detik)
       await _dio.get(
         '/user', 
-        options: Options(
-          sendTimeout: const Duration(seconds: 3),
-          receiveTimeout: const Duration(seconds: 3),
-        ),
+        options: Options(sendTimeout: const Duration(seconds: 5), receiveTimeout: const Duration(seconds: 5)),
       );
-      return true; // Server merespon (200 OK)
+      return true; // Sukses
     } catch (e) {
-      // Jika errornya 401 (Unauthorized), berarti server NYAMBUNG (Cuma token salah)
-      // Jadi kita anggap ONLINE (return true) agar logic logout bisa jalan nanti
+      // Jika 401, berarti server NYAMBUNG (cuma token salah).
+      // Kembalikan TRUE agar sistem tahu kita "Online", sehingga proses logout bisa jalan.
       if (e is DioException && e.response?.statusCode == 401) return true;
       
-      // Error lain (Timeout, SocketException) = OFFLINE
+      // Timeout / SocketException -> Benar-benar OFFLINE
       return false;
     }
   }

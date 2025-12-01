@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
@@ -26,42 +26,50 @@ class AuthController extends _$AuthController {
     try {
       final repo = ref.read(authRepositoryInstanceProvider);
       
-      // 1. Cek Lokal (Prioritas Utama)
+      // 1. Cek Lokal
       final localUser = await repo.getUserLocal();
-      if (localUser == null) return false; // Tidak ada data -> Login
+      if (localUser == null) return false; 
 
-      // Update UI agar User langsung masuk Home
       state = AsyncData(localUser); 
 
-      // 2. Validasi Server (Di Background)
-      // Jangan 'await' ini di return statement agar Splash Screen tidak macet jika server down
-      _validateTokenInBackground(repo);
-
-      return true; // Izinkan masuk Home
-
+      // 2. Cek Server
+      try {
+        final freshUser = await repo.fetchUserProfile();
+        state = AsyncData(freshUser);
+        return true;
+      } catch (e) {
+        if (e is DioException && e.response?.statusCode == 401) {
+          // Force Logout hanya jika 401
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.clear();
+          navigatorKey.currentState?.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
+          return false;
+        }
+        return true; // Offline mode
+      }
     } catch (e) {
       return false;
     }
   }
 
-  Future<void> _validateTokenInBackground(AuthRepository repo) async {
-    try {
-      final freshUser = await repo.fetchUserProfile();
-      state = AsyncData(freshUser); // Update data terbaru
-      debugPrint("✅ Token Valid & Data Updated");
-    } catch (e) {
-      // 🚨 CRITICAL: Hanya Logout jika 401 (Token Salah/Expired)
-      if (e is DioException && e.response?.statusCode == 401) {
-        debugPrint("🛑 Token Expired (401). Force Logout.");
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.clear();
-        navigatorKey.currentState?.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
-      } else {
-        // Error lain (Timeout/No Internet) -> Biarkan tetap Login (Mode Offline)
-        debugPrint("⚠️ Server Validation Failed (Offline Mode): $e");
-      }
-    }
-  }
+  // Future<void> _validateTokenInBackground(AuthRepository repo) async {
+  //   try {
+  //     final freshUser = await repo.fetchUserProfile();
+  //     state = AsyncData(freshUser); // Update data terbaru
+  //     debugPrint("✅ Token Valid & Data Updated");
+  //   } catch (e) {
+  //     // 🚨 CRITICAL: Hanya Logout jika 401 (Token Salah/Expired)
+  //     if (e is DioException && e.response?.statusCode == 401) {
+  //       debugPrint("🛑 Token Expired (401). Force Logout.");
+  //       final prefs = await SharedPreferences.getInstance();
+  //       await prefs.clear();
+  //       navigatorKey.currentState?.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
+  //     } else {
+  //       // Error lain (Timeout/No Internet) -> Biarkan tetap Login (Mode Offline)
+  //       debugPrint("⚠️ Server Validation Failed (Offline Mode): $e");
+  //     }
+  //   }
+  // }
 
   // ... (Semua method auth lainnya login/register/dll TETAP SAMA, copy dari file Anda sebelumnya) ...
   Future<bool> login(String email, String password) async {
