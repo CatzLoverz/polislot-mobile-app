@@ -10,7 +10,7 @@ import '../../profile/presentation/profile_screen.dart';
 // import '../../../core/routes/app_routes.dart';
 import '../../profile/presentation/providers/profile_ui_provider.dart';
 import '../../mission/presentation/mission_screen.dart';
-import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/auth_controller.dart'; 
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -24,8 +24,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   int _previousIndex = 0; 
   late final PageController _pageController;
   
-  // ✅ Variabel Status Offline
+  // Status Offline & Timer
   bool _isOffline = false;
+  Timer? _retryTimer; // Timer untuk cek ulang koneksi
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
   final List<Widget> _pages = [
@@ -43,36 +44,73 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   void _setupConnectivityListener() async {
-    // Cek status awal
+    // Cek awal
     final initialResults = await Connectivity().checkConnectivity();
-    _updateConnectionStatus(initialResults);
+    _handleConnectivityChange(initialResults);
 
-    // Monitor perubahan
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
-      _updateConnectionStatus(results);
+    // Listen perubahan
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+      _handleConnectivityChange(results);
     });
   }
 
-  void _updateConnectionStatus(List<ConnectivityResult> results) {
-    // Logika: Jika List HANYA berisi 'none', berarti offline.
-    // Jika ada wifi atau mobile, berarti online.
-    final isOffline = results.contains(ConnectivityResult.none) && results.length == 1;
-    
-    if (_isOffline != isOffline) {
-      setState(() {
-        _isOffline = isOffline;
-      });
-    }
+  void _handleConnectivityChange(List<ConnectivityResult> results) {
+    // 1. Cek Koneksi Fisik (WiFi/Mobile)
+    final hasNetwork = !results.contains(ConnectivityResult.none);
 
-    // ✅ JIKA ONLINE: Cek Validitas Token ke Server
-    if (!isOffline) {
-      debugPrint("🌐 Network Restored. Validating Token...");
+    if (!hasNetwork) {
+      // Jika Fisik Mati -> Pasti Offline
+      _setOffline(true);
+      _stopRetryTimer(); // Tidak usah ping server kalau fisik mati
+    } else {
+      // Jika Fisik Hidup -> Cek Server
+      _checkServerConnection();
+    }
+  }
+
+  // ✅ LOGIKA UTAMA: Cek Server & Retry
+  Future<void> _checkServerConnection() async {
+    final isReachable = await ref.read(authControllerProvider.notifier).isServerReachable();
+    
+    if (isReachable) {
+      // Server OK -> Online
+      _setOffline(false);
+      _stopRetryTimer(); // Berhenti cek ulang
+      
+      // Sync Data User (Karena baru online lagi)
       ref.read(authControllerProvider.notifier).checkAuthSession();
+    } else {
+      // Server Gagal -> Offline
+      _setOffline(true);
+      
+      // Mulai Timer untuk cek ulang otomatis (Self-Healing)
+      _startRetryTimer();
+    }
+  }
+
+  void _startRetryTimer() {
+    if (_retryTimer != null && _retryTimer!.isActive) return;
+    
+    // Coba ping server setiap 5 detik
+    _retryTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _checkServerConnection();
+    });
+  }
+
+  void _stopRetryTimer() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+  }
+
+  void _setOffline(bool value) {
+    if (_isOffline != value && mounted) {
+      setState(() => _isOffline = value);
     }
   }
 
   @override
   void dispose() {
+    _stopRetryTimer();
     _connectivitySubscription.cancel();
     _pageController.dispose();
     super.dispose();
@@ -80,21 +118,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   void _onTabChanged(int index) {
     if (index == _selectedIndex) return;
-    
     if (_selectedIndex == 3) {
       ref.read(profileSectionProvider.notifier).setSection(0);
     }
-
     setState(() {
       _previousIndex = _selectedIndex;
       _selectedIndex = index;
     });
-
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
   Future<bool> _showExitConfirmDialog() async {
@@ -122,7 +153,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
-
         if (_selectedIndex == 3) {
           final currentSection = ref.read(profileSectionProvider);
           if (currentSection != 0) {
@@ -130,24 +160,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             return;
           }
         }
-
         if (_selectedIndex != 0) {
           setState(() {
-            if (_previousIndex != 0) {
-              _selectedIndex = _previousIndex;
-              _previousIndex = 0;
-            } else {
-              _selectedIndex = 0;
-            }
+            if (_previousIndex != 0) { _selectedIndex = _previousIndex; _previousIndex = 0; }
+            else { _selectedIndex = 0; }
             _pageController.animateToPage(_selectedIndex, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
           });
           return;
         }
-
         final shouldExit = await _showExitConfirmDialog();
-        if (shouldExit) {
-          SystemNavigator.pop();
-        }
+        if (shouldExit) SystemNavigator.pop();
       },
       child: Stack(
         children: [
@@ -202,7 +224,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               bottom: 90, 
               right: 20,
               child: Tooltip(
-                message: "Anda sedang Offline",
+                message: "Anda sedang Offline (Tidak terhubung ke server)",
                 triggerMode: TooltipTriggerMode.tap,
                 child: Container(
                   width: 40,
@@ -227,7 +249,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 }
 
-// Placeholder Class
 class _PlaceholderScreen extends StatelessWidget {
   final String title;
   final IconData icon;

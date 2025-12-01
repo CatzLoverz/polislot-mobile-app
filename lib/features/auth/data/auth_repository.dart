@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart'; // Untuk debugPrint
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/dio_client.dart';
@@ -19,7 +21,29 @@ class AuthRepository {
   final Dio _dio;
   AuthRepository(this._dio);
 
-  // 1. AMBIL DATA LOKAL
+  // ✅ 1. CEK KONEKSI SERVER (PING)
+  // Menggunakan timeout pendek (3 detik) agar UI cepat merespon
+  Future<bool> checkConnectivity() async {
+    try {
+      await _dio.get(
+        '/user', 
+        options: Options(
+          sendTimeout: const Duration(seconds: 3),
+          receiveTimeout: const Duration(seconds: 3),
+        ),
+      );
+      return true; // Server merespon (200 OK)
+    } catch (e) {
+      // Jika errornya 401 (Unauthorized), berarti server NYAMBUNG (Cuma token salah)
+      // Jadi kita anggap ONLINE (return true) agar logic logout bisa jalan nanti
+      if (e is DioException && e.response?.statusCode == 401) return true;
+      
+      // Error lain (Timeout, SocketException) = OFFLINE
+      return false;
+    }
+  }
+
+  // ✅ 2. AMBIL DATA LOKAL
   Future<User?> getUserLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -28,12 +52,12 @@ class AuthRepository {
         return User.fromJson(jsonDecode(userString));
       }
     } catch (e) {
-      // Ignore error parsing local data
+      debugPrint("Error baca data lokal: $e");
     }
     return null;
   }
 
-  // 2. CEK SERVER (VALIDASI TOKEN & GET USER)
+  // ✅ 3. VALIDASI TOKEN KE SERVER
   Future<User> fetchUserProfile() async {
     try {
       final response = await _dio.get('/user');
@@ -41,6 +65,7 @@ class AuthRepository {
       final dynamic data = response.data;
       Map<String, dynamic> userJson;
 
+      // Parsing Fleksibel (Handle bungkus 'data' atau langsung)
       if (data is Map<String, dynamic>) {
         if (data.containsKey('data') && data['data'] is Map) {
           userJson = data['data'];
@@ -49,31 +74,30 @@ class AuthRepository {
         } else if (data.containsKey('user_id') || data.containsKey('id')) {
           userJson = data;
         } else {
-          throw Exception("Format data user server tidak valid");
+          throw Exception("Format data user tidak valid");
         }
       } else {
         throw Exception("Response bukan JSON Object");
       }
 
+      // Simpan pembaruan ke lokal
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_data', jsonEncode(userJson));
       
       return User.fromJson(userJson);
-
     } catch (e) {
+      // Rethrow agar Controller bisa menangkap Error 401
       rethrow;
     }
   }
 
-  // --- AUTH METHODS ---
+  // --- METHOD AUTH LAINNYA (PASTIKAN TETAP ADA) ---
   
   Future<User> login({required String email, required String password}) async {
     try {
       final response = await _dio.post('/login-attempt', data: {'email': email, 'password': password});
       return _handleAuthResponse(response.data);
-    } catch (e) {
-      throw Exception(DioErrorHandler.parse(e));
-    }
+    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
   }
 
   Future<void> register({required String name, required String email, required String password, required String confirmPassword}) async {
@@ -82,26 +106,21 @@ class AuthRepository {
       if (response.statusCode != 201 && response.data['status'] != 'success') {
         throw Exception(response.data['message'] ?? "Registrasi gagal");
       }
-    } catch (e) {
-      throw Exception(DioErrorHandler.parse(e));
-    }
+    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
   }
 
-  // OTP Register
   Future<User> registerOtpVerify({required String email, required String otp}) async {
     try {
       final response = await _dio.post('/register-otp-verify', data: {'email': email, 'otp': otp});
       return _handleAuthResponse(response.data);
-    } catch (e) {
-      throw Exception(DioErrorHandler.parse(e));
-    }
+    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
   }
 
   Future<void> registerOtpResend({required String email}) async {
     try { await _dio.post('/register-otp-resend', data: {'email': email}); } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
   }
 
-  // OTP Forgot Password
+  // Kirim OTP Forgot Password
   Future<void> forgotPasswordVerify({required String email}) async {
     try {
       final response = await _dio.post('/forgot-attempt', data: {'email': email});
@@ -111,6 +130,7 @@ class AuthRepository {
     } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
   }
 
+  // Verifikasi OTP Forgot Password
   Future<void> forgotPasswordOtpVerify({required String email, required String otp}) async {
     try {
       final response = await _dio.post('/forgot-otp-verify', data: {'email': email, 'otp': otp});
@@ -129,7 +149,11 @@ class AuthRepository {
     } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
   }
 
-  // Logout
+  // Method updateProfile (gunakan implementasi ProfileRepository, disini placeholder)
+  Future<User> updateProfile({required String name, File? avatar, String? currentPassword, String? newPassword, String? confirmPassword}) async {
+      throw UnimplementedError(); 
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
@@ -139,7 +163,6 @@ class AuthRepository {
     await prefs.clear();
   }
 
-  // Helper
   Future<User> _handleAuthResponse(dynamic data) async {
     Map<String, dynamic>? payload;
     if (data is Map<String, dynamic>) {
@@ -149,7 +172,6 @@ class AuthRepository {
         payload = data;
       }
     }
-
     if (payload != null && payload.containsKey('access_token') && payload.containsKey('user')) {
       final token = payload['access_token'];
       final userJson = payload['user'];

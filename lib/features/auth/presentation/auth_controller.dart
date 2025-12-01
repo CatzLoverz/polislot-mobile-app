@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
-import '../../../../main.dart';
+import '../../../../main.dart'; 
 import '../data/auth_repository.dart';
 import '../data/user_model.dart';
 
@@ -16,26 +16,28 @@ class AuthController extends _$AuthController {
     return await ref.read(authRepositoryInstanceProvider).getUserLocal();
   }
 
+  // ✅ FUNGSI BARU: Cek Koneksi (Ping)
+  Future<bool> isServerReachable() async {
+    return await ref.read(authRepositoryInstanceProvider).checkConnectivity();
+  }
+
+  // ✅ LOGIK CEK SESI (Background & Fail-Safe)
   Future<bool> checkAuthSession() async {
     try {
       final repo = ref.read(authRepositoryInstanceProvider);
       
-      // 1. Cek Data Lokal (Prioritas Utama agar UI cepat)
+      // 1. Cek Lokal (Prioritas Utama)
       final localUser = await repo.getUserLocal();
-      
-      if (localUser == null) {
-        return false; // Tidak ada data -> Login
-      }
+      if (localUser == null) return false; // Tidak ada data -> Login
 
-      // Update state UI dengan data lokal (Optimistic)
+      // Update UI agar User langsung masuk Home
       state = AsyncData(localUser); 
-      
-      // 2. Validasi ke Server (Background)
-      // Kita jalankan ini tapi jangan await response-nya untuk memblokir UI Splash Screen
-      // Biarkan dia berjalan, kalau 401 nanti dia force logout sendiri.
+
+      // 2. Validasi Server (Di Background)
+      // Jangan 'await' ini di return statement agar Splash Screen tidak macet jika server down
       _validateTokenInBackground(repo);
 
-      return true; // Loloskan ke Home karena data lokal ada
+      return true; // Izinkan masuk Home
 
     } catch (e) {
       return false;
@@ -44,102 +46,55 @@ class AuthController extends _$AuthController {
 
   Future<void> _validateTokenInBackground(AuthRepository repo) async {
     try {
-      // Request ke server
       final freshUser = await repo.fetchUserProfile();
-      
-      // Jika sukses, update state dengan data terbaru
-      state = AsyncData(freshUser);
-      debugPrint("✅ Token Valid. Data User diperbarui.");
-      
+      state = AsyncData(freshUser); // Update data terbaru
+      debugPrint("✅ Token Valid & Data Updated");
     } catch (e) {
-      // 🚨 HANYA LOGOUT JIKA 401 (Token Salah/Expired)
+      // 🚨 CRITICAL: Hanya Logout jika 401 (Token Salah/Expired)
       if (e is DioException && e.response?.statusCode == 401) {
-        debugPrint("⛔ Token Expired (401). Force Logout.");
-        
-        // Hapus data
+        debugPrint("🛑 Token Expired (401). Force Logout.");
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear();
-        
-        // Redirect paksa ke LoginRegis menggunakan Global Key
         navigatorKey.currentState?.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
-      } 
-      // Jika error lain (koneksi putus), biarkan saja (tetap di Home mode Offline)
-      else {
-        debugPrint("⚠️ Validasi Server Gagal (Offline Mode): $e");
+      } else {
+        // Error lain (Timeout/No Internet) -> Biarkan tetap Login (Mode Offline)
+        debugPrint("⚠️ Server Validation Failed (Offline Mode): $e");
       }
     }
   }
 
-  // Login
+  // ... (Semua method auth lainnya login/register/dll TETAP SAMA, copy dari file Anda sebelumnya) ...
   Future<bool> login(String email, String password) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() async {
-      return await ref.read(authRepositoryInstanceProvider).login(email: email, password: password);
-    });
-    state = result;
-    return !state.hasError;
+    final result = await AsyncValue.guard(() => ref.read(authRepositoryInstanceProvider).login(email: email, password: password));
+    state = result; return !state.hasError;
   }
-
-  // Register Attempt
-  Future<bool> register({
-    required String name, required String email, 
-    required String password, required String confirmPassword
-  }) async {
+  
+  Future<bool> register({required String name, required String email, required String password, required String confirmPassword}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(() async {
-      await ref.read(authRepositoryInstanceProvider).register(
-        name: name, email: email, password: password, confirmPassword: confirmPassword
-      );
-      return state.value; // Return state lama (null) karena belum login
+      await ref.read(authRepositoryInstanceProvider).register(name: name, email: email, password: password, confirmPassword: confirmPassword);
+      return state.value;
     });
-    if (result.hasError) {
-      state = AsyncError(result.error!, result.stackTrace!);
-      return false;
-    }
-    state = AsyncData(state.value); 
-    return true;
+    if (result.hasError) { state = AsyncError(result.error!, result.stackTrace!); return false; }
+    state = AsyncData(state.value); return true;
   }
 
-  // ✅ REGISTER OTP VERIFY (Auto Login)
   Future<bool> registerOtpVerify({required String email, required String otp}) async {
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(() async {
-      // Panggil repo dan update state user (login)
-      return await ref.read(authRepositoryInstanceProvider).registerOtpVerify(email: email, otp: otp);
-    });
-    state = result;
-    return !state.hasError;
+    final result = await AsyncValue.guard(() => ref.read(authRepositoryInstanceProvider).registerOtpVerify(email: email, otp: otp));
+    state = result; return !state.hasError;
   }
 
-  // ✅ REGISTER OTP RESEND
   Future<bool> registerOtpResend({required String email}) async {
-    try {
-      await ref.read(authRepositoryInstanceProvider).registerOtpResend(email: email);
-      return true;
-    } catch (e) { return false; }
+    try { await ref.read(authRepositoryInstanceProvider).registerOtpResend(email: email); return true; } catch (_) { return false; }
   }
 
-  // 🟡 KIRIM OTP (Forgot Password)
   Future<bool> forgotPasswordVerify({required String email}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(() async {
+      // Panggil Repo
       await ref.read(authRepositoryInstanceProvider).forgotPasswordVerify(email: email);
-      return state.value;
-    });
-    
-    if (result.hasError) {
-      state = AsyncError(result.error!, result.stackTrace!);
-      return false;
-    }
-    state = AsyncData(state.value);
-    return true;
-  }
-
-  // 🟡 FORGOT PASSWORD OTP VERIFY (Hanya Cek, Tidak Login)
-  Future<bool> forgotPasswordOtpVerify({required String email, required String otp}) async {
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(() async {
-      await ref.read(authRepositoryInstanceProvider).forgotPasswordOtpVerify(email: email, otp: otp);
       return state.value; // Return state lama
     });
     
@@ -151,44 +106,32 @@ class AuthController extends _$AuthController {
     return true;
   }
 
-  // 🟡 FORGOT PASSWORD OTP RESEND
-  Future<bool> forgotPasswordOtpResend({required String email}) async {
-    try {
-      await ref.read(authRepositoryInstanceProvider).forgotPasswordOtpResend(email: email);
-      return true;
-    } catch (e) { return false; }
-  }
-
-  // 🟡 RESET PASSWORD
-  Future<bool> resetPassword({
-    required String email,
-    required String password,
-    required String confirmPassword,
-  }) async {
+  Future<bool> forgotPasswordOtpVerify({required String email, required String otp}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(() async {
-      await ref.read(authRepositoryInstanceProvider).resetPassword(
-        email: email, 
-        password: password, 
-        confirmPassword: confirmPassword
-      );
+      await ref.read(authRepositoryInstanceProvider).forgotPasswordOtpVerify(email: email, otp: otp);
       return state.value;
     });
-
-    if (result.hasError) {
-      state = AsyncError(result.error!, result.stackTrace!);
-      return false;
-    }
-    state = AsyncData(state.value);
-    return true;
+    if (result.hasError) { state = AsyncError(result.error!, result.stackTrace!); return false; }
+    state = AsyncData(state.value); return true;
   }
 
-  // Update User Manual
-  void updateUser(User newUser) {
-    state = AsyncData(newUser);
+  Future<bool> forgotPasswordOtpResend({required String email}) async {
+    try { await ref.read(authRepositoryInstanceProvider).forgotPasswordOtpResend(email: email); return true; } catch (_) { return false; }
+  }
+  
+  Future<bool> resetPassword({required String email, required String password, required String confirmPassword}) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(() async {
+      await ref.read(authRepositoryInstanceProvider).resetPassword(email: email, password: password, confirmPassword: confirmPassword);
+      return state.value;
+    });
+    if (result.hasError) { state = AsyncError(result.error!, result.stackTrace!); return false; }
+    state = AsyncData(state.value); return true;
   }
 
-  // Logout
+  void updateUser(User newUser) { state = AsyncData(newUser); }
+
   Future<void> logout() async {
     state = const AsyncLoading();
     await ref.read(authRepositoryInstanceProvider).logout();
