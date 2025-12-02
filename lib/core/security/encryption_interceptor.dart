@@ -1,73 +1,120 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:encrypt/encrypt.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart' as a;
+// import 'package:pointycastle/asymmetric/api.dart';
+import 'key_manager.dart';
 
 class EncryptionInterceptor extends Interceptor {
-  static final String _keyString = dotenv.env['API_SECRET_KEY'] ?? '';
-  static final String _ivString = dotenv.env['API_SECRET_IV'] ?? '';
+  final _serverPublicKey = KeyManager.publicKey;
 
-  late final Encrypter _encrypter;
-  late final IV _iv;
-
-  EncryptionInterceptor() {
-    if (_keyString.length != 32 || _ivString.length != 16) {
-      throw Exception("Kunci Enkripsi di .env tidak valid (Key harus 32, IV harus 16 char)");
-    }
-    final key = Key.fromUtf8(_keyString);
-    _iv = IV.fromUtf8(_ivString);
-    _encrypter = Encrypter(AES(key, mode: AESMode.cbc));
-  }
-
-  // 1. ENKRIPSI REQUEST (Keluar)
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (options.data != null && options.data is Map && 
-       (options.method == 'POST' || options.method == 'PUT' || options.method == 'PATCH')) {
-      try {
-        final jsonString = jsonEncode(options.data);
-        final encrypted = _encrypter.encrypt(jsonString, iv: _iv);
-        
-        options.data = {'payload': encrypted.base64};
-      } catch (e) {
-        // print("Encryption Failed: $e");
+    try {
+      // 1. Generate Kunci Sesi (AES) untuk SETIAP request (GET/POST/dll)
+      final sessionKey = _generateRandomString(32);
+      final sessionIv = _generateRandomString(16);
+      
+      // Simpan di extra untuk dekripsi respon nanti
+      options.extra['session_key'] = sessionKey;
+      options.extra['session_iv'] = sessionIv;
+
+      // 2. Enkripsi Kunci Sesi pakai RSA
+      final rsaEncrypter = Encrypter(RSA(publicKey: _serverPublicKey));
+      final sessionData = "$sessionKey|$sessionIv";
+      final encryptedSessionKey = rsaEncrypter.encrypt(sessionData).base64;
+
+      // ✅ PINDAHKAN KEY KE HEADER (Agar GET request juga membawanya)
+      options.headers['X-Session-Key'] = encryptedSessionKey;
+
+      // 3. Enkripsi Body (Hanya jika ada data)
+      if (options.data != null) {
+        final aesKey = Key.fromUtf8(sessionKey);
+        final aesIv = IV.fromUtf8(sessionIv);
+        final aesEncrypter = Encrypter(AES(aesKey, mode: AESMode.cbc));
+
+        // KASUS A: JSON BIASA
+        if (options.data is Map) {
+          final jsonString = jsonEncode(options.data);
+          final encryptedPayload = aesEncrypter.encrypt(jsonString, iv: aesIv).base64;
+          
+          // Body hanya berisi payload, key sudah di header
+          options.data = { 'payload': encryptedPayload };
+        } 
+        // KASUS B: MULTIPART / FILE
+        else if (options.data is FormData) {
+          final originalForm = options.data as FormData;
+          final Map<String, dynamic> textFields = {};
+
+          for (var field in originalForm.fields) {
+            textFields[field.key] = field.value;
+          }
+          
+          if (textFields.isNotEmpty) {
+            final jsonString = jsonEncode(textFields);
+            final encryptedPayload = aesEncrypter.encrypt(jsonString, iv: aesIv).base64;
+
+            final newForm = FormData();
+            newForm.fields.add(MapEntry('payload', encryptedPayload));
+            
+            // Salin file asli
+            for (var file in originalForm.files) {
+              newForm.files.add(file);
+            }
+            options.data = newForm;
+          }
+        }
       }
+    } catch (e) {
+      a.debugPrint("❌ Encryption Init Failed: $e");
     }
+
     super.onRequest(options, handler);
   }
 
-  // 2. DEKRIPSI RESPONSE SUKSES (200 OK)
+  // ... (Bagian onResponse dan onError SAMA SEPERTI SEBELUMNYA) ...
+  // Pastikan _decryptResponse menggunakan 'session_key' dari options.extra
+  
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    _decryptResponseData(response);
+    _decryptResponse(response);
     super.onResponse(response, handler);
   }
 
-  // 3. ✅ DEKRIPSI RESPONSE ERROR (401, 422, 500) - INI YANG KURANG TADI
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (err.response != null) {
-      // Coba dekripsi body error agar pesan aslinya terbaca
-      _decryptResponseData(err.response!);
-    }
+    if (err.response != null) _decryptResponse(err.response!);
     super.onError(err, handler);
   }
 
-  // 🛠️ Helper Logic Dekripsi
-  void _decryptResponseData(Response response) {
+  void _decryptResponse(Response response) {
+    // Cek apakah respon terenkripsi (punya payload)
     if (response.data is Map && response.data.containsKey('payload')) {
-      try {
-        final encryptedData = response.data['payload'];
-        final decrypted = _encrypter.decrypt64(encryptedData, iv: _iv);
         
-        // Ganti data terenkripsi dengan data asli (JSON)
-        response.data = jsonDecode(decrypted);
-        
-        // Debugging (Optional)
-        // print("🔓 Decrypted (${response.statusCode}): ${response.data}");
-      } catch (e) {
-        // print("❌ Decryption Failed for ${response.statusCode}: $e");
+      // Cek apakah kita punya kuncinya di memory request
+      if (response.requestOptions.extra.containsKey('session_key')) {
+        try {
+          final keyString = response.requestOptions.extra['session_key'];
+          final ivString = response.requestOptions.extra['session_iv'];
+          
+          final aesEncrypter = Encrypter(AES(Key.fromUtf8(keyString), mode: AESMode.cbc));
+          final encryptedData = response.data['payload'];
+          
+          final decrypted = aesEncrypter.decrypt64(encryptedData, iv: IV.fromUtf8(ivString));
+          response.data = jsonDecode(decrypted);
+          
+        } catch (e) {
+          a.debugPrint("❌ Decryption Failed: $e");
+        }
       }
     }
+  }
+
+  String _generateRandomString(int length) {
+    const chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+    Random rnd = Random();
+    return String.fromCharCodes(Iterable.generate(
+        length, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))));
   }
 }

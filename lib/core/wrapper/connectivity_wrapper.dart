@@ -66,7 +66,7 @@ class _AppConnectivityWrapperState extends ConsumerState<AppConnectivityWrapper>
 
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
       // Hanya cek jika kita merasa "Online" untuk memastikan sesi tetap valid
       if (!_isOffline) {
         debugPrint("💓 Heartbeat: Checking Server & Session...");
