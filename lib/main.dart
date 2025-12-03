@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'core/security/key_manager.dart'; 
-import 'core/wrapper/connectivity_wrapper.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -14,7 +14,6 @@ void main() async {
   // 1. Wajib: Binding Widget
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Error Handling Global (Agar tidak layar hitam)
   try {
     // A. Load Environment Variables
     await dotenv.load(fileName: ".env");
@@ -22,14 +21,16 @@ void main() async {
     // B. Load RSA Public Key (Ini yang sering bikin crash kalau file tidak ada)
     await KeyManager.loadPublicKey();
 
-    // C. Jika sukses, jalankan aplikasi normal
+    // C. Inisialisasi lokal tanggal untuk Indonesia
+    await initializeDateFormatting('id_ID', null);
+
+    // D. Jika sukses, jalankan aplikasi normal
     runApp(
       const ProviderScope(
         child: PoliSlotApp(),
       ),
     );
   } catch (e, stackTrace) {
-    // 🛑 JIKA ERROR: Tampilkan layar error merah
     debugPrint("🔥 CRITICAL ERROR STARTUP: $e");
     debugPrintStack(stackTrace: stackTrace);
     
@@ -82,12 +83,6 @@ class PoliSlotApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.onGenerateRoute,
-      
-      // Gunakan Wrapper Koneksi yang sudah kita buat sebelumnya
-      builder: (context, child) {
-        if (child == null) return const SizedBox.shrink();
-        return AppConnectivityWrapper(child: child);
-      },
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../enums/otp_type.dart';
 
 // Import Screen
+import '../../core/wrapper/connectivity_wrapper.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/auth/presentation/login_regis_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -11,9 +12,9 @@ import '../../features/auth/presentation/verify_otp_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/home/presentation/main_screen.dart';
-import '../../features/profile/presentation/sections/profile_edit_section.dart'; // Pastikan path benar
-import '../../features/profile/presentation/sections/profile_feedback_section.dart'; // Pastikan path benar
-import '../../features/profile/presentation/sections/profile_reward_section.dart'; // Pastikan path benar
+import '../../features/profile/presentation/sections/profile_edit_section.dart'; 
+import '../../features/profile/presentation/sections/profile_feedback_section.dart'; 
+import '../../features/profile/presentation/sections/profile_reward_section.dart'; 
 
 class AppRoutes {
   // ===========================================================================
@@ -84,7 +85,11 @@ class AppRoutes {
 
       // --- MAIN / HOME ---
       case main:
-        return _materialRoute(const MainScreen());
+        return _materialRoute(
+          const AppConnectivityWrapper(
+            child: MainScreen(),
+          ),
+        );
 
       case profileEdit:
         return _slideRoute(const ProfileEditSection());
