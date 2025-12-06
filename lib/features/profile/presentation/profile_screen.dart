@@ -67,7 +67,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (index == 1) {
             Navigator.pushNamed(context, AppRoutes.profileEdit);
           } else if (index == 2) {
-            Navigator.pushNamed(context, AppRoutes.profileFeedback);
+            Navigator.pushNamed(context, AppRoutes.feedback);
           }
         },
         onLogoutTap: _showLogoutDialog,

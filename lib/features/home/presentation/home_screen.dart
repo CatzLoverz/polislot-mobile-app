@@ -595,7 +595,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Info Board",
+                  "Pemberitahuan Terbaru",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -632,7 +632,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: 0.05), // Saya sesuaikan alpha agar shadow lebih halus (standar 0.05-0.1)
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -643,12 +643,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              // ✅ Ganti Background: Merah muda saat error, Abu saat kosong
+              color: isError ? Colors.red.shade50 : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              Icons.notifications_none_rounded,
-              color: Colors.grey.shade400,
+              // ✅ Ganti Icon: Wifi Off saat error, Lonceng saat kosong
+              isError ? Icons.wifi_off_rounded : Icons.notifications_none_rounded,
+              // ✅ Ganti Warna Icon: Merah saat error
+              color: isError ? Colors.red.shade400 : Colors.grey.shade400,
               size: 24,
             ),
           ),
@@ -658,11 +661,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isError ? "Gagal memuat data" : "Belum ada informasi",
-                  style: const TextStyle(
+                  // Teks Judul
+                  isError ? "Anda Sedang Offline" : "Belum ada informasi",
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Color(0xFF1A253A),
+                    // ✅ Ganti Warna Teks Judul jadi Merah saat error
+                    color: isError ? Colors.red.shade700 : const Color(0xFF1A253A),
                   ),
                 ),
                 const SizedBox(height: 2),

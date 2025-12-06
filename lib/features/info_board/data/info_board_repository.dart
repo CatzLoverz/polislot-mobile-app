@@ -27,10 +27,9 @@ class InfoBoardRepository {
         final List list = data['data'];
         return list.map((e) => InfoBoard.fromJson(e)).toList();
       }
-      return [];
+      throw Exception(data['message'] ?? "Gagal memuat data");
     } catch (e) {
-      // Jika error/kosong, kembalikan list kosong agar UI tidak crash
-      return [];
+      rethrow;
     }
   }
 }

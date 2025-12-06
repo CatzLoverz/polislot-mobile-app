@@ -13,7 +13,7 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/home/presentation/main_screen.dart';
 import '../../features/profile/presentation/sections/profile_edit_section.dart'; 
-import '../../features/profile/presentation/sections/profile_feedback_section.dart'; 
+import '../../features/feedback/presentation/feedback_screen.dart'; 
 import '../../features/profile/presentation/sections/profile_reward_section.dart'; 
 
 class AppRoutes {
@@ -35,7 +35,7 @@ class AppRoutes {
   static const String main = '/main'; // Home / Dashboard
 
   static const String profileEdit = '/profile/edit';
-  static const String profileFeedback = '/profile/feedback';
+  static const String feedback = '/feedback';
   static const String profileReward = '/profile/reward';
 
   // ===========================================================================
@@ -93,8 +93,8 @@ class AppRoutes {
 
       case profileEdit:
         return _slideRoute(const ProfileEditSection());
-      case profileFeedback:
-        return _slideRoute(const ProfileFeedbackSection());
+      case feedback:
+        return _slideRoute(const FeedbackScreen());
       case profileReward:
         return _slideRoute(const ProfileRewardSection());
         
