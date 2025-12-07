@@ -1,1 +1,1 @@
-Letakkan public key dalam directory ini
+Letakkan public key bernama public_key.pem dalam directory ini

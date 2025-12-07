@@ -26,12 +26,12 @@ class DioClientService extends _$DioClientService {
     );
 
     dio.interceptors.addAll([
+      EncryptionInterceptor(),
+      AuthInterceptor(),
       LogInterceptor(
         requestBody: true, 
         responseBody: true,
       ),
-      EncryptionInterceptor(),
-      AuthInterceptor(),
     ]);
 
     return dio;

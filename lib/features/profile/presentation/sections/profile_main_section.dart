@@ -95,7 +95,7 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
               children: [
                 CircleAvatar(
                   radius: 36,
-                  backgroundColor: Colors.white.withValues(alpha: 0.3),
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
                   // Menggunakan helper fullAvatarUrl dari Model User
                   backgroundImage: (user?.fullAvatarUrl.isNotEmpty ?? false) 
                       ? NetworkImage(user!.fullAvatarUrl) 
@@ -153,7 +153,13 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 3))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2), 
+              blurRadius: 8, 
+              offset: Offset(0, 3)
+            ),
+          ],
         ),
         child: Row(
           children: [
