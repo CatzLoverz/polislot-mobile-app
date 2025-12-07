@@ -30,7 +30,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Konfirmasi Logout", style: TextStyle(color: Color(0xFF1565C0))),
+        title: const Text("Konfirmasi Logout", style: TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
         content: const Text("Apakah Anda yakin ingin keluar?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),

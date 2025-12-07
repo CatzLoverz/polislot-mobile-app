@@ -8,6 +8,7 @@ import '../../profile/presentation/profile_screen.dart';
 // import '../../../core/routes/app_routes.dart';
 import '../../profile/presentation/providers/profile_ui_provider.dart';
 import '../../mission/presentation/mission_screen.dart';
+import '../../reward/presentation/reward_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -24,7 +25,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   final List<Widget> _pages = [
     const HomeScreen(),
     const MissionScreen(), 
-    const _PlaceholderScreen(title: "Reward Screen", icon: Icons.card_giftcard),
+    const RewardScreen(),
     const ProfileScreen(),
   ];
 
@@ -128,7 +129,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 ),
                 tabs: const [
                   GButton(icon: Icons.home_rounded, text: 'Home'),
-                  GButton(icon: Icons.flag_outlined, text: 'Misi'),
+                  GButton(icon: Icons.fact_check_rounded, text: 'Misi'),
                   GButton(icon: Icons.card_giftcard_rounded, text: 'Reward'),
                   GButton(icon: Icons.person_outline_rounded, text: 'Profil'),
                 ],
@@ -143,9 +144,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 }
 
-class _PlaceholderScreen extends StatelessWidget {
-  final String title; final IconData icon;
-  const _PlaceholderScreen({required this.title, required this.icon});
-  @override
-  Widget build(BuildContext context) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 80, color: Colors.grey[300]), Text(title)]));
-}
+// class _PlaceholderScreen extends StatelessWidget {
+//   final String title; final IconData icon;
+//   const _PlaceholderScreen({required this.title, required this.icon});
+//   @override
+//   Widget build(BuildContext context) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 80, color: Colors.grey[300]), Text(title)]));
+// }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/enums/otp_type.dart';
 import 'auth_controller.dart';
@@ -57,9 +58,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lupa Password'),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.white,
         elevation: 0,
+        title: Text(
+          'Lupa Password',
+          style: const TextStyle(
+            color: AppTheme.primaryColor, // Warna Biru
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          )
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.primaryColor),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -110,7 +122,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   onPressed: isLoading ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: AppTheme.primaryColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: isLoading
