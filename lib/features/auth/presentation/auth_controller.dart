@@ -1,8 +1,9 @@
-// import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
-import '../../../../main.dart'; 
+import '../../../../core/providers/connection_status_provider.dart';
+// import '../../../../main.dart'; 
 import '../data/auth_repository.dart';
 import '../data/user_model.dart';
 
@@ -16,62 +17,53 @@ class AuthController extends _$AuthController {
     return await ref.read(authRepositoryInstanceProvider).getUserLocal();
   }
 
-  // ✅ FUNGSI BARU: Cek Koneksi (Ping)
-  Future<bool> isServerReachable() async {
-    return await ref.read(authRepositoryInstanceProvider).checkConnectivity();
-  }
-
-  // ✅ LOGIK CEK SESI (Background & Fail-Safe)
-  Future<bool> checkAuthSession() async {
+  // ✅ LOGIC STARTUP (Dipanggil Splash Screen)
+  Future<bool> checkStartupSession() async {
     try {
       final repo = ref.read(authRepositoryInstanceProvider);
-      
-      // 1. Cek Lokal
+      final connectionNotifier = ref.read(connectionStatusProvider.notifier);
+
+      // 1. Cek Token Lokal
       final localUser = await repo.getUserLocal();
-      if (localUser == null) return false; 
+      
+      if (localUser == null) {
+        // Tidak ada token -> Langsung ke Login
+        return false; 
+      }
 
-      state = AsyncData(localUser); 
+      // Ada token -> Set state agar UI Home bisa render (Offline Mode Ready)
+      state = AsyncData(localUser);
 
-      // 2. Cek Server
+      // 2. Cek Koneksi Server (Ping)
+      // Gunakan timeout pendek
       try {
+        await repo.checkConnectivity(); // Pastikan repo punya method ini (return void/bool)
+        
+        // 3. Jika Server OK -> Validasi Token & Update Data
         final freshUser = await repo.fetchUserProfile();
         state = AsyncData(freshUser);
-        return true;
+        connectionNotifier.setOnline(); // Set UI jadi Online
+        
       } catch (e) {
-        if (e is DioException && e.response?.statusCode == 401) {
-          // Force Logout hanya jika 401
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.clear();
-          navigatorKey.currentState?.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
-          return false;
+        // Jika Server Gagal (Timeout/Down) ATAU 401
+        
+        // Jika 401, Interceptor Dio di atas SUDAH menangani logout.
+        // Jadi di sini kita hanya perlu menangani kasus Offline.
+        if (e is DioException && e.response?.statusCode != 401) {
+           debugPrint("⚠️ Server unreachable. Masuk Mode Offline.");
+           connectionNotifier.setOffline(); // Set UI jadi Offline (Merah)
         }
-        return true; // Offline mode
       }
+
+      // Apapun yang terjadi (Online sukses / Offline), 
+      // selama Token Lokal ada (dan bukan 401), kita izinkan masuk Home.
+      return true; 
+
     } catch (e) {
       return false;
     }
   }
 
-  // Future<void> _validateTokenInBackground(AuthRepository repo) async {
-  //   try {
-  //     final freshUser = await repo.fetchUserProfile();
-  //     state = AsyncData(freshUser); // Update data terbaru
-  //     debugPrint("✅ Token Valid & Data Updated");
-  //   } catch (e) {
-  //     // 🚨 CRITICAL: Hanya Logout jika 401 (Token Salah/Expired)
-  //     if (e is DioException && e.response?.statusCode == 401) {
-  //       debugPrint("🛑 Token Expired (401). Force Logout.");
-  //       final prefs = await SharedPreferences.getInstance();
-  //       await prefs.clear();
-  //       navigatorKey.currentState?.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
-  //     } else {
-  //       // Error lain (Timeout/No Internet) -> Biarkan tetap Login (Mode Offline)
-  //       debugPrint("⚠️ Server Validation Failed (Offline Mode): $e");
-  //     }
-  //   }
-  // }
-
-  // ... (Semua method auth lainnya login/register/dll TETAP SAMA, copy dari file Anda sebelumnya) ...
   Future<bool> login(String email, String password) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(() => ref.read(authRepositoryInstanceProvider).login(email: email, password: password));

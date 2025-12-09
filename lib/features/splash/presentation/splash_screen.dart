@@ -92,11 +92,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
     await Future.delayed(const Duration(seconds: 4));
     if (!mounted) return;
 
-    final hasSession = await ref.read(authControllerProvider.notifier).checkAuthSession();
+    // Panggil logika startup yang baru
+    final isLoggedIn = await ref.read(authControllerProvider.notifier).checkStartupSession();
 
     if (!mounted) return;
 
-    if (hasSession) {
+    if (isLoggedIn) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.loginRegis);

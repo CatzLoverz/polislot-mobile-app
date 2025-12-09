@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:intl/intl.dart';
-// import 'package:intl/date_symbol_data_local.dart';
 
 import '../../auth/presentation/auth_controller.dart';
-// import '../../auth/data/user_model.dart';
 import '../../info_board/data/info_board_model.dart';
 import '../../info_board/presentation/info_board_controller.dart';
+import '../../../core/providers/connection_status_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,7 +19,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   Timer? _slideTimer;
-  Timer? _dataRefreshTimer;
 
   final List<String> _slideTexts = [
     "Selamat Datang di Aplikasi PoliSlot! Temukan slot parkir terbaikmu.",
@@ -29,28 +27,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     "Selesaikan misi dan rebut posisi top leaderboard!🎯",
   ];
 
-  // Data Placeholder Area Parkir
   final List<Map<String, String>> _parkingAreas = [
-    {
-      "name": "Parkir Tower A",
-      "desc": "Pada area ini memiliki 3 sub-area yang dapat anda tempati untuk parkir",
-      "code": "TA",
-    },
-    {
-      "name": "Parkir Gedung Utama",
-      "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir",
-      "code": "GU",
-    },
-    {
-      "name": "Parkir Teaching Factory",
-      "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir",
-      "code": "RTF",
-    },
-    {
-      "name": "Parkir Technopreneur",
-      "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir",
-      "code": "TECHNO",
-    },
+    { "name": "Parkir Tower A", "desc": "Pada area ini memiliki 3 sub-area yang dapat anda tempati untuk parkir", "code": "TA" },
+    { "name": "Parkir Gedung Utama", "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir", "code": "GU" },
+    { "name": "Parkir Teaching Factory", "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir", "code": "RTF" },
+    { "name": "Parkir Technopreneur", "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir", "code": "TECHNO" },
   ];
 
   @override
@@ -73,15 +54,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(infoBoardControllerProvider);
+    }
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _slideTimer?.cancel();
-    _dataRefreshTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
-  // 📢 POP-UP DIALOG
   void _showAllInfoDialog(BuildContext context, List<InfoBoard> infoList) {
     showDialog(
       context: context,
@@ -153,13 +139,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final authState = ref.watch(authControllerProvider);
     final user = authState.value;
     final infoBoardAsync = ref.watch(infoBoardControllerProvider);
+    
+    // ✅ Pantau Status Koneksi Global
+    final isOffline = ref.watch(connectionStatusProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            return ref.refresh(infoBoardControllerProvider);
+            return ref.refresh(infoBoardControllerProvider.future);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -175,38 +164,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ),
                   const SizedBox(height: 16),
 
-                  // 1. Greeting Card
                   _buildGreetingCard(user?.name ?? "Mahasiswa"),
                   const SizedBox(height: 16),
 
-                  // 2. Info Board
-                  infoBoardAsync.when(
-                    skipLoadingOnRefresh: true,
-                    data: (infoList) {
-                      if (infoList.isEmpty) {
-                        return _buildInfoBoardPlaceholder();
-                      }
-                      final latestInfo = infoList.first;
-                      return InkWell(
-                        onTap: () => _showAllInfoDialog(context, infoList),
-                        borderRadius: BorderRadius.circular(16),
-                        child: _buildInfoBoardCard(latestInfo),
-                      );
-                    },
-                    loading: () => _buildInfoBoardLoading(),
-                    error: (err, stack) => _buildInfoBoardPlaceholder(isError: true),
-                  ),
+                  // ✅ 2. Info Board (Logic Baru)
+                  // Jika Offline, langsung tampilkan placeholder tanpa loading
+                  if (isOffline)
+                    _buildInfoBoardPlaceholder(isError: true)
+                  else
+                    infoBoardAsync.when(
+                      skipLoadingOnRefresh: true,
+                      data: (infoList) {
+                        if (infoList.isEmpty) {
+                          return _buildInfoBoardPlaceholder();
+                        }
+                        final latestInfo = infoList.first;
+                        return InkWell(
+                          onTap: () => _showAllInfoDialog(context, infoList),
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildInfoBoardCard(latestInfo),
+                        );
+                      },
+                      loading: () => _buildInfoBoardLoading(),
+                      error: (err, stack) => _buildInfoBoardPlaceholder(isError: true),
+                    ),
+
                   const SizedBox(height: 24),
 
-                  // 3. Header Summary Area Parkir
                   _buildParkingHeaderCard(),
                   const SizedBox(height: 16),
 
-                  // 4. List Area Parkir
                   ..._parkingAreas.map((area) => _buildParkingAreaItem(area)),
                   const SizedBox(height: 16),
 
-                  // 5. Leaderboard 
                   _buildLeaderboardCard(),
                   const SizedBox(height: 80),
                 ],
@@ -220,133 +210,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   // ================= WIDGET BUILDERS =================
 
-  Widget _buildLeaderboardCard() {
-    // Data dummy leaderboard
-    final leaders = [
-      {"rank": 1, "name": "Andri Yani Meuraxa", "validasi": "98"},
-      {"rank": 2, "name": "Alndea Resta Amaira", "validasi": "91"},
-      {"rank": 3, "name": "Ardila Putri", "validasi": "87"},
-    ];
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        // Navigasi ke Leaderboard Detail jika ada
-      },
-      child: _customCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.emoji_events_rounded, color: Color(0xFF1352C8)),
-                SizedBox(width: 8),
-                Text(
-                  "Peringkat Teratas",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Color(0xFF1A253A),
-                  ),
-                ),
-                Spacer(),
-                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black38),
-              ],
-            ),
-            const Divider(),
-            Column(
-              children: leaders.map((l) {
-                return _leaderRow(
-                  l["rank"] as int,
-                  l["name"] as String,
-                  l["validasi"] as String,
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _leaderRow(int rank, String name, String validasi) {
-    late Color tierColor;
-    late IconData tierIcon;
-
-    if (rank == 1) {
-      tierColor = Colors.amber; 
-      tierIcon = Icons.emoji_events;
-    } else if (rank == 2) {
-      tierColor = const Color(0xFFC0C0C0); 
-      tierIcon = Icons.emoji_events;
-    } else {
-      tierColor = const Color(0xFFCD7F32);
-      tierIcon = Icons.emoji_events;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: tierColor.withValues(alpha: 0.15),
-                child: Icon(tierIcon, color: tierColor, size: 24),
-              ),
-              Positioned(
-                bottom: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  child: Text(
-                    "#$rank",
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.verified, color: tierColor, size: 18),
-              const SizedBox(width: 4),
-              Text(
-                "$validasi Validasi",
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper Card Container
-  Widget _customCard({required Widget child}) {
+  // Card Info Board
+  Widget _buildInfoBoardCard(InfoBoard info) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -354,21 +219,228 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEFE0),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.notifications_active_rounded,
+              color: Color(0xFFFFA500),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Papan Pemberitahuan",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFF1A253A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  info.content,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                    color: Color(0xFF454F63),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black26),
+        ],
+      ),
+    );
+  }
+
+  // Placeholder (Offline / Kosong / Error)
+  Widget _buildInfoBoardPlaceholder({bool isError = false}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: child,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isError ? Colors.red.shade50 : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isError ? Icons.wifi_off_rounded : Icons.notifications_none_rounded,
+              color: isError ? Colors.red.shade400 : Colors.grey.shade400,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isError ? "Anda Sedang Offline" : "Belum ada informasi",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: isError ? Colors.red.shade700 : const Color(0xFF1A253A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isError
+                      ? "Periksa koneksi internet Anda."
+                      : "Tidak ada informasi terbaru saat ini.",
+                  maxLines: 2,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                    color: Color(0xFF454F63),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // --- Parking Area Widgets ---
+  // Loading Skeleton
+  Widget _buildInfoBoardLoading() {
+    return Container(
+      height: 80,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(width: double.infinity, height: 14, color: Colors.grey[200]),
+                const SizedBox(height: 6),
+                Container(width: 150, height: 12, color: Colors.grey[200]),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  // ... (Widget Greeting, Parking, Leaderboard TETAP SAMA) ...
+  Widget _buildGreetingCard(String userName) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Hai, $userName 👋",
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: _slideTexts.length,
+              itemBuilder: (context, index) {
+                return Text(
+                  _slideTexts[index],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          SmoothPageIndicator(
+            controller: _pageController,
+            count: _slideTexts.length,
+            effect: const WormEffect(
+              dotHeight: 8,
+              dotWidth: 8,
+              activeDotColor: Colors.white,
+              dotColor: Colors.white54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildParkingHeaderCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
@@ -376,6 +448,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -388,29 +467,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${_parkingAreas.length} Area Tersedia",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${_parkingAreas.length} Area Tersedia",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  "Jelajahi berbagai area parkir yang tersedia untuk Anda.",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                "Anda dapat parkir dimana saja",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
                 ),
-              ],
-            ),
-          )
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -424,7 +501,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -501,130 +578,129 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  // --- Greeting Card ---
-  Widget _buildGreetingCard(String userName) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Hai, $userName 👋",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _slideTexts.length,
-              itemBuilder: (context, index) {
-                return Text(
-                  _slideTexts[index],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 8),
-          SmoothPageIndicator(
-            controller: _pageController,
-            count: _slideTexts.length,
-            effect: const WormEffect(
-              dotHeight: 8,
-              dotWidth: 8,
-              activeDotColor: Colors.white,
-              dotColor: Colors.white54,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildLeaderboardCard() {
+    final leaders = [
+      {"rank": 1, "name": "Andri Yani Meuraxa", "validasi": "98"},
+      {"rank": 2, "name": "Alndea Resta Amaira", "validasi": "91"},
+      {"rank": 3, "name": "Ardila Putri", "validasi": "87"},
+    ];
 
-  // --- Info Board Widgets ---
-  Widget _buildInfoBoardCard(InfoBoard info) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFEFE0),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.notifications_active_rounded,
-              color: Color(0xFFFFA500),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {},
+      child: _customCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
               children: [
-                const Text(
-                  "Pemberitahuan Terbaru",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Icon(Icons.emoji_events_rounded, color: Color(0xFF1352C8)),
+                SizedBox(width: 8),
+                Text(
+                  "Peringkat Teratas",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 18,
                     color: Color(0xFF1A253A),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  info.content, 
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    color: Color(0xFF454F63),
-                  ),
-                ),
+                Spacer(),
+                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black38),
               ],
             ),
+            const Divider(),
+            Column(
+              children: leaders.map((l) {
+                return _leaderRow(
+                  l["rank"] as int,
+                  l["name"] as String,
+                  l["validasi"] as String,
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _leaderRow(int rank, String name, String validasi) {
+    late Color tierColor;
+    late IconData tierIcon;
+
+    if (rank == 1) {
+      tierColor = Colors.amber;
+      tierIcon = Icons.emoji_events;
+    } else if (rank == 2) {
+      tierColor = const Color(0xFFC0C0C0);
+      tierIcon = Icons.emoji_events;
+    } else {
+      tierColor = const Color(0xFFCD7F32);
+      tierIcon = Icons.emoji_events;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: tierColor.withValues(alpha: 0.15),
+                child: Icon(tierIcon, color: tierColor, size: 24),
+              ),
+              Positioned(
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  child: Text(
+                    "#$rank",
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              name,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.verified, color: tierColor, size: 18),
+              const SizedBox(width: 4),
+              Text(
+                "$validasi Validasi",
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoBoardPlaceholder({bool isError = false}) {
+  Widget _customCard({required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -632,96 +708,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05), // Saya sesuaikan alpha agar shadow lebih halus (standar 0.05-0.1)
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              // ✅ Ganti Background: Merah muda saat error, Abu saat kosong
-              color: isError ? Colors.red.shade50 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              // ✅ Ganti Icon: Wifi Off saat error, Lonceng saat kosong
-              isError ? Icons.wifi_off_rounded : Icons.notifications_none_rounded,
-              // ✅ Ganti Warna Icon: Merah saat error
-              color: isError ? Colors.red.shade400 : Colors.grey.shade400,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  // Teks Judul
-                  isError ? "Anda Sedang Offline" : "Belum ada informasi",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    // ✅ Ganti Warna Teks Judul jadi Merah saat error
-                    color: isError ? Colors.red.shade700 : const Color(0xFF1A253A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isError
-                      ? "Periksa koneksi internet Anda."
-                      : "Tidak ada informasi terbaru saat ini.",
-                  maxLines: 2,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    color: Color(0xFF454F63),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoBoardLoading() {
-    return Container(
-      height: 80,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(width: double.infinity, height: 14, color: Colors.grey[200]),
-                const SizedBox(height: 6),
-                Container(width: 150, height: 12, color: Colors.grey[200]),
-              ],
-            ),
-          )
-        ],
-      ),
+      child: child,
     );
   }
 }

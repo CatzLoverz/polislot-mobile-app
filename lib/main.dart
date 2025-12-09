@@ -7,8 +7,8 @@ import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'core/security/key_manager.dart'; 
 import 'package:intl/date_symbol_data_local.dart';
+import 'core/utils/navigator_key.dart';
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   // 1. Wajib: Binding Widget

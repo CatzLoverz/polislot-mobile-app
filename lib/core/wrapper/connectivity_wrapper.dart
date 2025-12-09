@@ -1,104 +1,26 @@
-import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/auth/presentation/auth_controller.dart';
+import '../../core/utils/snackbar_utils.dart';
+import '../providers/connection_status_provider.dart';
 
-class AppConnectivityWrapper extends ConsumerStatefulWidget {
+class AppConnectivityWrapper extends ConsumerWidget {
   final Widget child;
   const AppConnectivityWrapper({super.key, required this.child});
 
   @override
-  ConsumerState<AppConnectivityWrapper> createState() => _AppConnectivityWrapperState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Pantau status koneksi global dari provider
+    final isOffline = ref.watch(connectionStatusProvider);
 
-class _AppConnectivityWrapperState extends ConsumerState<AppConnectivityWrapper> {
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
-  Timer? _heartbeatTimer;
-  bool _isOffline = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // 1. Cek status awal
-    _initConnectivity();
-    
-    // 2. Monitor perubahan jaringan
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-      _handleConnectivityChange(results);
-    });
-
-    // 3. Mulai Heartbeat (Cek server berkala)
-    _startHeartbeat();
-  }
-
-  void _initConnectivity() async {
-    final results = await Connectivity().checkConnectivity();
-    _handleConnectivityChange(results);
-  }
-
-  void _handleConnectivityChange(List<ConnectivityResult> results) {
-    final hasNetwork = !results.contains(ConnectivityResult.none);
-    
-    if (!hasNetwork) {
-      // Fisik mati -> Pasti Offline
-      _setOffline(true);
-    } else {
-      // Fisik nyala -> Cek Server
-      _checkServerConnection();
-    }
-  }
-
-  Future<void> _checkServerConnection() async {
-    // Ping server via Controller
-    // Pastikan authController memiliki method isServerReachable()
-    final isReachable = await ref.read(authControllerProvider.notifier).isServerReachable();
-    
-    if (isReachable) {
-      _setOffline(false);
-      // Jika server nyambung, cek validitas token (Session)
-      // Ini berjalan di background (Async), tidak memblokir UI
-      ref.read(authControllerProvider.notifier).checkAuthSession();
-    } else {
-      _setOffline(true);
-    }
-  }
-
-  void _startHeartbeat() {
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(hours: 1), (timer) {
-      // Hanya cek jika kita merasa "Online" untuk memastikan sesi tetap valid
-      if (!_isOffline) {
-        debugPrint("💓 Heartbeat: Checking Server & Session...");
-        _checkServerConnection();
-      }
-    });
-  }
-
-  void _setOffline(bool value) {
-    if (_isOffline != value && mounted) {
-      setState(() => _isOffline = value);
-    }
-  }
-
-  @override
-  void dispose() {
-    _heartbeatTimer?.cancel();
-    _connectivitySubscription.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 1. Halaman Aplikasi (Child)
-        widget.child,
+        // Halaman Utama
+        child,
 
-        // 2. Indikator Offline (Overlay)
-        if (_isOffline)
+        // Indikator Offline
+        if (isOffline)
           Positioned(
-            bottom: 120, // Posisi di atas navbar
+            bottom: 100,
             right: 20,
             child: Material(
               color: Colors.transparent,
@@ -106,16 +28,12 @@ class _AppConnectivityWrapperState extends ConsumerState<AppConnectivityWrapper>
               shape: const CircleBorder(),
               child: InkWell(
                 onTap: () {
-                  // Saat diklik, coba cek koneksi manual
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text("Anda sedang Offline. Mencoba menghubungkan...", style: TextStyle(fontWeight: FontWeight.w600)),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
-                    ),
+                  // ✅ Tap hanya memunculkan SnackBar
+                  AppSnackBars.show(
+                    context, 
+                    "Tidak dapat terhubung ke server.\nPeriksa internet Anda dan lakukan refresh.", 
+                    isError: true
                   );
-                  _checkServerConnection();
                 },
                 customBorder: const CircleBorder(),
                 child: Container(
@@ -125,6 +43,9 @@ class _AppConnectivityWrapperState extends ConsumerState<AppConnectivityWrapper>
                     color: Colors.redAccent,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))
+                    ],
                   ),
                   child: const Icon(
                     Icons.wifi_off_rounded,

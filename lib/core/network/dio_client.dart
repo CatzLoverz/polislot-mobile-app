@@ -2,12 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Untuk hapus token manual
 import '../security/encryption_interceptor.dart';
 import 'auth_interceptor.dart';
+import '../providers/connection_status_provider.dart'; // Import Provider Koneksi
+import '../utils/navigator_key.dart';
 
 part 'dio_client.g.dart';
-
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 @Riverpod(keepAlive: true)
 class DioClientService extends _$DioClientService {
@@ -28,10 +29,69 @@ class DioClientService extends _$DioClientService {
     dio.interceptors.addAll([
       EncryptionInterceptor(),
       AuthInterceptor(),
-      LogInterceptor(
-        requestBody: true, 
-        responseBody: true,
+      
+      // ✅ INTERCEPTOR GLOBAL
+      InterceptorsWrapper(
+        onResponse: (response, handler) {
+          ref.read(connectionStatusProvider.notifier).setOnline();
+          return handler.next(response);
+        },
+        
+        onError: (DioException e, handler) async { // ⚠️ Wajib ASYNC
+          int? statusCode = e.response?.statusCode;
+          final path = e.requestOptions.path;
+
+          // 🛑 KASUS 1: 401 UNAUTHORIZED (Sesi Habis)
+          if (statusCode == 401) {
+            // Pengecualian: Jangan logout jika errornya saat sedang login/register
+            // (Karena itu artinya password salah, bukan sesi expired)
+            bool isAuthEndpoint = path.contains('/login') || path.contains('/register');
+
+            if (!isAuthEndpoint) {
+              debugPrint("🚨 401 Session Expired di ($path). Melakukan Force Logout...");
+
+              try {
+                // 1. Hapus Token Dulu (AWAIT Wajib!)
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+
+                // 2. Navigasi ke Login
+                // Kita gunakan addPostFrameCallback opsional untuk memastikan frame siap, 
+                // tapi navigatorKey biasanya aman dipanggil langsung.
+                if (navigatorKey.currentState != null) {
+                  navigatorKey.currentState!.pushNamedAndRemoveUntil(
+                    '/loginRegis', 
+                    (route) => false,
+                  );
+                } else {
+                  debugPrint("⚠️ Navigator State is NULL. Tidak bisa navigasi.");
+                }
+                
+                // 3. STOP. Jangan panggil handler.next(e) di sini jika ingin memutus rantai
+                // Tapi Dio butuh resolusi. Kita reject, tapi UI mungkin sudah pindah halaman.
+                return handler.reject(e);
+
+              } catch (err) {
+                debugPrint("❌ Gagal Logout Otomatis: $err");
+              }
+            }
+          }
+          
+          // 🛑 KASUS 2: MASALAH KONEKSI
+          // Hanya dijalankan jika BUKAN 401 (atau 401 pada login page)
+          if (e.type == DioExceptionType.connectionTimeout || 
+              e.type == DioExceptionType.receiveTimeout || 
+              e.type == DioExceptionType.connectionError) {
+             debugPrint("⚠️ Network Error. Set Offline Mode.");
+             ref.read(connectionStatusProvider.notifier).setOffline();
+          }
+
+          // Lanjutkan error ke Controller/Repository seperti biasa
+          return handler.next(e);
+        },
       ),
+
+      LogInterceptor(requestBody: true, responseBody: true),
     ]);
 
     return dio;
