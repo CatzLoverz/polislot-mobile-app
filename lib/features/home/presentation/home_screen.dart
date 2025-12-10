@@ -75,7 +75,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text(
-            "Papan Pemberitahuan",
+            "Papan Informasi",
             style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1352C8)),
           ),
           content: SizedBox(
@@ -245,7 +245,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Papan Pemberitahuan",
+                  "Papan Informasi",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
