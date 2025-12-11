@@ -1,10 +1,10 @@
-// import 'dart:math';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Pastikan import ini ada untuk Base URL
 import 'mission_controller.dart';
 import '../data/mission_model.dart';
+import '../../../core/providers/connection_status_provider.dart';
 
 class MissionScreen extends ConsumerStatefulWidget {
   final bool initialTabIsMission;
@@ -39,7 +39,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
     super.dispose();
   }
 
-  // ✅ Helper Icon sesuai Model Laravel
   IconData _getMissionIcon(String metricCode) {
     switch (metricCode.toUpperCase()) {
       case 'VALIDATION_STREAK': return FontAwesomeIcons.fire;
@@ -50,31 +49,12 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
     }
   }
 
-  // ✅ Helper Warna Progress
   Color _getProgressColor(double percent) {
     if (percent >= 1.0) return Colors.green;
     if (percent >= 0.5) return Colors.blue;
     return Colors.orange;
   }
 
-  // ✅ Helper Image Provider (Fix Error "No host specified")
-  ImageProvider _getAvatarProvider(String? avatarUrl) {
-    if (avatarUrl == null || avatarUrl.isEmpty) {
-      return const AssetImage('assets/images/default_avatar.png'); // Pastikan aset ini ada atau ganti dengan icon
-    }
-    
-    // Jika URL sudah lengkap (http...), pakai langsung
-    if (avatarUrl.startsWith('http')) {
-      return NetworkImage(avatarUrl);
-    }
-
-    // Jika URL relatif (avatars/...), tambahkan Base URL Server
-    // Ambil base url dari .env, hapus '/api' jika ada, lalu gabung dengan /storage/
-    final baseUrl = dotenv.env['API_BASE_URL']?.replaceAll('/api', '') ?? 'http://192.168.137.1'; 
-    return NetworkImage('$baseUrl/storage/$avatarUrl');
-  }
-
-  // Animasi Card
   Widget _fadeSlide(Widget child, int index) {
     final start = (index * 0.1).clamp(0.0, 1.0);
     final end = (start + 0.5).clamp(0.0, 1.0);
@@ -93,6 +73,13 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final missionDataAsync = ref.watch(missionControllerProvider);
+    
+    // ✅ Pantau Status Koneksi Global
+    final isOffline = ref.watch(connectionStatusProvider);
+
+    // ✅ FIX: Gunakan .asData?.value untuk keamanan akses data
+    final stats = missionDataAsync.asData?.value.stats ?? 
+        UserStats(totalCompleted: 0, lifetimePoints: 0);
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9EEF6),
@@ -110,60 +97,95 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
         onRefresh: () async {
           return ref.refresh(missionControllerProvider.future);
         },
-        child: missionDataAsync.when(
-          data: (data) => _buildContent(data),
-          loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF1352C8))),
-          error: (err, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 40),
-                const SizedBox(height: 10),
-                // Tampilkan pesan error yang lebih ramah
-                Text("Gagal memuat data", style: TextStyle(color: Colors.grey[700])),
-                TextButton(
-                  onPressed: () => ref.refresh(missionControllerProvider),
-                  child: const Text("Coba Lagi"),
-                )
-              ],
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Header Stats
+                  _topStatsCard(stats),
+                  const SizedBox(height: 20),
+
+                  // 2. Tabs
+                  _animatedTabs(),
+                  const SizedBox(height: 20),
+
+                  // 3. Konten (Logic Offline Integrasi)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: isOffline 
+                        // ✅ Jika Offline, langsung tampilkan placeholder tanpa loading
+                        ? _buildOfflinePlaceholder()
+                        : missionDataAsync.when(
+                            data: (data) => isMissionTab 
+                                ? _buildMissionsList(data.missions)
+                                : _buildLeaderboard(data.leaderboard),
+                            
+                            error: (err, stack) => _buildOfflinePlaceholder(),
+                            
+                            loading: () => const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(40.0),
+                                child: CircularProgressIndicator(color: Color(0xFF1352C8)),
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ),
+
+            if (!isMissionTab && missionDataAsync.asData != null)
+              Positioned(
+                left: 0, right: 0, bottom: 0,
+                child: _buildUserPositionCard(missionDataAsync.asData!.value.userRank),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildContent(MissionScreenData data) {
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _topStatsCard(data.stats),
-              const SizedBox(height: 20),
-
-              _animatedTabs(),
-              const SizedBox(height: 20),
-
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: isMissionTab 
-                    ? _buildMissionsList(data.missions)
-                    : _buildLeaderboard(data.leaderboard),
-              ),
-            ],
+  // ✅ WIDGET PLACEHOLDER OFFLINE (Revisi: Hapus Tombol, Ganti Teks)
+  Widget _buildOfflinePlaceholder() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.wifi_off_rounded, size: 40, color: Colors.red.shade400),
           ),
-        ),
-
-        if (!isMissionTab)
-          Positioned(
-            left: 0, right: 0, bottom: 0,
-            child: _buildUserPositionCard(data.userRank),
+          const SizedBox(height: 16),
+          Text(
+            "Anda Sedang Offline",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey.shade800),
           ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            // ✅ Instruksi Scroll Down
+            "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 
@@ -262,8 +284,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
     );
   }
 
-  // --- MISSIONS LIST ---
-
   Widget _buildMissionsList(List<MissionItem> missions) {
     if (missions.isEmpty) {
       return const Center(child: Padding(
@@ -284,7 +304,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   }
 
   Widget _missionCard(MissionItem m) {
-    // ✅ Fix Persentase: Jika selesai, paksa 100% (1.0)
     final double displayPercent = m.isCompleted ? 1.0 : m.percentage;
     final Color progressColor = _getProgressColor(displayPercent);
 
@@ -294,7 +313,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        // ✅ Shadow Alpha 0.2
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -316,14 +334,13 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
           Text(m.description, style: const TextStyle(color: Colors.black54, fontSize: 13, height: 1.4)),
           const SizedBox(height: 12),
           
-          // Progress Bar
           Row(
             children: [
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
-                    value: displayPercent, // Gunakan nilai yang sudah diperbaiki
+                    value: displayPercent,
                     backgroundColor: const Color(0xFFE0E0E0),
                     color: progressColor,
                     minHeight: 6,
@@ -336,7 +353,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
           ),
           const SizedBox(height: 16),
 
-          // ✅ Logic Label "Misi Selesai" menggantikan Tombol
           if (m.isCompleted)
             Container(
               width: double.infinity,
@@ -361,18 +377,18 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
                 ],
               ),
             )
-          // ❌ Tombol "Mulai Misi" DIHAPUS TOTAL sesuai permintaan
         ],
       ),
     );
   }
 
-  // --- LEADERBOARD TAB ---
-
   Widget _buildLeaderboard(List<LeaderboardItem> leaderboard) {
-    if (leaderboard.isEmpty) return const SizedBox.shrink();
-
-    // Data asli (bisa kurang dari 3)
+    if (leaderboard.isEmpty) { 
+      return const Center(child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Text("Belum ada data leaderboard.", style: TextStyle(color: Colors.grey)),
+      ));
+    }
     final top3 = leaderboard.take(3).toList();
     final rest = leaderboard.skip(3).toList();
 
@@ -412,15 +428,10 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Posisi 2 (Kiri) - Cek jika data ada
           if (top3.length > 1) Expanded(child: _podiumItem(top3[1], 140, Colors.grey.shade400)),
           const SizedBox(width: 8),
-          
-          // Posisi 1 (Tengah) - Wajib ada kalau list tidak kosong
           if (top3.isNotEmpty) Expanded(child: _podiumItem(top3[0], 180, Colors.amber)),
-          
           const SizedBox(width: 8),
-          // Posisi 3 (Kanan) - Cek jika data ada
           if (top3.length > 2) Expanded(child: _podiumItem(top3[2], 110, Colors.brown.shade400)),
         ],
       ),
@@ -434,15 +445,15 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
         CircleAvatar(
           radius: user.rank == 1 ? 32 : 26,
           backgroundColor: color.withValues(alpha: 0.2),
-          // ✅ Gunakan Helper Image Provider
-          backgroundImage: _getAvatarProvider(user.avatar),
-          child: (user.avatar == null) 
-              ? Text(user.name.isNotEmpty ? user.name[0] : '?', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 20))
+          backgroundImage: user.fullAvatarUrl.isNotEmpty 
+              ? NetworkImage(user.fullAvatarUrl) 
+              : null,
+          child: user.fullAvatarUrl.isEmpty 
+              ? Icon(Icons.person, color: color, size: user.rank == 1 ? 32 : 24)
               : null,
         ),
         const SizedBox(height: 8),
         
-        // Nama (Marquee)
         SizedBox(
           height: 20,
           child: _MarqueeText(
@@ -476,11 +487,12 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
           CircleAvatar(
             radius: 18, 
             backgroundColor: Colors.grey.shade200,
-            // ✅ Gunakan Helper Image Provider
-            backgroundImage: _getAvatarProvider(user.avatar),
-            child: (user.avatar == null)
-              ? Text(user.name.isNotEmpty ? user.name[0] : '?', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54))
-              : null,
+            backgroundImage: user.fullAvatarUrl.isNotEmpty 
+                ? NetworkImage(user.fullAvatarUrl) 
+                : null,
+            child: user.fullAvatarUrl.isEmpty 
+                ? const Icon(Icons.person, color: Colors.black54, size: 20)
+                : null,
           ),
           
           const SizedBox(width: 12),
@@ -534,7 +546,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   }
 }
 
-// Widget Text Marquee (Geser otomatis)
 class _MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;
@@ -550,40 +561,54 @@ class _MarqueeText extends StatefulWidget {
   State<_MarqueeText> createState() => _MarqueeTextState();
 }
 
-class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderStateMixin {
-  late ScrollController _scrollController;
-  late AnimationController _animationController;
+class _MarqueeTextState extends State<_MarqueeText> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
-    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 4));
-
     Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) _startScrolling();
+      if (mounted && !_isDisposed) _startMarqueeLoop();
     });
-  }
-
-  void _startScrolling() {
-    if (!_scrollController.hasClients) return;
-    
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    if (maxScroll > 0) {
-      _animationController.repeat(reverse: true);
-      _animationController.addListener(() {
-        if (_scrollController.hasClients) {
-          _scrollController.jumpTo(_animationController.value * maxScroll);
-        }
-      });
-    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _isDisposed = true;
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _startMarqueeLoop() async {
+    while (mounted && !_isDisposed) {
+      if (!_scrollController.hasClients) {
+        await Future.delayed(const Duration(seconds: 1));
+        continue;
+      }
+
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      if (maxScroll <= 0) break; 
+
+      final duration = Duration(milliseconds: (maxScroll * 25).toInt() + 1000);
+      try {
+        await _scrollController.animateTo(maxScroll, duration: duration, curve: Curves.linear);
+      } catch (e) { break; }
+
+      if (!mounted || _isDisposed) break;
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (!mounted || _isDisposed) break;
+
+      try {
+        await _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 800), curve: Curves.easeOut);
+      } catch (e) { break; }
+
+      if (!mounted || _isDisposed) break;
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
   }
 
   @override

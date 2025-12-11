@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class MissionScreenData {
   final UserStats stats;
   final List<MissionItem> missions;
@@ -93,5 +95,25 @@ class LeaderboardItem {
       points: json['points'],
       isCurrentUser: json['is_current_user'] ?? false,
     );
+  }
+
+  String get fullAvatarUrl {
+    if (avatar == null || avatar!.isEmpty) return '';
+    if (avatar!.startsWith('http')) return avatar!;
+
+    String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    // Bersihkan /api jika ada, karena storage biasanya di root/storage
+    baseUrl = baseUrl.replaceAll('/api', '');
+    
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+
+    String cleanAvatar = avatar!;
+    if (cleanAvatar.startsWith('/')) {
+      cleanAvatar = cleanAvatar.substring(1);
+    }
+
+    return '$baseUrl/storage/$cleanAvatar';
   }
 }

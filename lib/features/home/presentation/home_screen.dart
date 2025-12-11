@@ -219,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -283,7 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -383,13 +383,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,13 +441,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -501,7 +487,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -708,7 +694,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
