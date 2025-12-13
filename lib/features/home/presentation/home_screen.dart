@@ -54,6 +54,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         );
       }
     });
+
+    Future.microtask(() {
+      ref.invalidate(infoBoardControllerProvider);
+      ref.invalidate(missionControllerProvider);
+    });
   }
 
   @override
@@ -151,9 +156,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       backgroundColor: const Color(0xFFF3F6FB),
       body: SafeArea(
         child: RefreshIndicator(
+          // ✅ LOGIKA BARU: Cek Offline & Try-Catch
           onRefresh: () async {
-            ref.invalidate(missionControllerProvider);
-            return ref.refresh(infoBoardControllerProvider.future);
+            ref.read(connectionStatusProvider.notifier).setOnline();
+
+            try {
+              ref.invalidate(missionControllerProvider);
+              final _ = await ref.refresh(infoBoardControllerProvider.future);
+            } catch (_) {
+              // Tangkap error (timeout/server down) agar spinner berhenti
+            }
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -176,6 +188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     _buildInfoBoardPlaceholder(isError: true)
                   else
                     infoBoardAsync.when(
+                      skipLoadingOnReload: true, 
                       skipLoadingOnRefresh: true,
                       data: (infoList) {
                         if (infoList.isEmpty) {
@@ -200,11 +213,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ..._parkingAreas.map((area) => _buildParkingAreaItem(area)),
                   const SizedBox(height: 16),
 
-                  // ✅ LEADERBOARD SECTION (Offline Logic Added)
+                  // LEADERBOARD SECTION 
                   if (isOffline)
                     _buildLeaderboardOffline()
                   else
                     missionAsync.when(
+                      skipLoadingOnReload: true,
+                      skipLoadingOnRefresh: true,
                       data: (data) => _buildLeaderboardCard(data.leaderboard),
                       loading: () => _buildLeaderboardLoading(),
                       error: (err, stack) => const SizedBox.shrink(),

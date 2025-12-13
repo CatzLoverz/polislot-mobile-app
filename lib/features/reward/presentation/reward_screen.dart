@@ -12,7 +12,7 @@ class RewardScreen extends ConsumerStatefulWidget {
   ConsumerState<RewardScreen> createState() => _RewardScreenState();
 }
 
-class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerProviderStateMixin {
+class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   bool isRewardTab = true;
   
   late AnimationController _animController;
@@ -20,15 +20,28 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
     _animController.forward();
+
+    Future.microtask(() {
+      ref.invalidate(rewardControllerProvider);
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(rewardControllerProvider);
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
     super.dispose();
   }
@@ -68,26 +81,30 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         centerTitle: true,
       ),
       body: SafeArea(
-        // ✅ REVISI: RefreshIndicator membungkus SingleChildScrollView (Keseluruhan Layar)
         child: RefreshIndicator(
+          // ✅ LOGIKA BARU: Cek Offline & Try-Catch
           onRefresh: () async {
-            return ref.refresh(rewardControllerProvider.future);
+            ref.read(connectionStatusProvider.notifier).setOnline();
+
+            try {
+              final _ = await ref.refresh(rewardControllerProvider.future);
+            } catch (_) {}
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Column(
               children: [
-                // 1. Header & Tabs (Ikut ter-scroll dan refresh)
                 _buildHeaderCard(currentPoints),
                 const SizedBox(height: 18),
                 _buildTabBar(),
                 const SizedBox(height: 18),
 
-                // 2. Konten
                 isOffline
                     ? _buildOfflinePlaceholder()
                     : rewardDataAsync.when(
+                        skipLoadingOnReload: true,
+                        skipLoadingOnRefresh: true,
                         data: (data) => isRewardTab 
                             ? _buildRewardList(data.rewards, currentPoints)
                             : _buildCoinHistoryPlaceholder(),
@@ -105,7 +122,6 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // 1️⃣ Header Card
   Widget _buildHeaderCard(int points) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -160,7 +176,6 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // 2️⃣ Tab Bar
   Widget _buildTabBar() {
     return Container(
       height: 50,
@@ -231,13 +246,12 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // 3️⃣ List Reward (Menggunakan Column Loop agar fit di SingleChildScrollView)
   Widget _buildRewardList(List<RewardItem> rewards, int currentPoints) {
     if (rewards.isEmpty) {
-      return const Center(child: Padding( 
-        padding: EdgeInsets.all(20.0),
-        child: Text("Belum ada hadiah tersedia.", style: TextStyle(color: Colors.grey)),
-      ));
+      return const Padding(
+        padding: EdgeInsets.only(top: 50.0),
+        child: Center(child: Text("Belum ada hadiah tersedia.", style: TextStyle(color: Colors.grey))),
+      );
     }
 
     return Column(
@@ -313,7 +327,6 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // 4️⃣ Placeholder Riwayat Koin
   Widget _buildCoinHistoryPlaceholder() {
     return Padding(
       padding: const EdgeInsets.only(top: 50.0),
@@ -336,11 +349,12 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // ✅ Offline Placeholder (Sama dengan Mission Screen & Statis karena sudah di dalam ScrollView)
+  // ✅ Offline Placeholder 
   Widget _buildOfflinePlaceholder() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -368,8 +382,6 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       ),
     );
   }
-
-  // --- DIALOGS ---
 
   void _showInfoDialog() {
     showDialog(

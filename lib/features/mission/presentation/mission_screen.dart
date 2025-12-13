@@ -18,23 +18,38 @@ class MissionScreen extends ConsumerStatefulWidget {
   ConsumerState<MissionScreen> createState() => _MissionScreenState();
 }
 
-class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTickerProviderStateMixin {
+class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late bool isMissionTab;
   late AnimationController _animController;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     isMissionTab = widget.initialTabIsMission;
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
     _animController.forward();
+
+    // ✅ SILENT REFRESH: Trigger fetch saat init tanpa blocking UI
+    Future.microtask(() {
+      ref.invalidate(missionControllerProvider);
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // ✅ SILENT REFRESH: Trigger fetch saat resume tanpa blocking UI
+      ref.invalidate(missionControllerProvider);
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // ✅ Hapus Observer
     _animController.dispose();
     super.dispose();
   }
@@ -74,10 +89,8 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   Widget build(BuildContext context) {
     final missionDataAsync = ref.watch(missionControllerProvider);
     
-    // ✅ Pantau Status Koneksi Global
     final isOffline = ref.watch(connectionStatusProvider);
 
-    // ✅ FIX: Gunakan .asData?.value untuk keamanan akses data
     final stats = missionDataAsync.asData?.value.stats ?? 
         UserStats(totalCompleted: 0, lifetimePoints: 0);
 
@@ -93,33 +106,36 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          return ref.refresh(missionControllerProvider.future);
-        },
-        child: Stack(
-          children: [
-            SingleChildScrollView(
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            // ✅ LOGIKA BARU: Cek Offline & Try-Catch
+            onRefresh: () async {
+              ref.read(connectionStatusProvider.notifier).setOnline();
+
+              try {
+                final _ = await ref.refresh(missionControllerProvider.future);
+              } catch (_) {}
+            },
+            child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Header Stats
                   _topStatsCard(stats),
                   const SizedBox(height: 20),
 
-                  // 2. Tabs
                   _animatedTabs(),
                   const SizedBox(height: 20),
 
-                  // 3. Konten (Logic Offline Integrasi)
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: isOffline 
-                        // ✅ Jika Offline, langsung tampilkan placeholder tanpa loading
                         ? _buildOfflinePlaceholder()
                         : missionDataAsync.when(
+                            skipLoadingOnReload: true,
+                            skipLoadingOnRefresh: true,
                             data: (data) => isMissionTab 
                                 ? _buildMissionsList(data.missions)
                                 : _buildLeaderboard(data.leaderboard),
@@ -137,19 +153,18 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
                 ],
               ),
             ),
+          ),
 
-            if (!isMissionTab && missionDataAsync.asData != null)
-              Positioned(
-                left: 0, right: 0, bottom: 0,
-                child: _buildUserPositionCard(missionDataAsync.asData!.value.userRank),
-              ),
-          ],
-        ),
+          if (!isMissionTab && missionDataAsync.asData != null)
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: _buildUserPositionCard(missionDataAsync.asData!.value.userRank),
+            ),
+        ],
       ),
     );
   }
 
-  // ✅ WIDGET PLACEHOLDER OFFLINE (Revisi: Hapus Tombol, Ganti Teks)
   Widget _buildOfflinePlaceholder() {
     return Container(
       width: double.infinity,
@@ -179,7 +194,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
           ),
           const SizedBox(height: 8),
           Text(
-            // ✅ Instruksi Scroll Down
             "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 14),

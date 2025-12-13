@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -12,7 +13,33 @@ class ProfileRewardSection extends ConsumerStatefulWidget {
   ConsumerState<ProfileRewardSection> createState() => _ProfileRewardSectionState();
 }
 
-class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> {
+class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> with WidgetsBindingObserver {
+  
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // ✅ SILENT REFRESH: Trigger fetch saat init tanpa blocking UI
+    Future.microtask(() {
+      ref.invalidate(rewardHistoryControllerProvider);
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // ✅ SILENT REFRESH: Trigger fetch saat resume
+      ref.invalidate(rewardHistoryControllerProvider);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(rewardHistoryControllerProvider);
@@ -40,40 +67,45 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> {
         ),
       ),
       body: RefreshIndicator(
+        // ✅ LOGIKA BARU: Cek Offline & Try-Catch
         onRefresh: () async {
-          return ref.refresh(rewardHistoryControllerProvider.future);
+          ref.read(connectionStatusProvider.notifier).setOnline();
+
+          try {
+            final _ = await ref.refresh(rewardHistoryControllerProvider.future);
+          } catch (_) {}
         },
-        child: isOffline
-            ? _buildOfflinePlaceholder()
-            : historyAsync.when(
-                data: (history) {
-                  if (history.isEmpty) {
-                    // Gunakan ListView agar tetap bisa di-refresh saat kosong
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                        const Center(child: Text("Belum ada riwayat penukaran.")),
-                      ],
-                    );
-                  }
-                  return ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                    padding: const EdgeInsets.all(20),
-                    itemCount: history.length,
-                    itemBuilder: (context, index) {
-                      return _buildHistoryCard(history[index]);
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => _buildOfflinePlaceholder(),
-              ),
+        child: isOffline ? _buildOfflinePlaceholder() : historyAsync.when(
+          // ✅ SILENT REFRESH: Skip loading jika data sudah ada
+          skipLoadingOnReload: true,
+          skipLoadingOnRefresh: true,
+          data: (history) {
+            if (history.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                  const Center(child: Text("Belum ada riwayat penukaran.")),
+                ],
+              );
+            }
+            return ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              padding: const EdgeInsets.all(20),
+              itemCount: history.length,
+              itemBuilder: (context, index) {
+                return _buildHistoryCard(history[index]);
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => _buildOfflinePlaceholder(),
+        ),
       ),
     );
   }
 
-  // ✅ Widget Offline / Error (Sama dengan Reward & Mission Screen)
+  // ✅ Widget Offline / Error (Konsisten dengan Screen Lain)
   Widget _buildOfflinePlaceholder() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -93,7 +125,11 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
                       ],
                     ),
                     child: Column(

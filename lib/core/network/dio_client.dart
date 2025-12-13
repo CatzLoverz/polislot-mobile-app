@@ -2,10 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Untuk hapus token manual
+import 'package:shared_preferences/shared_preferences.dart'; 
 import '../security/encryption_interceptor.dart';
 import 'auth_interceptor.dart';
-import '../providers/connection_status_provider.dart'; // Import Provider Koneksi
+import '../providers/connection_status_provider.dart'; 
 import '../utils/navigator_key.dart';
 
 part 'dio_client.g.dart';
@@ -27,66 +27,68 @@ class DioClientService extends _$DioClientService {
     );
 
     dio.interceptors.addAll([
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final isOffline = ref.read(connectionStatusProvider);
+          final path = options.path;
+
+          // WHITELIST AUTH: Kecualikan endpoint Auth dari blokir Offline
+          // Agar user tetap bisa mencoba Login/Register/OTP meski status "Offline"
+          bool isAuthEndpoint = path.contains('/login') || 
+                                path.contains('/register') || 
+                                path.contains('/forgot') || 
+                                path.contains('/reset-pass');
+
+          // Blokir request HANYA JIKA Offline DAN BUKAN endpoint Auth
+          if (isOffline && !isAuthEndpoint) {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.connectionError,
+                error: "Offline Mode Active",
+                message: "Aplikasi sedang dalam mode offline. Refresh untuk mencoba lagi.",
+              ),
+            );
+          }
+          
+          return handler.next(options);
+        },
+      ),
+
       EncryptionInterceptor(),
       AuthInterceptor(),
-      
-      // ✅ INTERCEPTOR GLOBAL
       InterceptorsWrapper(
         onResponse: (response, handler) {
           ref.read(connectionStatusProvider.notifier).setOnline();
           return handler.next(response);
         },
-        
-        onError: (DioException e, handler) async { // ⚠️ Wajib ASYNC
+        onError: (DioException e, handler) async { 
           int? statusCode = e.response?.statusCode;
           final path = e.requestOptions.path;
-
-          // 🛑 KASUS 1: 401 UNAUTHORIZED (Sesi Habis)
           if (statusCode == 401) {
-            // Pengecualian: Jangan logout jika errornya saat sedang login/register
-            // (Karena itu artinya password salah, bukan sesi expired)
             bool isAuthEndpoint = path.contains('/login') || path.contains('/register');
-
             if (!isAuthEndpoint) {
               debugPrint("🚨 401 Session Expired di ($path). Melakukan Force Logout...");
-
               try {
-                // 1. Hapus Token Dulu (AWAIT Wajib!)
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
-
-                // 2. Navigasi ke Login
-                // Kita gunakan addPostFrameCallback opsional untuk memastikan frame siap, 
-                // tapi navigatorKey biasanya aman dipanggil langsung.
                 if (navigatorKey.currentState != null) {
-                  navigatorKey.currentState!.pushNamedAndRemoveUntil(
-                    '/loginRegis', 
-                    (route) => false,
-                  );
-                } else {
-                  debugPrint("⚠️ Navigator State is NULL. Tidak bisa navigasi.");
+                  navigatorKey.currentState!.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
                 }
-                
-                // 3. STOP. Jangan panggil handler.next(e) di sini jika ingin memutus rantai
-                // Tapi Dio butuh resolusi. Kita reject, tapi UI mungkin sudah pindah halaman.
                 return handler.reject(e);
-
               } catch (err) {
                 debugPrint("❌ Gagal Logout Otomatis: $err");
               }
             }
           }
           
-          // 🛑 KASUS 2: MASALAH KONEKSI
-          // Hanya dijalankan jika BUKAN 401 (atau 401 pada login page)
           if (e.type == DioExceptionType.connectionTimeout || 
               e.type == DioExceptionType.receiveTimeout || 
               e.type == DioExceptionType.connectionError) {
-             debugPrint("⚠️ Network Error. Set Offline Mode.");
+             debugPrint("⚠️ Network Error ($path). Set Offline Mode.");
              ref.read(connectionStatusProvider.notifier).setOffline();
           }
 
-          // Lanjutkan error ke Controller/Repository seperti biasa
           return handler.next(e);
         },
       ),
@@ -98,41 +100,34 @@ class DioClientService extends _$DioClientService {
   }
 }
 
-// ✅ HELPER: CLASS KHUSUS HANDLING ERROR
 class DioErrorHandler {
   static String parse(Object e) {
     if (e is DioException) {
       String errorMsg = "Terjadi kesalahan koneksi";
       
-      // 1. Cek Response dari Server
       if (e.response != null && e.response?.data != null) {
         final data = e.response?.data;
-        
         if (data is Map) {
-          // Prioritas 1: Pesan error standar Laravel ('message')
           if (data['message'] != null) {
             errorMsg = data['message'];
-          } 
-          // Prioritas 2: Pesan error custom ('error')
-          else if (data['error'] != null) {
+          } else if (data['error'] != null) {
             errorMsg = data['error'];
           }
-          
-          // Prioritas 3: Validation Errors (422)
-          // Jika ada field 'errors', ambil pesan pertama
           if (data['errors'] != null && data['errors'] is Map) {
              final errors = data['errors'] as Map;
              if (errors.isNotEmpty) {
                final firstKey = errors.keys.first;
                final firstErrorList = errors[firstKey];
                if (firstErrorList is List && firstErrorList.isNotEmpty) {
-                 errorMsg = firstErrorList.first; // Contoh: "Email sudah terdaftar"
+                 errorMsg = firstErrorList.first;
                }
              }
           }
         }
       } 
-      // 2. Cek Error Koneksi (Timeout, No Internet)
+      else if (e.error == "Offline Mode Active") {
+        errorMsg = "Anda sedang offline. Tarik layar untuk menyegarkan.";
+      }
       else if (e.type == DioExceptionType.connectionTimeout || 
                e.type == DioExceptionType.receiveTimeout ||
                e.type == DioExceptionType.sendTimeout) {
@@ -143,8 +138,6 @@ class DioErrorHandler {
 
       return errorMsg;
     } 
-    
-    // Error generic lainnya
     return e.toString().replaceAll('Exception: ', '');
   }
 }
