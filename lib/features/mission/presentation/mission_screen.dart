@@ -82,10 +82,10 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
         UserStats(totalCompleted: 0, lifetimePoints: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE9EEF6),
+      backgroundColor: const Color(0xFFF3F6FB),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFFE9EEF6),
+        backgroundColor: const Color(0xFFF3F6FB),
         centerTitle: true,
         elevation: 0,
         title: const Text(
@@ -198,7 +198,6 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: const Color(0xFF1565C0).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       child: Row(
@@ -239,7 +238,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Stack(
         children: [

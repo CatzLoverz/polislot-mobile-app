@@ -1,9 +1,15 @@
+import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+part 'mission_model.g.dart';
+
+@JsonSerializable()
 class MissionScreenData {
   final UserStats stats;
   final List<MissionItem> missions;
   final List<LeaderboardItem> leaderboard;
+  
+  @JsonKey(name: 'user_rank')
   final LeaderboardItem userRank;
 
   MissionScreenData({
@@ -13,38 +19,45 @@ class MissionScreenData {
     required this.userRank,
   });
 
-  factory MissionScreenData.fromJson(Map<String, dynamic> json) {
-    return MissionScreenData(
-      stats: UserStats.fromJson(json['stats']),
-      missions: (json['missions'] as List).map((e) => MissionItem.fromJson(e)).toList(),
-      leaderboard: (json['leaderboard'] as List).map((e) => LeaderboardItem.fromJson(e)).toList(),
-      userRank: LeaderboardItem.fromJson(json['user_rank']),
-    );
-  }
+  factory MissionScreenData.fromJson(Map<String, dynamic> json) => _$MissionScreenDataFromJson(json);
+  Map<String, dynamic> toJson() => _$MissionScreenDataToJson(this);
 }
 
+@JsonSerializable()
 class UserStats {
+  @JsonKey(name: 'total_completed')
   final int totalCompleted;
+  
+  @JsonKey(name: 'lifetime_points')
   final int lifetimePoints;
 
-  UserStats({required this.totalCompleted, required this.lifetimePoints});
+  UserStats({
+    required this.totalCompleted, 
+    required this.lifetimePoints
+  });
 
-  factory UserStats.fromJson(Map<String, dynamic> json) {
-    return UserStats(
-      totalCompleted: json['total_completed'] ?? 0,
-      lifetimePoints: json['lifetime_points'] ?? 0,
-    );
-  }
+  factory UserStats.fromJson(Map<String, dynamic> json) => _$UserStatsFromJson(json);
+  Map<String, dynamic> toJson() => _$UserStatsToJson(this);
 }
 
+@JsonSerializable()
 class MissionItem {
+  @JsonKey(name: 'mission_id')
   final int id;
+  
   final String title;
   final String description;
   final int points;
+  
+  @JsonKey(name: 'metric_code')
   final String metricCode;
+  
   final double percentage;
+  
+  @JsonKey(name: 'is_completed')
   final bool isCompleted;
+  
+  @JsonKey(name: 'completed_at')
   final String? completedAt;
 
   MissionItem({
@@ -58,25 +71,18 @@ class MissionItem {
     this.completedAt,
   });
 
-  factory MissionItem.fromJson(Map<String, dynamic> json) {
-    return MissionItem(
-      id: json['mission_id'],
-      title: json['title'],
-      description: json['description'],
-      points: json['points'],
-      metricCode: json['metric_code'],
-      percentage: (json['percentage'] as num).toDouble(),
-      isCompleted: json['is_completed'] == true || json['is_completed'] == 1,
-      completedAt: json['completed_at'],
-    );
-  }
+  factory MissionItem.fromJson(Map<String, dynamic> json) => _$MissionItemFromJson(json);
+  Map<String, dynamic> toJson() => _$MissionItemToJson(this);
 }
 
+@JsonSerializable()
 class LeaderboardItem {
   final int rank;
   final String name;
   final String? avatar;
   final int points;
+  
+  @JsonKey(name: 'is_current_user')
   final bool isCurrentUser;
 
   LeaderboardItem({
@@ -87,22 +93,15 @@ class LeaderboardItem {
     this.isCurrentUser = false,
   });
 
-  factory LeaderboardItem.fromJson(Map<String, dynamic> json) {
-    return LeaderboardItem(
-      rank: json['rank'],
-      name: json['name'],
-      avatar: json['avatar'],
-      points: json['points'],
-      isCurrentUser: json['is_current_user'] ?? false,
-    );
-  }
+  factory LeaderboardItem.fromJson(Map<String, dynamic> json) => _$LeaderboardItemFromJson(json);
+  Map<String, dynamic> toJson() => _$LeaderboardItemToJson(this);
 
+  // --- Helper Custom (Tidak masuk JSON) ---
   String get fullAvatarUrl {
     if (avatar == null || avatar!.isEmpty) return '';
     if (avatar!.startsWith('http')) return avatar!;
 
     String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    // Bersihkan /api jika ada, karena storage biasanya di root/storage
     baseUrl = baseUrl.replaceAll('/api', '');
     
     if (baseUrl.endsWith('/')) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -8,6 +9,8 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../info_board/data/info_board_model.dart';
 import '../../info_board/presentation/info_board_controller.dart';
 import '../../../core/providers/connection_status_provider.dart';
+import '../../mission/presentation/mission_controller.dart';
+import '../../mission/data/mission_model.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -57,6 +60,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(infoBoardControllerProvider);
+      ref.invalidate(missionControllerProvider);
     }
   }
 
@@ -139,8 +143,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final authState = ref.watch(authControllerProvider);
     final user = authState.value;
     final infoBoardAsync = ref.watch(infoBoardControllerProvider);
+    final missionAsync = ref.watch(missionControllerProvider);
     
-    // ✅ Pantau Status Koneksi Global
     final isOffline = ref.watch(connectionStatusProvider);
 
     return Scaffold(
@@ -148,6 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
+            ref.invalidate(missionControllerProvider);
             return ref.refresh(infoBoardControllerProvider.future);
           },
           child: SingleChildScrollView(
@@ -167,8 +172,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   _buildGreetingCard(user?.name ?? "Mahasiswa"),
                   const SizedBox(height: 16),
 
-                  // ✅ 2. Info Board (Logic Baru)
-                  // Jika Offline, langsung tampilkan placeholder tanpa loading
                   if (isOffline)
                     _buildInfoBoardPlaceholder(isError: true)
                   else
@@ -197,7 +200,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ..._parkingAreas.map((area) => _buildParkingAreaItem(area)),
                   const SizedBox(height: 16),
 
-                  _buildLeaderboardCard(),
+                  // ✅ LEADERBOARD SECTION (Offline Logic Added)
+                  if (isOffline)
+                    _buildLeaderboardOffline()
+                  else
+                    missionAsync.when(
+                      data: (data) => _buildLeaderboardCard(data.leaderboard),
+                      loading: () => _buildLeaderboardLoading(),
+                      error: (err, stack) => const SizedBox.shrink(),
+                    ),
+                  
                   const SizedBox(height: 80),
                 ],
               ),
@@ -208,9 +220,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  // ================= WIDGET BUILDERS =================
-
-  // Card Info Board
   Widget _buildInfoBoardCard(InfoBoard info) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -274,7 +283,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  // Placeholder (Offline / Kosong / Error)
   Widget _buildInfoBoardPlaceholder({bool isError = false}) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -336,7 +344,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  // Loading Skeleton
   Widget _buildInfoBoardLoading() {
     return Container(
       height: 80,
@@ -372,7 +379,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  // ... (Widget Greeting, Parking, Leaderboard TETAP SAMA) ...
   Widget _buildGreetingCard(String userName) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -433,7 +439,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   Widget _buildParkingHeaderCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
@@ -564,12 +570,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildLeaderboardCard() {
-    final leaders = [
-      {"rank": 1, "name": "Andri Yani Meuraxa", "validasi": "98"},
-      {"rank": 2, "name": "Alndea Resta Amaira", "validasi": "91"},
-      {"rank": 3, "name": "Ardila Putri", "validasi": "87"},
-    ];
+  Widget _buildLeaderboardCard(List<LeaderboardItem> leaderboard) {
+    final top3 = leaderboard.take(3).toList();
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -590,39 +592,100 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     color: Color(0xFF1A253A),
                   ),
                 ),
-                Spacer(),
-                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black38),
               ],
             ),
             const Divider(),
-            Column(
-              children: leaders.map((l) {
-                return _leaderRow(
-                  l["rank"] as int,
-                  l["name"] as String,
-                  l["validasi"] as String,
-                );
-              }).toList(),
-            ),
+            if (top3.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: Text("Belum ada data.")),
+              )
+            else
+              Column(
+                children: top3.map((l) {
+                  return _leaderRow(l);
+                }).toList(),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _leaderRow(int rank, String name, String validasi) {
-    late Color tierColor;
-    late IconData tierIcon;
+  // ✅ Leaderboard Offline State (New Widget)
+  Widget _buildLeaderboardOffline() {
+    return _customCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, color: Color(0xFF1352C8)),
+              SizedBox(width: 8),
+              Text(
+                "Peringkat Teratas",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF1A253A),
+                ),
+              ),
+            ],
+          ),
+          const Divider(),
+          const SizedBox(height: 16),
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.wifi_off_rounded, color: Colors.red.shade400, size: 28),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Anda Sedang Offline",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade700,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 
-    if (rank == 1) {
+  Widget _buildLeaderboardLoading() {
+    return _customCard(
+      child: const SizedBox(
+        height: 150,
+        child: Center(child: CircularProgressIndicator(color: Color(0xFF1352C8))),
+      ),
+    );
+  }
+
+  Widget _leaderRow(LeaderboardItem item) {
+    late Color tierColor;
+
+    if (item.rank == 1) {
       tierColor = Colors.amber;
-      tierIcon = Icons.emoji_events;
-    } else if (rank == 2) {
+    } else if (item.rank == 2) {
       tierColor = const Color(0xFFC0C0C0);
-      tierIcon = Icons.emoji_events;
     } else {
       tierColor = const Color(0xFFCD7F32);
-      tierIcon = Icons.emoji_events;
     }
 
     return Padding(
@@ -635,7 +698,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               CircleAvatar(
                 radius: 24,
                 backgroundColor: tierColor.withValues(alpha: 0.15),
-                child: Icon(tierIcon, color: tierColor, size: 24),
+                backgroundImage: item.fullAvatarUrl.isNotEmpty 
+                    ? NetworkImage(item.fullAvatarUrl) 
+                    : null,
+                child: item.fullAvatarUrl.isEmpty 
+                    ? Icon(Icons.person, color: tierColor, size: 24)
+                    : null,
               ),
               Positioned(
                 bottom: 0,
@@ -643,10 +711,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.grey.shade300, width: 0.5),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   child: Text(
-                    "#$rank",
+                    "#${item.rank}",
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -659,21 +728,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final textSpan = TextSpan(
+                  text: item.name, 
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87)
+                );
+                final tp = TextPainter(text: textSpan, maxLines: 1, textDirection: ui.TextDirection.ltr);
+                tp.layout(maxWidth: constraints.maxWidth);
+                
+                if (tp.didExceedMaxLines) {
+                  return SizedBox(
+                    height: 20, 
+                    child: _MarqueeText(
+                      text: item.name, 
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87), 
+                      alignment: Alignment.centerLeft
+                    )
+                  );
+                }
+                return Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87));
+              },
             ),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.verified, color: tierColor, size: 18),
+              Icon(Icons.monetization_on_rounded, color: Colors.green[600], size: 18),
               const SizedBox(width: 4),
               Text(
-                "$validasi Validasi",
+                "${item.points} Koin",
                 style: const TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.w500,
@@ -701,6 +785,85 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         ],
       ),
       child: child,
+    );
+  }
+}
+
+class _MarqueeText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final Alignment alignment;
+
+  const _MarqueeText({
+    required this.text,
+    required this.style,
+    this.alignment = Alignment.center,
+  });
+
+  @override
+  State<_MarqueeText> createState() => _MarqueeTextState();
+}
+
+class _MarqueeTextState extends State<_MarqueeText> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isDisposed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted && !_isDisposed) _startMarqueeLoop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startMarqueeLoop() async {
+    while (mounted && !_isDisposed) {
+      if (!_scrollController.hasClients) {
+        await Future.delayed(const Duration(seconds: 1));
+        continue;
+      }
+
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      if (maxScroll <= 0) break; 
+
+      final duration = Duration(milliseconds: (maxScroll * 25).toInt() + 1000);
+      try {
+        await _scrollController.animateTo(maxScroll, duration: duration, curve: Curves.linear);
+      } catch (e) { break; }
+
+      if (!mounted || _isDisposed) break;
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (!mounted || _isDisposed) break;
+
+      try {
+        await _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 800), curve: Curves.easeOut);
+      } catch (e) { break; }
+
+      if (!mounted || _isDisposed) break;
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: widget.alignment,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: Text(widget.text, style: widget.style),
+      ),
     );
   }
 }

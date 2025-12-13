@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'reward_controller.dart';
+import '../data/reward_model.dart';
+import '../../../core/providers/connection_status_provider.dart';
 
 class RewardScreen extends ConsumerStatefulWidget {
   const RewardScreen({super.key});
@@ -10,124 +13,17 @@ class RewardScreen extends ConsumerStatefulWidget {
 }
 
 class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerProviderStateMixin {
-  bool isTokoSelected = true;
+  bool isRewardTab = true;
   
-  // Animation Controllers
   late AnimationController _animController;
-  
-  // List Animasi (Profile/Mission Style)
-  late List<Animation<double>> _rewardFadeAnims;
-  late List<Animation<Offset>> _rewardSlideAnims;
-  late List<Animation<double>> _historyFadeAnims;
-  late List<Animation<Offset>> _historySlideAnims;
-
-  // ===========================================================================
-  // 💾 DATA PLACEHOLDER (Siap diganti dengan Data API)
-  // ===========================================================================
-
-  final int _currentPoints = 1250;
-
-  final List<Map<String, dynamic>> _dummyRewards = [
-    {
-      "name": "Voucher Kantin Rp 10.000",
-      "desc": "Potongan harga untuk semua tenant kantin.",
-      "points": 500,
-      "type": "voucher",
-      "canExchange": true,
-    },
-    {
-      "name": "Tote Bag Eksklusif",
-      "desc": "Tas jinjing kanvas dengan logo kampus.",
-      "points": 1500,
-      "type": "merchandise",
-      "canExchange": false,
-    },
-    {
-      "name": "Voucher Parkir Gratis 1 Hari",
-      "desc": "Bebas biaya parkir seharian penuh.",
-      "points": 300,
-      "type": "voucher",
-      "canExchange": true,
-    },
-    {
-      "name": "Gantungan Kunci",
-      "desc": "Merchandise kecil untuk kenang-kenangan.",
-      "points": 200,
-      "type": "merchandise",
-      "canExchange": true,
-    },
-  ];
-
-  final List<Map<String, dynamic>> _dummyHistory = [
-    {
-      "name": "Voucher Kantin Rp 10.000",
-      "code": "KANTIN-8821",
-      "status": "Dipakai",
-      "date": "12 Okt 2025",
-      "isPending": false,
-    },
-    {
-      "name": "Voucher Parkir Gratis",
-      "code": "PARK-9921",
-      "status": "Menunggu",
-      "date": "14 Okt 2025",
-      "isPending": true,
-    },
-  ];
 
   @override
   void initState() {
     super.initState();
-    
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-
-    // ✅ GENERATE ANIMASI REWARD (Staggered)
-    _rewardFadeAnims = List.generate(_dummyRewards.length, (i) {
-      final start = 0.1 + (i * 0.1); 
-      final end = start + 0.5;
-      return CurvedAnimation(
-        parent: _animController,
-        curve: Interval(start.clamp(0.0, 1.0), end.clamp(0.0, 1.0), curve: Curves.easeOut),
-      );
-    });
-
-    _rewardSlideAnims = List.generate(_dummyRewards.length, (i) {
-      final start = 0.1 + (i * 0.1);
-      final end = start + 0.5;
-      return Tween<Offset>(
-        begin: const Offset(0, 0.2),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _animController,
-        curve: Interval(start.clamp(0.0, 1.0), end.clamp(0.0, 1.0), curve: Curves.easeOutCubic),
-      ));
-    });
-
-    // ✅ GENERATE ANIMASI HISTORY
-    _historyFadeAnims = List.generate(_dummyHistory.length, (i) {
-      final start = 0.1 + (i * 0.1); 
-      final end = start + 0.5;
-      return CurvedAnimation(
-        parent: _animController,
-        curve: Interval(start.clamp(0.0, 1.0), end.clamp(0.0, 1.0), curve: Curves.easeOut),
-      );
-    });
-
-    _historySlideAnims = List.generate(_dummyHistory.length, (i) {
-      final start = 0.1 + (i * 0.1);
-      final end = start + 0.5;
-      return Tween<Offset>(
-        begin: const Offset(0, 0.2),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _animController,
-        curve: Interval(start.clamp(0.0, 1.0), end.clamp(0.0, 1.0), curve: Curves.easeOutCubic),
-      ));
-    });
-
     _animController.forward();
   }
 
@@ -137,23 +33,28 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     super.dispose();
   }
 
-  // Widget Helper Animasi Sederhana untuk elemen tunggal (Header/Tab)
-  Widget _fadeSlideSingle(Widget child, {double delay = 0.0}) {
-    final fade = CurvedAnimation(
-      parent: _animController,
-      curve: Interval(delay, (delay + 0.5).clamp(1.0, 1.0), curve: Curves.easeIn),
+  Widget _fadeSlide(Widget child, int index) {
+    final start = (index * 0.1).clamp(0.0, 1.0);
+    final end = (start + 0.5).clamp(0.0, 1.0);
+    
+    final slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeOut)),
     );
-    final slide = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: Interval(delay, (delay + 0.5).clamp(1.0, 1.0), curve: Curves.easeOut),
-      ),
+    final fade = CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeIn));
+
+    return SlideTransition(
+      position: slide,
+      child: FadeTransition(opacity: fade, child: RepaintBoundary(child: child)),
     );
-    return FadeTransition(opacity: fade, child: SlideTransition(position: slide, child: child));
   }
 
   @override
   Widget build(BuildContext context) {
+    final rewardDataAsync = ref.watch(rewardControllerProvider);
+    final isOffline = ref.watch(connectionStatusProvider);
+
+    final currentPoints = rewardDataAsync.asData?.value.currentPoints ?? 0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
       appBar: AppBar(
@@ -167,41 +68,45 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Column(
-                children: [
-                  // 1. Header Poin
-                  _fadeSlideSingle(_buildHeaderCard(), delay: 0.0),
-                  const SizedBox(height: 18),
-                  
-                  // 2. Tab Bar
-                  _fadeSlideSingle(_buildTabBar(), delay: 0.1),
-                ],
-              ),
+        // ✅ REVISI: RefreshIndicator membungkus SingleChildScrollView (Keseluruhan Layar)
+        child: RefreshIndicator(
+          onRefresh: () async {
+            return ref.refresh(rewardControllerProvider.future);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            child: Column(
+              children: [
+                // 1. Header & Tabs (Ikut ter-scroll dan refresh)
+                _buildHeaderCard(currentPoints),
+                const SizedBox(height: 18),
+                _buildTabBar(),
+                const SizedBox(height: 18),
+
+                // 2. Konten
+                isOffline
+                    ? _buildOfflinePlaceholder()
+                    : rewardDataAsync.when(
+                        data: (data) => isRewardTab 
+                            ? _buildRewardList(data.rewards, currentPoints)
+                            : _buildCoinHistoryPlaceholder(),
+                        loading: () => const Padding(
+                          padding: EdgeInsets.only(top: 50.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (err, stack) => _buildOfflinePlaceholder(),
+                      ),
+              ],
             ),
-            
-            // 3. Content Switcher
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: isTokoSelected
-                    ? _buildRewardList()
-                    : _buildHistoryList(),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // ================= WIDGET BUILDERS =================
-
   // 1️⃣ Header Card
-  Widget _buildHeaderCard() {
+  Widget _buildHeaderCard(int points) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -229,7 +134,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
               const Text("Total Koin Kamu", style: TextStyle(color: Colors.white70, fontSize: 13)),
               const SizedBox(height: 4),
               Text(
-                "$_currentPoints Koin",
+                "$points Koin",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -240,9 +145,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
           ),
           const Spacer(),
           ElevatedButton.icon(
-            onPressed: () {
-               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Info Cara Penukaran")));
-            },
+            onPressed: () => _showInfoDialog(),
             icon: const Icon(Icons.info_outline, color: Colors.white, size: 18),
             label: const Text("Info", style: TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(
@@ -275,29 +178,32 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       child: Stack(
         children: [
           AnimatedAlign(
-            alignment: isTokoSelected ? Alignment.centerLeft : Alignment.centerRight,
+            alignment: isRewardTab ? Alignment.centerLeft : Alignment.centerRight,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.45 - 16,
-              margin: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1565C0),
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1565C0).withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              heightFactor: 1.0,
+              child: Container(
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1565C0),
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1565C0).withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           Row(
             children: [
-              _tabButton("Toko Hadiah", isTokoSelected, () => setState(() => isTokoSelected = true)),
-              _tabButton("Riwayat", !isTokoSelected, () => setState(() => isTokoSelected = false)),
+              _tabButton("Toko Hadiah", isRewardTab, () => setState(() => isRewardTab = true)),
+              _tabButton("Riwayat Koin", !isRewardTab, () => setState(() => isRewardTab = false)),
             ],
           ),
         ],
@@ -311,44 +217,45 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: Center(
-          child: Text(
-            text,
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
             style: TextStyle(
               color: active ? Colors.white : Colors.grey[600],
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
+            child: Text(text),
           ),
         ),
       ),
     );
   }
 
-  // 3️⃣ List Toko (Rewards)
-  Widget _buildRewardList() {
-    return ListView.builder(
-      key: const ValueKey('RewardList'),
-      padding: const EdgeInsets.all(16),
-      physics: const BouncingScrollPhysics(),
-      itemCount: _dummyRewards.length,
-      itemBuilder: (context, index) {
-        final item = _dummyRewards[index];
-        // Menggunakan animasi generate
-        return FadeTransition(
-          opacity: _rewardFadeAnims[index],
-          child: SlideTransition(
-            position: _rewardSlideAnims[index],
-            child: RepaintBoundary(child: _rewardCard(item)),
-          ),
-        );
-      },
+  // 3️⃣ List Reward (Menggunakan Column Loop agar fit di SingleChildScrollView)
+  Widget _buildRewardList(List<RewardItem> rewards, int currentPoints) {
+    if (rewards.isEmpty) {
+      return const Center(child: Padding( 
+        padding: EdgeInsets.all(20.0),
+        child: Text("Belum ada hadiah tersedia.", style: TextStyle(color: Colors.grey)),
+      ));
+    }
+
+    return Column(
+      key: const ValueKey('RewardsList'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Daftar Reward", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 14),
+        for (int i = 0; i < rewards.length; i++)
+          _fadeSlide(_rewardCard(rewards[i], currentPoints), i),
+      ],
     );
   }
 
-  Widget _rewardCard(Map<String, dynamic> item) {
-    final bool canExchange = item['canExchange'];
-    final IconData icon = item['type'] == 'voucher' ? FontAwesomeIcons.ticket : FontAwesomeIcons.gift;
-    final Color color = item['type'] == 'voucher' ? Colors.green : Colors.deepOrange;
+  Widget _rewardCard(RewardItem item, int currentPoints) {
+    final bool canExchange = currentPoints >= item.pointsRequired;
+    final IconData icon = item.type == 'Voucher' ? FontAwesomeIcons.ticket : FontAwesomeIcons.gift;
+    final Color color = item.type == 'Voucher' ? Colors.green : Colors.deepOrange;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -377,20 +284,20 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['name'],
+                  item.name,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A253A)),
                   maxLines: 2, overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "${item['points']} Koin",
+                  "${item.pointsRequired} Koin",
                   style: const TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.w800, fontSize: 13),
                 ),
               ],
             ),
           ),
           ElevatedButton(
-            onPressed: canExchange ? () {} : null,
+            onPressed: canExchange ? () => _showRedeemConfirmation(item) : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1565C0),
               foregroundColor: Colors.white,
@@ -406,80 +313,188 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // 4️⃣ List Riwayat
-  Widget _buildHistoryList() {
-    return ListView.builder(
-      key: const ValueKey('HistoryList'),
-      padding: const EdgeInsets.all(16),
-      physics: const BouncingScrollPhysics(),
-      itemCount: _dummyHistory.length,
-      itemBuilder: (context, index) {
-        final item = _dummyHistory[index];
-        // Menggunakan animasi generate
-        return FadeTransition(
-          opacity: _historyFadeAnims[index],
-          child: SlideTransition(
-            position: _historySlideAnims[index],
-            child: RepaintBoundary(child: _historyCard(item)),
+  // 4️⃣ Placeholder Riwayat Koin
+  Widget _buildCoinHistoryPlaceholder() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 50.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.history_rounded, size: 60, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            "Riwayat Koin",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
           ),
+          const SizedBox(height: 8),
+          Text(
+            "Fitur ini akan segera tersedia.",
+            style: TextStyle(color: Colors.grey.shade500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Offline Placeholder (Sama dengan Mission Screen & Statis karena sudah di dalam ScrollView)
+  Widget _buildOfflinePlaceholder() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
+            child: Icon(Icons.wifi_off_rounded, size: 40, color: Colors.red.shade400),
+          ),
+          const SizedBox(height: 16),
+          Text("Anda Sedang Offline", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey.shade800)),
+          const SizedBox(height: 8),
+          Text(
+            "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- DIALOGS ---
+
+  void _showInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Cara Penukaran Hadiah", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1352C8))),
+          content: const Text(
+            "Tukar hadiah di pusat informasi kampus dengan voucher kamu.\nPenukaran bisa dilakukan pukul 08.00 - 16.00.",
+            textAlign: TextAlign.justify,
+            style: TextStyle(height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Tutup", style: TextStyle(color: Color(0xFF1352C8), fontWeight: FontWeight.bold)),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _historyCard(Map<String, dynamic> item) {
-    final bool isPending = item['isPending'];
-    final Color statusColor = isPending ? Colors.orange : Colors.green;
-    final IconData statusIcon = isPending ? Icons.access_time_rounded : Icons.check_circle_rounded;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(statusIcon, color: statusColor, size: 32),
-          const SizedBox(width: 14),
-          Expanded(
+  void _showRedeemConfirmation(RewardItem item) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  item['name'],
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A253A)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Kode: ${item['code']}",
-                  style: const TextStyle(color: Colors.black54, fontSize: 12, fontFamily: 'Monospace'),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item['date'],
-                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                ),
+                if (item.fullImageUrl.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      item.fullImageUrl,
+                      height: 150,
+                      width: double.maxFinite, 
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, o, s) => Container(
+                        height: 120,
+                        width: double.maxFinite,
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                const Text("Konfirmasi Penukaran", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 8),
+                Text("Tukar ${item.pointsRequired} poin untuk ${item.name}?", textAlign: TextAlign.center),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Batal", style: TextStyle(color: Colors.grey)),
             ),
-            child: Text(
-              item['status'],
-              style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _processRedeem(item);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1352C8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: const Text("Ya, Tukar", style: TextStyle(color: Colors.white)),
             ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _processRedeem(RewardItem item) async {
+    showDialog(context: context, barrierDismissible: false, builder: (c) => const Center(child: CircularProgressIndicator()));
+
+    try {
+      final code = await ref.read(rewardControllerProvider.notifier).redeem(item.id);
+      if (mounted) {
+        Navigator.pop(context); 
+        _showSuccessDialog(code!, item.name);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); 
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  void _showSuccessDialog(String code, String rewardName) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 60),
+              const SizedBox(height: 16),
+              const Text("Penukaran Berhasil!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
+              Text("Selamat! Anda mendapatkan $rewardName", textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
+                child: Text(code, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: 1.5)),
+              ),
+              const SizedBox(height: 8),
+              const Text("Tunjukkan kode ini di pusat informasi.", style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Tutup", style: TextStyle(color: Color(0xFF1352C8))),
+            ),
+          ],
+        );
+      },
     );
   }
 }

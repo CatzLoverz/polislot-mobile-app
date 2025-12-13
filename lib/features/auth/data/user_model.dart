@@ -39,32 +39,21 @@ class User {
   // --- ✅ HELPER METHODS: AUTO JOIN URL ---
   
   String get fullAvatarUrl {
-    // 1. Jika avatar kosong, return string kosong (UI akan pakai icon default)
-    if (avatar == null || avatar!.isEmpty) return ''; 
-    
-    // 2. Jika sudah URL lengkap (misal dari Google), return langsung
+    if (avatar == null || avatar!.isEmpty) return '';
     if (avatar!.startsWith('http')) return avatar!;
-    
-    // 3. Ambil Base URL dari .env
-    // Default ke localhost jika .env gagal load (tapi ini pasti gagal di HP)
-    String baseUrl = dotenv.env['API_STORAGE_URL'] ?? '';
 
-    // 🛡️ FIX SLASH: Pastikan tidak ada double slash atau missing slash
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.substring(0, baseUrl.length - 1); // Hapus slash akhir
-    }
+    String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    baseUrl = baseUrl.replaceAll('/api', '');
     
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+
     String cleanAvatar = avatar!;
     if (cleanAvatar.startsWith('/')) {
-      cleanAvatar = cleanAvatar.substring(1); // Hapus slash awal
+      cleanAvatar = cleanAvatar.substring(1);
     }
 
-    // Gabungkan: http://192.168.1.x:8000/storage + / + avatars/file.jpg
-    final finalUrl = '$baseUrl/$cleanAvatar';
-    
-    // 🔍 Debugging: Cek di console URL apa yang terbentuk
-    // print("🖼️ Generated Image URL: $finalUrl"); 
-    
-    return finalUrl; 
+    return '$baseUrl/storage/$cleanAvatar';
   }
 }
