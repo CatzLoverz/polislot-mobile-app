@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="polislot_mobile_catz"
+        android:label="PoliSlot"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
