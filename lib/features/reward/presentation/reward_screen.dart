@@ -41,7 +41,6 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      // Trigger Load More saat mendekati bawah
       if (!isRewardTab) {
         ref.read(historyControllerProvider.notifier).loadMore();
       }
@@ -112,7 +111,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
             } catch (_) {}
           },
           child: SingleChildScrollView(
-            controller: _scrollController, // ✅ Pasang Scroll Controller
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Column(
@@ -122,31 +121,35 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
                 _buildTabBar(),
                 const SizedBox(height: 18),
 
-                isOffline
-                    ? _buildOfflinePlaceholder()
-                    : isRewardTab 
-                        // --- TAB REWARD ---
-                        ? rewardDataAsync.when(
-                            skipLoadingOnReload: true,
-                            skipLoadingOnRefresh: true,
-                            data: (data) => _buildRewardList(data.rewards, currentPoints),
-                            loading: () => const Padding(
-                              padding: EdgeInsets.only(top: 50.0),
-                              child: Center(child: CircularProgressIndicator()),
+                // ✅ ANIMASI: AnimatedSwitcher agar seragam dengan Mission Screen
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: isOffline
+                      ? _buildOfflinePlaceholder()
+                      : isRewardTab
+                          // --- TAB REWARD ---
+                          ? rewardDataAsync.when(
+                              skipLoadingOnReload: true,
+                              skipLoadingOnRefresh: true,
+                              data: (data) => _buildRewardList(data.rewards, currentPoints),
+                              loading: () => const Padding(
+                                padding: EdgeInsets.only(top: 50.0),
+                                child: Center(child: CircularProgressIndicator()),
+                              ),
+                              error: (err, stack) => _buildOfflinePlaceholder(),
+                            )
+                          // --- TAB RIWAYAT KOIN ---
+                          : historyDataAsync.when(
+                              skipLoadingOnReload: true,
+                              skipLoadingOnRefresh: true,
+                              data: (history) => _buildHistoryList(history),
+                              loading: () => const Padding(
+                                padding: EdgeInsets.only(top: 50.0),
+                                child: Center(child: CircularProgressIndicator()),
+                              ),
+                              error: (err, stack) => _buildOfflinePlaceholder(),
                             ),
-                            error: (err, stack) => _buildOfflinePlaceholder(),
-                          )
-                        // --- TAB RIWAYAT KOIN ---
-                        : historyDataAsync.when(
-                            skipLoadingOnReload: true,
-                            skipLoadingOnRefresh: true,
-                            data: (history) => _buildHistoryList(history),
-                            loading: () => const Padding(
-                              padding: EdgeInsets.only(top: 50.0),
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            error: (err, stack) => _buildOfflinePlaceholder(),
-                          ),
+                ),
               ],
             ),
           ),
@@ -299,7 +302,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // ✅ WIDGET: List Riwayat Koin
+  // WIDGET: List Riwayat Koin
   Widget _buildHistoryList(List<HistoryItem> history) {
     if (history.isEmpty) {
       return const Padding(
@@ -405,8 +408,6 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         icon = FontAwesomeIcons.gift;
         color = Colors.purple;
         
-        // --- LOGIKA KONDISI REDEEM ---
-
         if (item.points == null && item.isNegative) {
           titleText = "Penukaran Diterima";
           descText = "Admin menerima penukaran hadiah ${item.title} Anda. Lihat bagian profile untuk riwayat kode penukaran.";
@@ -453,7 +454,6 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         children: [
           Row(
             children: [
-              // Icon Kiri
               Container(
                 width: 50,
                 height: 50,
