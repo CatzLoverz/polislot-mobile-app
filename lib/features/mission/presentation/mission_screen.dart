@@ -56,10 +56,9 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
 
   IconData _getMissionIcon(String metricCode) {
     switch (metricCode.toUpperCase()) {
-      case 'VALIDATION_STREAK': return FontAwesomeIcons.fire;
-      case 'VALIDATION_TOTAL': return FontAwesomeIcons.squareCheck;
+      case 'VALIDATION_ACTION': return FontAwesomeIcons.squareCheck;
       case 'PROFILE_UPDATE': return FontAwesomeIcons.userPen;
-      case 'LOGIN_APP': return FontAwesomeIcons.rightToBracket;
+      case 'LOGIN_ACTION': return FontAwesomeIcons.rightToBracket;
       default: return FontAwesomeIcons.star;
     }
   }

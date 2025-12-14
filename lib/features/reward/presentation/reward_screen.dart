@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'reward_controller.dart';
 import '../data/reward_model.dart';
 import '../../../core/providers/connection_status_provider.dart';
+import '../../history/presentation/history_controller.dart';
+import '../../history/data/history_model.dart';
 
 class RewardScreen extends ConsumerStatefulWidget {
   const RewardScreen({super.key});
@@ -14,28 +16,43 @@ class RewardScreen extends ConsumerStatefulWidget {
 
 class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   bool isRewardTab = true;
-  
   late AnimationController _animController;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
     _animController.forward();
 
+    // Setup Listener Scroll untuk Load More
+    _scrollController.addListener(_onScroll);
+
     Future.microtask(() {
       ref.invalidate(rewardControllerProvider);
+      ref.invalidate(historyControllerProvider);
     });
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      // Trigger Load More saat mendekati bawah
+      if (!isRewardTab) {
+        ref.read(historyControllerProvider.notifier).loadMore();
+      }
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(rewardControllerProvider);
+      ref.invalidate(historyControllerProvider);
     }
   }
 
@@ -43,6 +60,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -64,6 +82,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     final rewardDataAsync = ref.watch(rewardControllerProvider);
+    final historyDataAsync = ref.watch(historyControllerProvider);
     final isOffline = ref.watch(connectionStatusProvider);
 
     final currentPoints = rewardDataAsync.asData?.value.currentPoints ?? 0;
@@ -82,15 +101,18 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          // ✅ LOGIKA BARU: Cek Offline & Try-Catch
           onRefresh: () async {
             ref.read(connectionStatusProvider.notifier).setOnline();
-
             try {
-              final _ = await ref.refresh(rewardControllerProvider.future);
+              if (isRewardTab) {
+                final _ = await ref.refresh(rewardControllerProvider.future);
+              } else {
+                final _ = await ref.refresh(historyControllerProvider.future);
+              }
             } catch (_) {}
           },
           child: SingleChildScrollView(
+            controller: _scrollController, // ✅ Pasang Scroll Controller
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Column(
@@ -102,18 +124,29 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
 
                 isOffline
                     ? _buildOfflinePlaceholder()
-                    : rewardDataAsync.when(
-                        skipLoadingOnReload: true,
-                        skipLoadingOnRefresh: true,
-                        data: (data) => isRewardTab 
-                            ? _buildRewardList(data.rewards, currentPoints)
-                            : _buildCoinHistoryPlaceholder(),
-                        loading: () => const Padding(
-                          padding: EdgeInsets.only(top: 50.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (err, stack) => _buildOfflinePlaceholder(),
-                      ),
+                    : isRewardTab 
+                        // --- TAB REWARD ---
+                        ? rewardDataAsync.when(
+                            skipLoadingOnReload: true,
+                            skipLoadingOnRefresh: true,
+                            data: (data) => _buildRewardList(data.rewards, currentPoints),
+                            loading: () => const Padding(
+                              padding: EdgeInsets.only(top: 50.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                            error: (err, stack) => _buildOfflinePlaceholder(),
+                          )
+                        // --- TAB RIWAYAT KOIN ---
+                        : historyDataAsync.when(
+                            skipLoadingOnReload: true,
+                            skipLoadingOnRefresh: true,
+                            data: (history) => _buildHistoryList(history),
+                            loading: () => const Padding(
+                              padding: EdgeInsets.only(top: 50.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                            error: (err, stack) => _buildOfflinePlaceholder(),
+                          ),
               ],
             ),
           ),
@@ -266,6 +299,27 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
+  // ✅ WIDGET: List Riwayat Koin
+  Widget _buildHistoryList(List<HistoryItem> history) {
+    if (history.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 50.0),
+        child: Center(child: Text("Belum ada riwayat koin.", style: TextStyle(color: Colors.grey))),
+      );
+    }
+
+    return Column(
+      key: const ValueKey('HistoryList'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Aktivitas Koin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 14),
+        for (int i = 0; i < history.length; i++)
+          _fadeSlide(_historyCard(history[i]), i),
+      ],
+    );
+  }
+
   Widget _rewardCard(RewardItem item, int currentPoints) {
     final bool canExchange = currentPoints >= item.pointsRequired;
     final IconData icon = item.type == 'Voucher' ? FontAwesomeIcons.ticket : FontAwesomeIcons.gift;
@@ -278,7 +332,11 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8, 
+            offset: const Offset(0, 2)
+          )
         ],
       ),
       child: Row(
@@ -327,29 +385,143 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildCoinHistoryPlaceholder() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 50.0),
+  // WIDGET: Card History
+  Widget _historyCard(HistoryItem item) {
+    IconData icon;
+    Color color;
+    String titleText;
+    String descText;
+    bool hidePoints = false;
+
+    switch (item.type.toLowerCase()) {
+      case 'validation':
+        icon = FontAwesomeIcons.squareCheck;
+        color = Colors.blue;
+        titleText = "Melakukan Validasi";
+        descText = "Anda telah melakukan validasi pada ${item.title}";
+        break;
+
+      case 'redeem':
+        icon = FontAwesomeIcons.gift;
+        color = Colors.purple;
+        
+        // --- LOGIKA KONDISI REDEEM ---
+
+        if (item.points == null && item.isNegative) {
+          titleText = "Penukaran Diterima";
+          descText = "Admin menerima penukaran hadiah ${item.title} Anda. Lihat bagian profile untuk riwayat kode penukaran.";
+          hidePoints = true;
+        }
+        else if (item.points != null && item.isNegative) {
+          titleText = "Menukarkan Hadiah";
+          descText = "Anda menukarkan hadiah berupa ${item.title}";
+          hidePoints = false;
+        }
+        else {
+          titleText = "Penukaran Ditolak";
+          descText = "Admin menolak penukaran hadiah ${item.title} Anda, Koin telah dikembalikan.";
+          hidePoints = false; 
+        }
+        break;
+
+      case 'mission':
+      default:
+        icon = FontAwesomeIcons.clipboardCheck; 
+        color = Colors.orange;
+        titleText = "Menyelesaikan Misi";
+        descText = "Anda telah menyelesaikan misi ${item.title}";
+        break;
+    }
+
+    // 2. Logic Format Poin (+/-)
+    final bool isMinus = item.isNegative;
+    final String sign = isMinus ? "-" : "+";
+    final Color pointColor = isMinus ? Colors.red : Colors.green;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))
+        ],
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Icon(Icons.history_rounded, size: 60, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            "Riwayat Koin",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+          Row(
+            children: [
+              // Icon Kiri
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(child: Icon(icon, color: color, size: 24)),
+              ),
+              const SizedBox(width: 14),
+              
+              // Tengah: Judul & Deskripsi
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titleText,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A253A)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      descText,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.3),
+                      maxLines: 3, 
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Kanan: Poin (Jika tidak di-hide)
+              if (!hidePoints) ...[
+                const SizedBox(width: 8),
+                Text(
+                  "$sign${item.points ?? 0} Koin",
+                  style: TextStyle(
+                    color: pointColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            "Fitur ini akan segera tersedia.",
-            style: TextStyle(color: Colors.grey.shade500),
+          
+          const SizedBox(height: 12),
+          const Divider(height: 1, thickness: 0.5),
+          const SizedBox(height: 12),
+
+          // Footer: Timestamp
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              "${item.date} • ${item.time}",
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 11,
+                fontStyle: FontStyle.italic
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ✅ Offline Placeholder 
+  // Offline Placeholder 
   Widget _buildOfflinePlaceholder() {
     return Container(
       width: double.infinity,
