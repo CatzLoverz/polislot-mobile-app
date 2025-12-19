@@ -11,7 +11,10 @@ import '../../info_board/presentation/info_board_controller.dart';
 import '../../../core/providers/connection_status_provider.dart';
 import '../../mission/presentation/mission_controller.dart';
 import '../../mission/data/mission_model.dart';
-import 'main_screen.dart'; 
+import '../../park/presentation/park_controller.dart';
+import '../../park/data/park_model.dart';
+import '../../park/presentation/park_screen.dart';
+import 'main_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,8 +23,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
-  // ... (Bagian initState, dispose, _slideTimer dll TETAP SAMA seperti sebelumnya)
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   Timer? _slideTimer;
 
@@ -30,13 +33,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     "Ayo klaim validasi harian untuk dapatkan poin!💪",
     "Kumpulkan streak untuk jadi pemenang mingguan!🔥",
     "Selesaikan misi dan rebut posisi top leaderboard!🎯",
-  ];
-
-  final List<Map<String, String>> _parkingAreas = [
-    { "name": "Parkir Tower A", "desc": "Pada area ini memiliki 3 sub-area yang dapat anda tempati untuk parkir", "code": "TA" },
-    { "name": "Parkir Gedung Utama", "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir", "code": "GU" },
-    { "name": "Parkir Teaching Factory", "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir", "code": "RTF" },
-    { "name": "Parkir Technopreneur", "desc": "Pada area ini memiliki 2 sub-area yang dapat anda tempati untuk parkir", "code": "TECHNO" },
   ];
 
   @override
@@ -60,6 +56,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     Future.microtask(() {
       ref.invalidate(infoBoardControllerProvider);
       ref.invalidate(missionControllerProvider);
+      // Jangan invalidate parkAreaList agar tidak clearing state
+      ref.read(parkAreaListControllerProvider.notifier).refreshData();
     });
   }
 
@@ -68,6 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(infoBoardControllerProvider);
       ref.invalidate(missionControllerProvider);
+      ref.read(parkAreaListControllerProvider.notifier).refreshData();
     }
   }
 
@@ -84,10 +83,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Text(
             "Papan Informasi",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1352C8)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1352C8),
+            ),
           ),
           content: SizedBox(
             width: double.maxFinite,
@@ -103,7 +107,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       String dateStr = '-';
                       if (info.createdAt != null) {
                         try {
-                          dateStr = DateFormat('d MMM y, HH:mm', 'id_ID').format(info.createdAt!);
+                          dateStr = DateFormat(
+                            'd MMM y, HH:mm',
+                            'id_ID',
+                          ).format(info.createdAt!);
                         } catch (e) {
                           dateStr = info.createdAt.toString();
                         }
@@ -114,12 +121,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         children: [
                           Text(
                             info.title,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             info.content,
-                            style: const TextStyle(fontSize: 14, height: 1.4, color: Colors.black87),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                              color: Colors.black87,
+                            ),
                             textAlign: TextAlign.justify,
                           ),
                           const SizedBox(height: 8),
@@ -127,7 +141,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                             alignment: Alignment.centerRight,
                             child: Text(
                               dateStr,
-                              style: TextStyle(color: Colors.grey[600], fontSize: 11, fontStyle: FontStyle.italic),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
                           ),
                         ],
@@ -138,7 +156,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Tutup", style: TextStyle(color: Color(0xFF1352C8), fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Tutup",
+                style: TextStyle(
+                  color: Color(0xFF1352C8),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -152,6 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final user = authState.value;
     final infoBoardAsync = ref.watch(infoBoardControllerProvider);
     final missionAsync = ref.watch(missionControllerProvider);
+    final parkListAsync = ref.watch(parkAreaListControllerProvider);
     final isOffline = ref.watch(connectionStatusProvider);
 
     return Scaffold(
@@ -162,11 +187,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ref.read(connectionStatusProvider.notifier).setOnline();
             try {
               ref.invalidate(missionControllerProvider);
+              // Gunakan refreshData agar UI tidak flickering loading jika ada data
+              await ref
+                  .read(parkAreaListControllerProvider.notifier)
+                  .refreshData();
               final _ = await ref.refresh(infoBoardControllerProvider.future);
             } catch (_) {}
           },
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -175,7 +206,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   const Text(
                     'Home',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1A253A)),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A253A),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -186,7 +221,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     _buildInfoBoardPlaceholder(isError: true)
                   else
                     infoBoardAsync.when(
-                      skipLoadingOnReload: true, 
+                      skipLoadingOnReload: true,
                       skipLoadingOnRefresh: true,
                       data: (infoList) {
                         if (infoList.isEmpty) {
@@ -200,15 +235,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         );
                       },
                       loading: () => _buildInfoBoardLoading(),
-                      error: (err, stack) => _buildInfoBoardPlaceholder(isError: true),
+                      error: (err, stack) =>
+                          _buildInfoBoardPlaceholder(isError: true),
                     ),
 
                   const SizedBox(height: 24),
 
-                  _buildParkingHeaderCard(),
+                  _buildParkingHeaderCard(
+                    parkListAsync.asData?.value.length ?? 0,
+                  ),
                   const SizedBox(height: 16),
 
-                  ..._parkingAreas.map((area) => _buildParkingAreaItem(area)),
+                  // ✅ LIST PARKIR DINAMIS DARI API
+                  if (isOffline)
+                    // Placeholder offline jika needed, atau biarkan kosong
+                    const SizedBox.shrink()
+                  else
+                    parkListAsync.when(
+                      skipLoadingOnReload: true,
+                      skipLoadingOnRefresh: true,
+                      data: (areas) {
+                        if (areas.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text("Belum ada data area parkir."),
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: areas
+                              .map((area) => _buildParkingAreaItem(area))
+                              .toList(),
+                        );
+                      },
+                      loading: () => _buildParkingListLoading(),
+                      error: (err, stack) => Center(
+                        child: Text(
+                          "Gagal memuat area parkir.",
+                          style: TextStyle(color: Colors.red.shade400),
+                        ),
+                      ),
+                    ),
+
                   const SizedBox(height: 16),
 
                   if (isOffline)
@@ -221,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       loading: () => _buildLeaderboardLoading(),
                       error: (err, stack) => const SizedBox.shrink(),
                     ),
-                  
+
                   const SizedBox(height: 80),
                 ],
               ),
@@ -243,7 +312,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -318,7 +387,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              isError ? Icons.wifi_off_rounded : Icons.notifications_none_rounded,
+              isError
+                  ? Icons.wifi_off_rounded
+                  : Icons.notifications_none_rounded,
               color: isError ? Colors.red.shade400 : Colors.grey.shade400,
               size: 24,
             ),
@@ -333,7 +404,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: isError ? Colors.red.shade700 : const Color(0xFF1A253A),
+                    color: isError
+                        ? Colors.red.shade700
+                        : const Color(0xFF1A253A),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -380,12 +453,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(width: double.infinity, height: 14, color: Colors.grey[200]),
+                Container(
+                  width: double.infinity,
+                  height: 14,
+                  color: Colors.grey[200],
+                ),
                 const SizedBox(height: 6),
                 Container(width: 150, height: 12, color: Colors.grey[200]),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -449,7 +526,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildParkingHeaderCard() {
+  // ✅ UPDATE: Terima parameter count
+  Widget _buildParkingHeaderCard(int areaCount) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
       decoration: BoxDecoration(
@@ -475,7 +553,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "${_parkingAreas.length} Area Tersedia",
+                "$areaCount Area Tersedia",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -485,10 +563,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               const SizedBox(height: 4),
               const Text(
                 "Anda dapat parkir dimana saja",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ],
           ),
@@ -497,88 +572,169 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildParkingAreaItem(Map<String, String> area) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+  // ✅ UPDATE: Menerima Model 'ParkAreaItem'
+  Widget _buildParkingAreaItem(ParkAreaItem area) {
+    return GestureDetector(
+      onTap: () {
+        // ✅ NAVIGASI KE PARK SCREEN DENGAN DATA ASLI
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ParkScreen(
+              areaId: area.id.toString(), // ID dari database
+              areaName: area.name,
+            ),
           ),
-        ],
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        area.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF1A253A),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        area.description,
+                        style: const TextStyle(
+                          color: Color(0xFF454F63),
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                width: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1565C0),
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      area['name']!,
-                      style: const TextStyle(
+                    const Text(
+                      "P",
+                      style: TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF1A253A),
+                        fontSize: 24,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
-                      area['desc']!,
+                      area.code, // Kode Area (TA, GU, dll)
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Color(0xFF454F63),
-                        fontSize: 12,
-                        height: 1.3,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-            Container(
-              width: 80,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1565C0),
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "P",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    area['code']!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildParkingListLoading() {
+    return Column(
+      children: List.generate(3, (index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 150,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -588,10 +744,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () {
-        // 1. Ubah Tab Misi ke Leaderboard (false)
         ref.read(missionTabStateProvider.notifier).setLeaderboard();
-        
-        // 2. Pindah Main Screen ke Index 1 (Misi)
         ref.read(bottomNavIndexProvider.notifier).setIndex(1);
       },
       child: _customCard(
@@ -630,7 +783,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  // ✅ Leaderboard Offline State (New Widget)
   Widget _buildLeaderboardOffline() {
     return _customCard(
       child: Column(
@@ -661,7 +813,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     color: Colors.red.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.wifi_off_rounded, color: Colors.red.shade400, size: 28),
+                  child: Icon(
+                    Icons.wifi_off_rounded,
+                    color: Colors.red.shade400,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -690,7 +846,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return _customCard(
       child: const SizedBox(
         height: 150,
-        child: Center(child: CircularProgressIndicator(color: Color(0xFF1352C8))),
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFF1352C8)),
+        ),
       ),
     );
   }
@@ -716,10 +874,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               CircleAvatar(
                 radius: 24,
                 backgroundColor: tierColor.withValues(alpha: 0.15),
-                backgroundImage: item.fullAvatarUrl.isNotEmpty 
-                    ? NetworkImage(item.fullAvatarUrl) 
+                backgroundImage: item.fullAvatarUrl.isNotEmpty
+                    ? NetworkImage(item.fullAvatarUrl)
                     : null,
-                child: item.fullAvatarUrl.isEmpty 
+                child: item.fullAvatarUrl.isEmpty
                     ? Icon(Icons.person, color: tierColor, size: 24)
                     : null,
               ),
@@ -731,7 +889,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: Colors.grey.shade300, width: 0.5),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   child: Text(
                     "#${item.rank}",
                     style: const TextStyle(
@@ -749,30 +910,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final textSpan = TextSpan(
-                  text: item.name, 
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87)
+                  text: item.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: Colors.black87,
+                  ),
                 );
-                final tp = TextPainter(text: textSpan, maxLines: 1, textDirection: ui.TextDirection.ltr);
+                final tp = TextPainter(
+                  text: textSpan,
+                  maxLines: 1,
+                  textDirection: ui.TextDirection.ltr,
+                );
                 tp.layout(maxWidth: constraints.maxWidth);
-                
+
                 if (tp.didExceedMaxLines) {
                   return SizedBox(
-                    height: 20, 
+                    height: 20,
                     child: _MarqueeText(
-                      text: item.name, 
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87), 
-                      alignment: Alignment.centerLeft
-                    )
+                      text: item.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: Colors.black87,
+                      ),
+                      alignment: Alignment.centerLeft,
+                    ),
                   );
                 }
-                return Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87));
+                return Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: Colors.black87,
+                  ),
+                );
               },
             ),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.monetization_on_rounded, color: Colors.green[600], size: 18),
+              Icon(
+                Icons.monetization_on_rounded,
+                color: Colors.green[600],
+                size: 18,
+              ),
               const SizedBox(width: 4),
               Text(
                 "${item.points} Koin",
@@ -796,7 +980,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -849,12 +1033,18 @@ class _MarqueeTextState extends State<_MarqueeText> {
       }
 
       final maxScroll = _scrollController.position.maxScrollExtent;
-      if (maxScroll <= 0) break; 
+      if (maxScroll <= 0) break;
 
       final duration = Duration(milliseconds: (maxScroll * 25).toInt() + 1000);
       try {
-        await _scrollController.animateTo(maxScroll, duration: duration, curve: Curves.linear);
-      } catch (e) { break; }
+        await _scrollController.animateTo(
+          maxScroll,
+          duration: duration,
+          curve: Curves.linear,
+        );
+      } catch (e) {
+        break;
+      }
 
       if (!mounted || _isDisposed) break;
 
@@ -863,8 +1053,14 @@ class _MarqueeTextState extends State<_MarqueeText> {
       if (!mounted || _isDisposed) break;
 
       try {
-        await _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 800), curve: Curves.easeOut);
-      } catch (e) { break; }
+        await _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOut,
+        );
+      } catch (e) {
+        break;
+      }
 
       if (!mounted || _isDisposed) break;
 

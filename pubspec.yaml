@@ -50,6 +50,8 @@ dependencies:
   pointycastle: ^3.9.1
   intl: ^0.20.2
   dropdown_search: ^6.0.2
+  google_maps_flutter: ^2.14.0
+  url_launcher: ^6.3.2
   
 
 dev_dependencies:
