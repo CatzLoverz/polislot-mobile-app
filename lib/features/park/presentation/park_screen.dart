@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import 'park_controller.dart';
 import '../data/park_model.dart';
+import 'comment_screen.dart';
 
 class ParkScreen extends ConsumerStatefulWidget {
   final String areaId;
@@ -20,6 +21,26 @@ class ParkScreen extends ConsumerStatefulWidget {
 
 class _ParkScreenState extends ConsumerState<ParkScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
+
+  Future<void> _handleRefresh() async {
+    final newData = await ref.refresh(
+      parkVisualizationControllerProvider(widget.areaId).future,
+    );
+
+    // Update selected subarea jika sedang ada yang dipilih
+    final currentSelected = ref.read(selectedSubareaProvider);
+    if (currentSelected != null) {
+      try {
+        final updatedSubarea = newData.subareas.firstWhere(
+          (element) => element.id == currentSelected.id,
+          orElse: () => currentSelected,
+        );
+        ref.read(selectedSubareaProvider.notifier).set(updatedSubarea);
+      } catch (_) {}
+    }
+  }
 
   // State untuk Tipe Map (Normal/Satelit)
   MapType _currentMapType = MapType.normal;
@@ -193,124 +214,146 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              _refreshIndicatorKey.currentState?.show();
+            },
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+          ),
+        ],
       ),
-      body: parkDataAsync.when(
-        data: (data) => Column(
-          children: [
-            // 1. AREA MAP
-            Expanded(
-              child: Stack(
-                children: [
-                  // FutureBuilder untuk Marker karena butuh waktu generate gambar
-                  FutureBuilder<Set<Marker>>(
-                    future: _generateMarkers(data.subareas),
-                    builder: (context, snapshot) {
-                      return GoogleMap(
-                        mapType: _currentMapType,
-                        initialCameraPosition: _kPolibatam,
-                        polygons: _buildPolygons(data.subareas),
-                        // Gunakan marker dari FutureBuilder
-                        markers: snapshot.hasData ? snapshot.data! : {},
-                        zoomControlsEnabled: false,
-                        mapToolbarEnabled: false,
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: false,
-                        onMapCreated: (c) {
-                          _mapController.complete(c);
-                          if (data.subareas.isNotEmpty &&
-                              data.subareas.first.polygonPoints.isNotEmpty) {
-                            c.animateCamera(
-                              CameraUpdate.newLatLngZoom(
-                                data.subareas.first.polygonPoints.first,
-                                18,
-                              ),
-                            );
-                          }
+      body: RefreshIndicator(
+        key: _refreshIndicatorKey,
+        onRefresh: _handleRefresh,
+        notificationPredicate: (_) =>
+            false, // Disable swipe gesture, enable only programmatic
+        child: parkDataAsync.when(
+          data: (data) => SizedBox.expand(
+            // Ensure proper layout for RefreshIndicator child
+            child: Column(
+              children: [
+                // 1. AREA MAP
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // FutureBuilder untuk Marker karena butuh waktu generate gambar
+                      FutureBuilder<Set<Marker>>(
+                        future: _generateMarkers(data.subareas),
+                        builder: (context, snapshot) {
+                          return GoogleMap(
+                            mapType: _currentMapType,
+                            initialCameraPosition: _kPolibatam,
+                            polygons: _buildPolygons(data.subareas),
+                            // Gunakan marker dari FutureBuilder
+                            markers: snapshot.hasData ? snapshot.data! : {},
+                            zoomControlsEnabled: false,
+                            mapToolbarEnabled: false,
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: false,
+                            onMapCreated: (c) {
+                              _mapController.complete(c);
+                              if (data.subareas.isNotEmpty &&
+                                  data
+                                      .subareas
+                                      .first
+                                      .polygonPoints
+                                      .isNotEmpty) {
+                                c.animateCamera(
+                                  CameraUpdate.newLatLngZoom(
+                                    data.subareas.first.polygonPoints.first,
+                                    18,
+                                  ),
+                                );
+                              }
+                            },
+                            onTap: (_) => ref
+                                .read(selectedSubareaProvider.notifier)
+                                .set(null),
+                          );
                         },
-                        onTap: (_) => ref
-                            .read(selectedSubareaProvider.notifier)
-                            .set(null),
-                      );
-                    },
-                  ),
-
-                  // A. Switch Tampilan (Satelit/Biasa)
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: FloatingActionButton.small(
-                      heroTag: "mapTypeBtn",
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        _currentMapType == MapType.normal
-                            ? Icons.satellite_alt
-                            : Icons.map,
-                        color: const Color(0xFF1565C0),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _currentMapType = _currentMapType == MapType.normal
-                              ? MapType.hybrid
-                              : MapType.normal;
-                        });
-                      },
-                    ),
-                  ),
 
-                  // B. Code Area Label
-                  Positioned(
-                    bottom: 16,
-                    left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
+                      // A. Switch Tampilan (Satelit/Biasa)
+                      Positioned(
+                        top: 16,
+                        right: 16,
+                        child: FloatingActionButton.small(
+                          heroTag: "mapTypeBtn",
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            _currentMapType == MapType.normal
+                                ? Icons.satellite_alt
+                                : Icons.map,
+                            color: const Color(0xFF1565C0),
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        "AREA ${data.areaCode}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          onPressed: () {
+                            setState(() {
+                              _currentMapType =
+                                  _currentMapType == MapType.normal
+                                  ? MapType.hybrid
+                                  : MapType.normal;
+                            });
+                          },
                         ),
                       ),
-                    ),
-                  ),
 
-                  // C. Info Button (Membuka Legend)
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: FloatingActionButton.small(
-                      heroTag: "infoBtn",
-                      backgroundColor: Colors.white,
-                      onPressed: () => _showLegendDialog(context),
-                      child: const Icon(
-                        Icons.info_outline_rounded,
-                        color: Color(0xFF1565C0),
+                      // B. Code Area Label
+                      Positioned(
+                        bottom: 16,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1565C0),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            "AREA ${data.areaCode}",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            // 2. CARD SUBAREA
-            _buildDetailSection(selectedSubarea),
-          ],
+                      // C. Info Button (Membuka Legend)
+                      Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: FloatingActionButton.small(
+                          heroTag: "infoBtn",
+                          backgroundColor: Colors.white,
+                          onPressed: () => _showLegendDialog(context),
+                          child: const Icon(
+                            Icons.info_outline_rounded,
+                            color: Color(0xFF1565C0),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 2. CARD SUBAREA
+                _buildDetailSection(selectedSubarea),
+              ],
+            ),
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text("Error: $err")),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text("Error: $err")),
       ),
     );
   }
@@ -510,12 +553,18 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                     ),
                     const SizedBox(width: 12),
                     InkWell(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Fitur Komentar segera hadir!"),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CommentScreen(
+                              subareaId: subarea.id,
+                              subareaName: subarea.name,
+                            ),
                           ),
-                        );
+                        ).then((_) {
+                          _refreshIndicatorKey.currentState?.show();
+                        });
                       },
                       child: Column(
                         children: [
@@ -590,6 +639,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
         subareaId: subareaId,
         subareaName: subareaName,
         parentContext: context,
+        areaId: widget.areaId,
       ),
     );
   }
@@ -696,11 +746,13 @@ class _ValidationSheet extends ConsumerStatefulWidget {
   final int subareaId;
   final String subareaName;
   final BuildContext parentContext;
+  final String areaId;
 
   const _ValidationSheet({
     required this.subareaId,
     required this.subareaName,
     required this.parentContext,
+    required this.areaId,
   });
 
   @override
@@ -814,6 +866,7 @@ class _ValidationSheetState extends ConsumerState<_ValidationSheet> {
       Navigator.pop(context);
       if (success) {
         AppSnackBars.show(context, message);
+        ref.invalidate(parkVisualizationControllerProvider(widget.areaId));
       } else {
         AppSnackBars.show(context, message, isError: true);
       }

@@ -30,8 +30,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   final List<String> _slideTexts = [
     "Selamat Datang di Aplikasi PoliSlot! Temukan slot parkir terbaikmu.",
-    "Ayo klaim validasi harian untuk dapatkan poin!💪",
-    "Kumpulkan streak untuk jadi pemenang mingguan!🔥",
+    "Ayo klaim validasi harian untuk dapatkan koin!💪",
+    "Kumpulkan streak untuk jadi pemenang misi mingguan!🔥",
     "Selesaikan misi dan rebut posisi top leaderboard!🎯",
   ];
 
@@ -594,7 +594,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -682,7 +682,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -980,7 +980,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
