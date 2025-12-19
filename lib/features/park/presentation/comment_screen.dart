@@ -156,19 +156,30 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Hapus Komentar?"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          "Hapus Komentar?",
+          style: TextStyle(
+            color: Color(0xFF1565C0),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: const Text("Komentar ini akan dihapus secara permanen."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Batal"),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               Navigator.pop(context);
               _deleteComment(commentId);
-            }, // Implement
-            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+            },
+            child: const Text("Hapus"),
           ),
         ],
       ),

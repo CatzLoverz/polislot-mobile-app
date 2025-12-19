@@ -15,7 +15,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  
   // Logic Logout Global
   Future<void> _handleLogout() async {
     try {
@@ -23,18 +22,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (_) {}
     if (!mounted) return;
     // Keluar dari MainScreen sepenuhnya
-    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(AppRoutes.loginRegis, (route) => false);
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamedAndRemoveUntil(AppRoutes.loginRegis, (route) => false);
   }
 
   void _showLogoutDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Konfirmasi Logout", style: TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          "Konfirmasi Logout",
+          style: TextStyle(
+            color: Color(0xFF1565C0),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: const Text("Apakah Anda yakin ingin keluar?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               Navigator.pop(context);
               _handleLogout();
@@ -72,7 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         },
         onLogoutTap: _showLogoutDialog,
         onRewardTap: () {
-           Navigator.pushNamed(context, AppRoutes.profileReward);
+          Navigator.pushNamed(context, AppRoutes.profileReward);
         },
       ),
     );
