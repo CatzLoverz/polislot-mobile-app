@@ -12,3 +12,14 @@ class MissionController extends _$MissionController {
     return await repo.getMissionData();
   }
 }
+
+@Riverpod(keepAlive: true)
+class MissionTabState extends _$MissionTabState {
+  @override
+  bool build() {
+    return true; // Default: true (Tab Misi)
+  }
+
+  void setMission() => state = true;
+  void setLeaderboard() => state = false;
+}

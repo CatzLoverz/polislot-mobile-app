@@ -168,6 +168,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 8, offset: Offset(0, 4))],
       ),
       child: Row(
         children: [

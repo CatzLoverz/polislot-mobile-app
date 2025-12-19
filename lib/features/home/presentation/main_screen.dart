@@ -5,10 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'home_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
-// import '../../../core/routes/app_routes.dart';
 import '../../profile/presentation/providers/profile_ui_provider.dart';
 import '../../mission/presentation/mission_screen.dart';
 import '../../reward/presentation/reward_screen.dart';
+
+// ✅ DEFINISI NOTIFIER MANUAL (Pengganti StateProvider)
+class BottomNavIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0; // Default Index: 0 (Home)
+
+  void setIndex(int index) => state = index;
+}
+
+// Provider Global
+final bottomNavIndexProvider = NotifierProvider<BottomNavIndexNotifier, int>(BottomNavIndexNotifier.new);
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -18,7 +28,6 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _selectedIndex = 0;
   int _previousIndex = 0; 
   late final PageController _pageController;
   
@@ -42,15 +51,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   void _onTabChanged(int index) {
-    if (index == _selectedIndex) return;
-    if (_selectedIndex == 3) {
+    final currentIndex = ref.read(bottomNavIndexProvider);
+    
+    if (index == currentIndex) return;
+
+    if (currentIndex == 3) {
       ref.read(profileSectionProvider.notifier).setSection(0);
     }
-    setState(() {
-      _previousIndex = _selectedIndex;
-      _selectedIndex = index;
-    });
-    _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+
+    _previousIndex = currentIndex;
+    
+    // ✅ Update state via method Notifier
+    ref.read(bottomNavIndexProvider.notifier).setIndex(index);
   }
 
   Future<bool> _showExitConfirmDialog() async {
@@ -74,25 +86,38 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Watch Provider
+    final selectedIndex = ref.watch(bottomNavIndexProvider);
+
+    // ✅ Listen Perubahan
+    ref.listen<int>(bottomNavIndexProvider, (previous, next) {
+      _pageController.animateToPage(
+        next, 
+        duration: const Duration(milliseconds: 300), 
+        curve: Curves.easeInOut
+      );
+    });
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
-        if (_selectedIndex == 3) {
+        
+        if (selectedIndex == 3) {
           final currentSection = ref.read(profileSectionProvider);
           if (currentSection != 0) {
             ref.read(profileSectionProvider.notifier).setSection(0);
             return;
           }
         }
-        if (_selectedIndex != 0) {
-          setState(() {
-            if (_previousIndex != 0) { _selectedIndex = _previousIndex; _previousIndex = 0; }
-            else { _selectedIndex = 0; }
-            _pageController.animateToPage(_selectedIndex, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-          });
+        
+        if (selectedIndex != 0) {
+          final target = (_previousIndex != 0) ? _previousIndex : 0;
+          _previousIndex = 0;
+          ref.read(bottomNavIndexProvider.notifier).setIndex(target);
           return;
         }
+        
         final shouldExit = await _showExitConfirmDialog();
         if (shouldExit) SystemNavigator.pop();
       },
@@ -133,7 +158,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   GButton(icon: Icons.card_giftcard_rounded, text: 'Reward'),
                   GButton(icon: Icons.person_outline_rounded, text: 'Profil'),
                 ],
-                selectedIndex: _selectedIndex,
+                selectedIndex: selectedIndex, 
                 onTabChange: _onTabChanged,
               ),
             ),
@@ -143,10 +168,3 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 }
-
-// class _PlaceholderScreen extends StatelessWidget {
-//   final String title; final IconData icon;
-//   const _PlaceholderScreen({required this.title, required this.icon});
-//   @override
-//   Widget build(BuildContext context) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 80, color: Colors.grey[300]), Text(title)]));
-// }

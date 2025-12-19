@@ -11,6 +11,7 @@ import '../../info_board/presentation/info_board_controller.dart';
 import '../../../core/providers/connection_status_provider.dart';
 import '../../mission/presentation/mission_controller.dart';
 import '../../mission/data/mission_model.dart';
+import 'main_screen.dart'; 
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +21,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
+  // ... (Bagian initState, dispose, _slideTimer dll TETAP SAMA seperti sebelumnya)
   final PageController _pageController = PageController();
   Timer? _slideTimer;
 
@@ -89,8 +91,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ),
           content: SizedBox(
             width: double.maxFinite,
+            height: 400,
             child: infoList.isEmpty
-                ? const Text("Tidak ada pengumuman.")
+                ? const Center(child: Text("Tidak ada pengumuman."))
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: infoList.length,
@@ -149,23 +152,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final user = authState.value;
     final infoBoardAsync = ref.watch(infoBoardControllerProvider);
     final missionAsync = ref.watch(missionControllerProvider);
-    
     final isOffline = ref.watch(connectionStatusProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
       body: SafeArea(
         child: RefreshIndicator(
-          // ✅ LOGIKA BARU: Cek Offline & Try-Catch
           onRefresh: () async {
             ref.read(connectionStatusProvider.notifier).setOnline();
-
             try {
               ref.invalidate(missionControllerProvider);
               final _ = await ref.refresh(infoBoardControllerProvider.future);
-            } catch (_) {
-              // Tangkap error (timeout/server down) agar spinner berhenti
-            }
+            } catch (_) {}
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -213,7 +211,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ..._parkingAreas.map((area) => _buildParkingAreaItem(area)),
                   const SizedBox(height: 16),
 
-                  // LEADERBOARD SECTION 
                   if (isOffline)
                     _buildLeaderboardOffline()
                   else
@@ -590,7 +587,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () {},
+      onTap: () {
+        // 1. Ubah Tab Misi ke Leaderboard (false)
+        ref.read(missionTabStateProvider.notifier).setLeaderboard();
+        
+        // 2. Pindah Main Screen ke Index 1 (Misi)
+        ref.read(bottomNavIndexProvider.notifier).setIndex(1);
+      },
       child: _customCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

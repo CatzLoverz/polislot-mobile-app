@@ -7,33 +7,26 @@ import '../data/mission_model.dart';
 import '../../../core/providers/connection_status_provider.dart';
 
 class MissionScreen extends ConsumerStatefulWidget {
-  final bool initialTabIsMission;
-
-  const MissionScreen({
-    super.key,
-    this.initialTabIsMission = true,
-  });
+  const MissionScreen({super.key});
 
   @override
   ConsumerState<MissionScreen> createState() => _MissionScreenState();
 }
 
 class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  late bool isMissionTab;
   late AnimationController _animController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    isMissionTab = widget.initialTabIsMission;
+    
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
     _animController.forward();
 
-    // ✅ SILENT REFRESH: Trigger fetch saat init tanpa blocking UI
     Future.microtask(() {
       ref.invalidate(missionControllerProvider);
     });
@@ -42,18 +35,21 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // ✅ SILENT REFRESH: Trigger fetch saat resume tanpa blocking UI
       ref.invalidate(missionControllerProvider);
     }
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // ✅ Hapus Observer
+    WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
     super.dispose();
   }
 
+  // ... (Method _getMissionIcon, _getProgressColor, _fadeSlide TETAP SAMA seperti file sebelumnya) ...
+  // Silakan gunakan kode _fadeSlide dll dari file sebelumnya untuk mempersingkat.
+  
+  // SAYA SERTAKAN KEMBALI HELPER AGAR TIDAK HILANG
   IconData _getMissionIcon(String metricCode) {
     switch (metricCode.toUpperCase()) {
       case 'VALIDATION_ACTION': return FontAwesomeIcons.squareCheck;
@@ -72,23 +68,20 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   Widget _fadeSlide(Widget child, int index) {
     final start = (index * 0.1).clamp(0.0, 1.0);
     final end = (start + 0.5).clamp(0.0, 1.0);
-    
     final slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
       CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeOut)),
     );
     final fade = CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeIn));
-
-    return SlideTransition(
-      position: slide,
-      child: FadeTransition(opacity: fade, child: RepaintBoundary(child: child)),
-    );
+    return SlideTransition(position: slide, child: FadeTransition(opacity: fade, child: RepaintBoundary(child: child)));
   }
 
   @override
   Widget build(BuildContext context) {
     final missionDataAsync = ref.watch(missionControllerProvider);
-    
     final isOffline = ref.watch(connectionStatusProvider);
+    
+    // ✅ WATCH PROVIDER BARU
+    final isMissionTab = ref.watch(missionTabStateProvider);
 
     final stats = missionDataAsync.asData?.value.stats ?? 
         UserStats(totalCompleted: 0, lifetimePoints: 0);
@@ -108,10 +101,8 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
       body: Stack(
         children: [
           RefreshIndicator(
-            // ✅ LOGIKA BARU: Cek Offline & Try-Catch
             onRefresh: () async {
               ref.read(connectionStatusProvider.notifier).setOnline();
-
               try {
                 final _ = await ref.refresh(missionControllerProvider.future);
               } catch (_) {}
@@ -125,7 +116,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
                   _topStatsCard(stats),
                   const SizedBox(height: 20),
 
-                  _animatedTabs(),
+                  _animatedTabs(isMissionTab),
                   const SizedBox(height: 20),
 
                   AnimatedSwitcher(
@@ -138,9 +129,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
                             data: (data) => isMissionTab 
                                 ? _buildMissionsList(data.missions)
                                 : _buildLeaderboard(data.leaderboard),
-                            
                             error: (err, stack) => _buildOfflinePlaceholder(),
-                            
                             loading: () => const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(40.0),
@@ -164,39 +153,22 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
     );
   }
 
+  // ... (Widget _buildOfflinePlaceholder, _topStatsCard, _statBox SAMA SEPERTI SEBELUMNYA) ...
+  // SAYA HANYA MENULISKAN YG BERUBAH YAITU _animatedTabs
+
   Widget _buildOfflinePlaceholder() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))]),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.wifi_off_rounded, size: 40, color: Colors.red.shade400),
-          ),
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle), child: Icon(Icons.wifi_off_rounded, size: 40, color: Colors.red.shade400)),
           const SizedBox(height: 16),
-          Text(
-            "Anda Sedang Offline",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey.shade800),
-          ),
+          Text("Anda Sedang Offline", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey.shade800)),
           const SizedBox(height: 8),
-          Text(
-            "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
+          Text("Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
         ],
       ),
     );
@@ -204,48 +176,24 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
 
   Widget _topStatsCard(UserStats stats) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-      ),
+      decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF2196F3)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(18)),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _statBox(
-            icon: Icons.verified_rounded,
-            color: Colors.amber,
-            title: "Total Misi Selesai",
-            value: stats.totalCompleted.toString(),
-          ),
+          _statBox(icon: Icons.verified_rounded, color: Colors.amber, title: "Total Misi Selesai", value: stats.totalCompleted.toString()),
           Container(width: 1, height: 50, color: Colors.white24),
-          _statBox(
-            icon: Icons.monetization_on_rounded,
-            color: Colors.greenAccent,
-            title: "Lifetime Koin",
-            value: stats.lifetimePoints.toString(),
-          ),
+          _statBox(icon: Icons.monetization_on_rounded, color: Colors.greenAccent, title: "Lifetime Koin", value: stats.lifetimePoints.toString()),
         ],
       ),
     );
   }
 
   Widget _statBox({required IconData icon, required Color color, required String title, required String value}) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 32),
-        const SizedBox(height: 6),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
-        Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13)),
-      ],
-    );
+    return Column(children: [Icon(icon, color: color, size: 32), const SizedBox(height: 6), Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)), Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13))]);
   }
 
-  Widget _animatedTabs() {
+  Widget _animatedTabs(bool isMissionTab) {
     return Container(
       height: 50,
       decoration: BoxDecoration(
@@ -273,7 +221,8 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => isMissionTab = true),
+                  // ✅ GUNAKAN METHOD DARI NOTIFIER
+                  onTap: () => ref.read(missionTabStateProvider.notifier).setMission(),
                   behavior: HitTestBehavior.opaque,
                   child: Center(
                     child: Text("Misi", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isMissionTab ? Colors.white : Colors.grey[600])),
@@ -282,7 +231,8 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
               ),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => isMissionTab = false),
+                  // ✅ GUNAKAN METHOD DARI NOTIFIER
+                  onTap: () => ref.read(missionTabStateProvider.notifier).setLeaderboard(),
                   behavior: HitTestBehavior.opaque,
                   child: Center(
                     child: Text("Leaderboard", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: !isMissionTab ? Colors.white : Colors.grey[600])),
