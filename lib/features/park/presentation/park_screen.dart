@@ -347,7 +347,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                 ),
 
                 // 2. CARD SUBAREA
-                _buildDetailSection(selectedSubarea),
+                _buildDetailSection(selectedSubarea, data.cooldown),
               ],
             ),
           ),
@@ -387,7 +387,10 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     }).toSet();
   }
 
-  Widget _buildDetailSection(ParkSubareaVisual? subarea) {
+  Widget _buildDetailSection(
+    ParkSubareaVisual? subarea,
+    ValidationCooldown? cooldown,
+  ) {
     if (subarea == null) {
       return Container(
         width: double.infinity,
@@ -586,7 +589,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            "Komen",
+                            "Komentar",
                             style: TextStyle(fontSize: 10, color: Colors.grey),
                           ),
                         ],
@@ -604,19 +607,36 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
             padding: const EdgeInsets.all(16),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    _showValidationSheet(context, subarea.id, subarea.name),
-                icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                label: const Text("Validasi Kondisi Area Ini"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1565C0),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+              child: Builder(
+                builder: (context) {
+                  final canValidate = cooldown?.canValidate ?? true;
+                  final waitTime = cooldown?.waitMinutes ?? 0;
+                  return ElevatedButton.icon(
+                    onPressed: canValidate
+                        ? () => _showValidationSheet(
+                            context,
+                            subarea.id,
+                            subarea.name,
+                          )
+                        : null,
+                    icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                    label: Text(
+                      canValidate
+                          ? "Validasi Kondisi Area Ini"
+                          : "Tunggu $waitTime menit lagi",
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: canValidate
+                          ? const Color(0xFF1565C0)
+                          : Colors.grey,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

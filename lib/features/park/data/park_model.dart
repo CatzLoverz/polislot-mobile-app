@@ -34,12 +34,16 @@ class ParkVisualData {
   @JsonKey(name: 'area_code')
   final String areaCode;
 
+  @JsonKey(name: 'validation_cooldown')
+  final ValidationCooldown? cooldown;
+
   final List<ParkSubareaVisual> subareas;
 
   ParkVisualData({
     required this.areaId,
     required this.areaName,
     required this.areaCode,
+    this.cooldown,
     required this.subareas,
   });
 
@@ -109,4 +113,19 @@ List<LatLng> _polygonFromJson(dynamic json) {
 
 dynamic _polygonToJson(List<LatLng> points) {
   return points.map((e) => {'lat': e.latitude, 'lng': e.longitude}).toList();
+}
+
+@JsonSerializable()
+class ValidationCooldown {
+  @JsonKey(name: 'can_validate')
+  final bool canValidate;
+
+  @JsonKey(name: 'wait_minutes')
+  final int waitMinutes;
+
+  ValidationCooldown({required this.canValidate, required this.waitMinutes});
+
+  factory ValidationCooldown.fromJson(Map<String, dynamic> json) =>
+      _$ValidationCooldownFromJson(json);
+  Map<String, dynamic> toJson() => _$ValidationCooldownToJson(this);
 }
