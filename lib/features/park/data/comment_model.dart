@@ -49,10 +49,11 @@ class Comment {
 
 @JsonSerializable()
 class CommentUser {
+  final int id; // Added ID
   final String name;
   final String? avatar;
 
-  CommentUser({required this.name, this.avatar});
+  CommentUser({required this.id, required this.name, this.avatar});
 
   factory CommentUser.fromJson(Map<String, dynamic> json) =>
       _$CommentUserFromJson(json);

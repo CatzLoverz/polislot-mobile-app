@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/dio_client.dart';
 import 'comment_model.dart';
 
@@ -51,6 +52,47 @@ class CommentRepository {
       }
 
       await _dio.post('/comment', data: formData);
+    } catch (e) {
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('message')) {
+          throw Exception(data['message']);
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> editComment(int commentId, String content, File? image) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+
+      FormData formData = FormData.fromMap({
+        'subarea_comment_content': content,
+        '_method': 'PUT',
+      });
+
+      if (image != null) {
+        formData.files.add(
+          MapEntry(
+            'subarea_comment_image',
+            await MultipartFile.fromFile(image.path),
+          ),
+        );
+      }
+
+      await _dio.post(
+        '/comment/$commentId',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json',
+          },
+        ),
+      );
     } catch (e) {
       if (e is DioException && e.response?.data != null) {
         final data = e.response?.data;

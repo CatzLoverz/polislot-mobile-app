@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/providers/connection_status_provider.dart';
+import '../../../../core/providers/connection_status_provider.dart';
+import '../../../../core/utils/snackbar_utils.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../data/comment_model.dart';
 import 'comment_controller.dart';
 
@@ -24,6 +26,10 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
   final TextEditingController _commentController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
+
+  // Edit State
+  bool _isEditing = false;
+  int? _editingCommentId;
 
   @override
   void dispose() {
@@ -47,22 +53,126 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     // Dismiss keyboard
     FocusScope.of(context).unfocus();
 
-    final success = await ref
-        .read(commentActionControllerProvider.notifier)
-        .postComment(widget.subareaId, content, _selectedImage);
+    bool success;
+    if (_isEditing && _editingCommentId != null) {
+      success = await ref
+          .read(commentActionControllerProvider.notifier)
+          .editComment(
+            widget.subareaId,
+            _editingCommentId!,
+            content,
+            _selectedImage,
+          );
+    } else {
+      success = await ref
+          .read(commentActionControllerProvider.notifier)
+          .postComment(widget.subareaId, content, _selectedImage);
+    }
 
     if (success && mounted) {
-      _commentController.clear();
-      setState(() {
-        _selectedImage = null;
-      });
+      _resetInput();
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Gagal mengirim komentar.")),
+        AppSnackBars.show(
+          context,
+          _isEditing
+              ? "Gagal mengupdate komentar."
+              : "Gagal mengirim komentar.",
+          isError: true,
         );
       }
     }
+  }
+
+  void _resetInput() {
+    _commentController.clear();
+    setState(() {
+      _selectedImage = null;
+      _isEditing = false;
+      _editingCommentId = null;
+    });
+  }
+
+  void _startEditing(Comment comment) {
+    setState(() {
+      _isEditing = true;
+      _editingCommentId = comment.id;
+      _commentController.text = comment.content;
+      _selectedImage =
+          null; // Reset image selector (logic: only change if selected)
+    });
+    // Focus input
+  }
+
+  Future<void> _deleteComment(int commentId) async {
+    final success = await ref
+        .read(commentActionControllerProvider.notifier)
+        .deleteComment(widget.subareaId, commentId);
+
+    if (success && mounted) {
+      AppSnackBars.show(context, "Komentar berhasil dihapus");
+    } else {
+      if (mounted) {
+        AppSnackBars.show(context, "Gagal menghapus komentar", isError: true);
+      }
+    }
+  }
+
+  void _showOptionsDialog(Comment comment) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit, color: Colors.blue),
+                title: const Text("Edit Komentar"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _startEditing(comment);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text("Hapus Komentar"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDelete(comment.id);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDelete(int commentId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Hapus Komentar?"),
+        content: const Text("Komentar ini akan dihapus secara permanen."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteComment(commentId);
+            }, // Implement
+            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -72,6 +182,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     );
     final actionState = ref.watch(commentActionControllerProvider);
     final isOffline = ref.watch(connectionStatusProvider);
+    final currentUser = ref
+        .watch(authControllerProvider)
+        .value; // Get Current User
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
@@ -131,7 +244,8 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                               const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final comment = comments[index];
-                            return _buildCommentCard(comment);
+                            final isMe = currentUser?.id == comment.user.id;
+                            return _buildCommentCard(comment, isMe: isMe);
                           },
                         );
                       },
@@ -212,106 +326,110 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     );
   }
 
-  Widget _buildCommentCard(Comment comment) {
+  Widget _buildCommentCard(Comment comment, {required bool isMe}) {
     // Use Helper from Model
     final avatarUrl = comment.user.fullAvatarUrl;
     final imageUrl = comment.fullImageUrl;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: avatarUrl != null
-                    ? NetworkImage(avatarUrl)
-                    : null,
-                child: avatarUrl == null
-                    ? const Icon(Icons.person, color: Colors.grey)
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onLongPress: isMe ? () => _showOptionsDialog(comment) : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage: avatarUrl != null
+                      ? NetworkImage(avatarUrl)
+                      : null,
+                  child: avatarUrl == null
+                      ? const Icon(Icons.person, color: Colors.grey)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        comment.user.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Date and Time
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      comment.user.name,
+                      comment.date,
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.black87,
+                        fontSize: 12,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
                       ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      comment.time,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
                 ),
-              ),
-              // Date and Time
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    comment.date,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    comment.time,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (imageUrl != null) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                imageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, _, _) => const SizedBox.shrink(),
-              ),
+              ],
             ),
             const SizedBox(height: 12),
-          ],
-          Text(
-            comment.content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-              height: 1.4,
+            if (imageUrl != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  imageUrl,
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Text(
+              comment.content,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                height: 1.4,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildInputSection(bool isLoading) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -324,44 +442,97 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       ),
       child: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_selectedImage != null)
+            if (_isEditing)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Mengedit Komentar",
+                      style: TextStyle(
+                        color: Color(0xFF1565C0),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _resetInput,
+                      child: const Icon(
+                        Icons.close,
+                        size: 20,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            if (_selectedImage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Stack(
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.file(
                         _selectedImage!,
-                        width: 60,
-                        height: 60,
+                        height: 80,
+                        width: 80,
                         fit: BoxFit.cover,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      onPressed: () => setState(() => _selectedImage = null),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedImage = null),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
             Row(
               children: [
-                IconButton(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.image_outlined, color: Colors.grey),
+                InkWell(
+                  onTap: _pickImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1565C0), // Blue Background
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.image_outlined,
+                      color: Colors.white, // White Icon
+                      size: 24,
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: TextField(
                     controller: _commentController,
                     decoration: InputDecoration(
-                      hintText: "Tulis Sesuatu....",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      hintText: _isEditing
+                          ? "Update komentar..."
+                          : "Tulis komentar...",
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
@@ -371,18 +542,36 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                         vertical: 10,
                       ),
                     ),
+                    minLines: 1,
+                    maxLines: 3,
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: isLoading ? null : _sendComment,
-                  icon: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send_rounded, color: Colors.black87),
+                const SizedBox(width: 12),
+                InkWell(
+                  onTap: isLoading ? null : _sendComment,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1565C0), // Blue Background
+                      shape: BoxShape.circle,
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Icon(
+                            _isEditing
+                                ? Icons.check_rounded
+                                : Icons.send_rounded,
+                            color: Colors.white, // White Icon
+                            size: 24,
+                          ),
+                  ),
                 ),
               ],
             ),

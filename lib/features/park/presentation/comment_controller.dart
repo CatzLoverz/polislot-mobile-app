@@ -42,4 +42,38 @@ class CommentActionController extends _$CommentActionController {
     }
     return false;
   }
+
+  Future<bool> editComment(
+    int subareaId,
+    int commentId,
+    String content,
+    File? image,
+  ) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(
+      () => ref
+          .read(commentRepositoryInstanceProvider)
+          .editComment(commentId, content, image),
+    );
+
+    if (!state.hasError) {
+      ref.invalidate(commentListControllerProvider(subareaId));
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> deleteComment(int subareaId, int commentId) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(
+      () =>
+          ref.read(commentRepositoryInstanceProvider).deleteComment(commentId),
+    );
+
+    if (!state.hasError) {
+      ref.invalidate(commentListControllerProvider(subareaId));
+      return true;
+    }
+    return false;
+  }
 }
