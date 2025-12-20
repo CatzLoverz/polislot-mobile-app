@@ -5,6 +5,7 @@ import '../enums/otp_type.dart';
 // Import Screen
 import '../../core/wrapper/connectivity_wrapper.dart';
 import '../../features/splash/presentation/splash_screen.dart';
+import '../../features/splash/presentation/privacy_policy_screen.dart';
 import '../../features/auth/presentation/login_regis_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
@@ -12,23 +13,25 @@ import '../../features/auth/presentation/verify_otp_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/home/presentation/main_screen.dart';
-import '../../features/profile/presentation/sections/profile_edit_section.dart'; 
-import '../../features/feedback/presentation/feedback_screen.dart'; 
-import '../../features/profile/presentation/sections/profile_reward_section.dart'; 
+import '../../features/profile/presentation/sections/profile_edit_section.dart';
+import '../../features/feedback/presentation/feedback_screen.dart';
+import '../../features/profile/presentation/sections/profile_reward_section.dart';
 
 class AppRoutes {
   // ===========================================================================
   // 📍 DAFTAR NAMA ROUTE
   // ===========================================================================
   static const String splash = '/';
-  static const String loginRegis = '/loginRegis'; // Halaman Pilihan (Masuk/Daftar)
+  static const String privacyPolicy = '/privacyPolicy';
+  static const String loginRegis =
+      '/loginRegis'; // Halaman Pilihan (Masuk/Daftar)
   static const String login = '/login';
   static const String register = '/register';
-  
+
   // Route OTP (Reusable untuk Register & Forgot Password)
   static const String verifyOtp = '/verifyOtp';
-  
-  // Forgot Password 
+
+  // Forgot Password
   static const String forgotPassword = '/forgotPassword';
   static const String resetPassword = '/resetPassword';
 
@@ -43,10 +46,12 @@ class AppRoutes {
   // ===========================================================================
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      
       // --- SPLASH ---
       case splash:
         return _materialRoute(const SplashScreen());
+
+      case privacyPolicy:
+        return _materialRoute(const PrivacyPolicyScreen());
 
       // --- PILIHAN AUTH ---
       case loginRegis:
@@ -64,12 +69,14 @@ class AppRoutes {
       case verifyOtp:
         // Ambil argument yang dikirim dari RegisterScreen atau ForgotPasswordScreen
         final args = settings.arguments as Map<String, dynamic>?;
-        
-        return _slideRoute(VerifyOtpScreen(
-          email: args?['email'],
-          // Default ke register jika tidak ada tipe yang dikirim
-          otpType: args?['type'] ?? OtpType.register, 
-        ));
+
+        return _slideRoute(
+          VerifyOtpScreen(
+            email: args?['email'],
+            // Default ke register jika tidak ada tipe yang dikirim
+            otpType: args?['type'] ?? OtpType.register,
+          ),
+        );
 
       // --- FORGOT PASSWORD ---
       case forgotPassword:
@@ -79,16 +86,12 @@ class AppRoutes {
       case resetPassword:
         final args = settings.arguments as Map<String, dynamic>?;
         // Nanti bisa kirim email/token ke sini
-        return _slideRoute(ResetPasswordScreen(
-          email: args?['email'],
-        ));
+        return _slideRoute(ResetPasswordScreen(email: args?['email']));
 
       // --- MAIN / HOME ---
       case main:
         return _materialRoute(
-          const AppConnectivityWrapper(
-            child: MainScreen(),
-          ),
+          const AppConnectivityWrapper(child: MainScreen()),
         );
 
       case profileEdit:
@@ -97,13 +100,15 @@ class AppRoutes {
         return _slideRoute(const FeedbackScreen());
       case profileReward:
         return _slideRoute(const ProfileRewardSection());
-        
+
       // --- DEFAULT / 404 ---
       default:
         return _materialRoute(
           Scaffold(
             appBar: AppBar(title: const Text("Error")),
-            body: Center(child: Text('Route tidak ditemukan: ${settings.name}')),
+            body: Center(
+              child: Text('Route tidak ditemukan: ${settings.name}'),
+            ),
           ),
         );
     }
@@ -127,12 +132,12 @@ class AppRoutes {
         const end = Offset.zero;
         const curve = Curves.easeOutQuart; // Kurva halus
 
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
 
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
+        return SlideTransition(position: animation.drive(tween), child: child);
       },
     );
   }

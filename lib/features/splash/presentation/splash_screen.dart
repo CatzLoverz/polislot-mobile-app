@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -11,7 +12,8 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with TickerProviderStateMixin {
   late AnimationController _mainController;
   late AnimationController _shimmerController;
   late AnimationController _glowPulseController;
@@ -63,15 +65,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
       curve: const Interval(0.45, 0.75, curve: Curves.easeIn),
     );
 
-    _slideText = Tween<Offset>(
-      begin: const Offset(0, 0.4),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _mainController,
-        curve: const Interval(0.45, 0.75, curve: Curves.easeOutBack),
-      ),
-    );
+    _slideText = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _mainController,
+            curve: const Interval(0.45, 0.75, curve: Curves.easeOutBack),
+          ),
+        );
 
     _fadeSubtitle = CurvedAnimation(
       parent: _mainController,
@@ -93,11 +93,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
     if (!mounted) return;
 
     // Panggil logika startup yang baru
-    final isLoggedIn = await ref.read(authControllerProvider.notifier).checkStartupSession();
+    // Panggil logika startup yang baru
+    final isLoggedIn = await ref
+        .read(authControllerProvider.notifier)
+        .checkStartupSession();
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenPrivacy = prefs.getBool('has_seen_privacy_policy') ?? false;
 
     if (!mounted) return;
 
-    if (isLoggedIn) {
+    if (!hasSeenPrivacy) {
+      Navigator.pushReplacementNamed(context, AppRoutes.privacyPolicy);
+    } else if (isLoggedIn) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.loginRegis);
@@ -157,7 +164,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.lightBlueAccent.withValues(
-                                  alpha: (0.5 * _fadeLogo.value).clamp(0.0, 1.0),
+                                  alpha: (0.5 * _fadeLogo.value).clamp(
+                                    0.0,
+                                    1.0,
+                                  ),
                                 ),
                                 blurRadius: 90,
                                 spreadRadius: 40,
@@ -184,9 +194,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // ✨ TEKS "PoliSlot" (FIXED: Menggunakan LayoutBuilder)
                     SlideTransition(
                       position: _slideText,
@@ -209,9 +219,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 10),
-                    
+
                     FadeTransition(
                       opacity: _fadeSubtitle,
                       child: const Padding(
@@ -260,8 +270,10 @@ class _GradientText extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Kita hitung perkiraan lebar teks atau gunakan maxWidth
-        final estimatedWidth = constraints.maxWidth > 300 ? 300.0 : constraints.maxWidth;
-        
+        final estimatedWidth = constraints.maxWidth > 300
+            ? 300.0
+            : constraints.maxWidth;
+
         return Text(
           text,
           style: style.copyWith(
@@ -275,17 +287,13 @@ class _GradientText extends StatelessWidget {
 
   Shader _createShimmerShader(Size size) {
     const gradient = LinearGradient(
-      colors: [
-        Colors.white,
-        Colors.cyanAccent,
-        Colors.white,
-      ],
+      colors: [Colors.white, Colors.cyanAccent, Colors.white],
       stops: [0.0, 0.5, 1.0],
       tileMode: TileMode.clamp,
     );
 
-    final shift = (shimmerValue * 2.5) - 1.0; 
-    final double xPos = shift * (size.width + 100); 
+    final shift = (shimmerValue * 2.5) - 1.0;
+    final double xPos = shift * (size.width + 100);
 
     return gradient.createShader(
       Rect.fromLTWH(xPos, 0, size.width, size.height),
