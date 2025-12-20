@@ -15,7 +15,8 @@ class RegisterScreen extends ConsumerStatefulWidget {
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProviderStateMixin {
+class _RegisterScreenState extends ConsumerState<RegisterScreen>
+    with TickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -33,7 +34,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
   @override
   void initState() {
     super.initState();
-    
+
     // --- SETUP BACKGROUND (Berdenyut Terus) ---
     _backgroundCtrl = AnimationController(
       vsync: this,
@@ -52,14 +53,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
 
     // Animasi Fade In Form (Opacity 0 -> 1)
     _fadeAnim = CurvedAnimation(
-      parent: _entryCtrl, 
+      parent: _entryCtrl,
       curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
     );
 
     // Animasi Logo Pop Up (Scale 0 -> 1)
-    _scaleLogoAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _entryCtrl, curve: Curves.elasticOut),
-    );
+    _scaleLogoAnim = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.elasticOut));
 
     // Jalankan animasi masuk
     _entryCtrl.forward();
@@ -77,38 +79,79 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
   }
 
   Future<void> _registerUser() async {
-    if (_nameController.text.trim().isEmpty || 
-        _emailController.text.trim().isEmpty || 
+    if (_nameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-        AppSnackBars.show(context, "Semua kolom wajib diisi", isError: true);
-       return;
-    }
-
-    if (_passwordController.text != _confirmController.text) {
-      AppSnackBars.show(context, "Konfirmasi password tidak cocok", isError: true);
+      AppSnackBars.show(context, "Semua kolom wajib diisi", isError: true);
       return;
     }
 
-    final success = await ref.read(authControllerProvider.notifier).register(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      confirmPassword: _confirmController.text,
-    );
+    // 1️⃣ Validasi Email (Regex)
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(_emailController.text.trim())) {
+      AppSnackBars.show(
+        context,
+        "Format email tidak valid",
+        isError: true,
+      );
+      return;
+    }
+
+    // 2️⃣ Validasi Password (Client Side - Comprehensive)
+    final pass = _passwordController.text;
+    final hasMinLength = pass.length >= 8;
+    final hasUppercase = pass.contains(RegExp(r'[A-Z]'));
+    final hasLowercase = pass.contains(RegExp(r'[a-z]'));
+    final hasNumber = pass.contains(RegExp(r'[0-9]'));
+    final hasSymbol = pass.contains(RegExp(r'[^a-zA-Z0-9]'));
+
+    if (!hasMinLength ||
+        !hasUppercase ||
+        !hasLowercase ||
+        !hasNumber ||
+        !hasSymbol) {
+      AppSnackBars.show(
+        context,
+        "Password harus memiliki minimal 8 karakter, huruf besar, huruf kecil, angka, dan simbol.",
+        isError: true,
+      );
+      return;
+    }
+
+    if (_passwordController.text != _confirmController.text) {
+      AppSnackBars.show(
+        context,
+        "Konfirmasi password tidak cocok",
+        isError: true,
+      );
+      return;
+    }
+
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .register(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          confirmPassword: _confirmController.text,
+        );
 
     // ✅ FIX ASYNC GAP: Cek mounted sebelum pakai context
     if (!mounted) return;
 
     if (success) {
-      AppSnackBars.show(context, "Pendaftaran Berhasil! Cek email Anda untuk kode OTP.");
-      
+      AppSnackBars.show(
+        context,
+        "Pendaftaran Berhasil! Cek email Anda untuk kode OTP.",
+      );
+
       Navigator.pushNamed(
-        context, 
-        AppRoutes.verifyOtp, 
+        context,
+        AppRoutes.verifyOtp,
         arguments: {
           'email': _emailController.text.trim(),
           'type': OtpType.register,
-        }
+        },
       );
     } else {
       final state = ref.read(authControllerProvider);
@@ -151,7 +194,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.lightBlueAccent.withValues(alpha: 0.45),
+                                    color: Colors.lightBlueAccent.withValues(
+                                      alpha: 0.45,
+                                    ),
                                     blurRadius: 85,
                                     spreadRadius: 35,
                                   ),
@@ -167,16 +212,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
                       ScaleTransition(
                         scale: _scaleLogoAnim,
                         child: const Icon(
-                          Icons.location_on_outlined, // ✅ ICON PIN SESUAI PERMINTAAN
-                          color: Colors.white, 
-                          size: 85
+                          Icons
+                              .location_on_outlined, // ✅ ICON PIN SESUAI PERMINTAAN
+                          color: Colors.white,
+                          size: 85,
                         ),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 20),
-                  
+
                   // --- LAYER 2: FORM INPUT (FADE IN) ---
                   // FadeTransition menggunakan _entryCtrl (Sekali jalan)
                   FadeTransition(
@@ -185,84 +231,103 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with TickerProv
                       children: [
                         const Text(
                           "Daftarkan Akun Baru",
-                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                         const SizedBox(height: 25),
 
                         // Input Nama
                         CustomTextField(
-                          hint: 'Nama Lengkap', 
+                          hint: 'Nama Lengkap',
                           prefixIcon: Icons.person, // ✅ Pakai prefixIcon
                           controller: _nameController,
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 12),
-                        
+
                         // Input Email
                         CustomTextField(
-                          hint: 'Email', 
+                          hint: 'Email',
                           prefixIcon: Icons.email, // ✅ Pakai prefixIcon
-                          controller: _emailController, 
+                          controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 12),
-                        
+
                         // Input Password
                         CustomTextField(
-                          hint: 'Kata Sandi', 
+                          hint: 'Kata Sandi',
                           prefixIcon: Icons.lock, // ✅ Pakai prefixIcon
-                          obscure: true, 
+                          obscure: true,
                           controller: _passwordController,
                           textInputAction: TextInputAction.next,
                         ),
-                        
+
                         // Helper Text
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 10,
+                          ),
                           child: RichText(
                             text: TextSpan(
-                              style: TextStyle(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                              ),
                               children: const [
                                 TextSpan(
-                                  text: '* ', 
-                                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)
+                                  text: '* ',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 TextSpan(
-                                  text: 'Min. 8 karakter, mengandung huruf besar/kecil, angka dan simbol.'
+                                  text:
+                                      'Min. 8 karakter, mengandung huruf besar/kecil, angka dan simbol.',
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        
+
                         // Konfirmasi Password
                         CustomTextField(
-                          hint: 'Konfirmasi Kata Sandi', 
+                          hint: 'Konfirmasi Kata Sandi',
                           prefixIcon: Icons.lock_outline, // ✅ Pakai prefixIcon
-                          obscure: true, 
+                          obscure: true,
                           controller: _confirmController,
                           textInputAction: TextInputAction.done,
                         ),
                         const SizedBox(height: 25),
 
                         // Button Daftar
-                        isLoading 
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : CustomButton(
-                              text: 'Daftar', 
-                              onPressed: _registerUser, 
-                              width: double.infinity
-                            ),
+                        isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : CustomButton(
+                                text: 'Daftar',
+                                onPressed: _registerUser,
+                                width: double.infinity,
+                              ),
 
                         const SizedBox(height: 15),
-                        
+
                         // Link Login
                         TextButton(
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
+                          onPressed: () =>
+                              Navigator.pushNamed(context, AppRoutes.login),
                           child: const Text(
-                            "Sudah punya akun? Masuk", 
-                            style: TextStyle(color: Colors.white)
+                            "Sudah punya akun? Masuk",
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ],

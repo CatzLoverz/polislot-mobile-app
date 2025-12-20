@@ -78,7 +78,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _onLoginPressed() async {
-    if (!_formKey.currentState!.validate()) return;
+    // 1️⃣ Validasi Email (Regex)
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(_emailController.text.trim())) {
+      AppSnackBars.show(context, "Format email tidak valid", isError: true);
+      return;
+    }
+
+    // 2️⃣ Validasi Password: Hapus cek min-length, biarkan server yang handle
+    if (_passwordController.text.isEmpty) {
+      AppSnackBars.show(context, "Password tidak boleh kosong", isError: true);
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     await ref
@@ -94,7 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (next is AsyncError) {
         String errorText = next.error.toString();
         if (errorText.startsWith("Exception: ")) {
-          errorText = errorText.substring(11);  
+          errorText = errorText.substring(11);
         }
         if (errorText.toLowerCase().contains("null") || errorText.isEmpty) {
           errorText = "Login gagal.";

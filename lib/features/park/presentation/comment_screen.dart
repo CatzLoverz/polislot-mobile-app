@@ -40,8 +40,23 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      final file = File(image.path);
+      final sizeInBytes = await file.length();
+      final sizeInMB = sizeInBytes / (1024 * 1024);
+
+      if (sizeInMB > 2) {
+        if (mounted) {
+          AppSnackBars.show(
+            context,
+            "Ukuran gambar maksimal 2MB",
+            isError: true,
+          );
+        }
+        return;
+      }
+
       setState(() {
-        _selectedImage = File(image.path);
+        _selectedImage = file;
       });
     }
   }
@@ -73,13 +88,18 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       _resetInput();
     } else {
       if (mounted) {
-        AppSnackBars.show(
-          context,
-          _isEditing
-              ? "Gagal mengupdate komentar."
-              : "Gagal mengirim komentar.",
-          isError: true,
-        );
+        // Ambil error message dari Controller
+        final errorMsg =
+            ref
+                .read(commentActionControllerProvider)
+                .error
+                ?.toString()
+                .replaceAll('Exception: ', '') ??
+            (_isEditing
+                ? "Gagal mengupdate komentar."
+                : "Gagal mengirim komentar.");
+
+        AppSnackBars.show(context, errorMsg, isError: true);
       }
     }
   }
@@ -217,10 +237,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),

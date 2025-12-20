@@ -80,7 +80,24 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
 
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) setState(() => _selectedImage = File(picked.path));
+    if (picked != null) {
+      final file = File(picked.path);
+      final sizeInBytes = await file.length();
+      final sizeInMB = sizeInBytes / (1024 * 1024);
+
+      if (sizeInMB > 2) {
+        if (mounted) {
+          AppSnackBars.show(
+            context,
+            "Ukuran gambar maksimal 2MB",
+            isError: true,
+          );
+        }
+        return;
+      }
+
+      setState(() => _selectedImage = file);
+    }
   }
 
   Future<void> _handleUpdate() async {

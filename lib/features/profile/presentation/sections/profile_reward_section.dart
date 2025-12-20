@@ -10,11 +10,12 @@ class ProfileRewardSection extends ConsumerStatefulWidget {
   const ProfileRewardSection({super.key});
 
   @override
-  ConsumerState<ProfileRewardSection> createState() => _ProfileRewardSectionState();
+  ConsumerState<ProfileRewardSection> createState() =>
+      _ProfileRewardSectionState();
 }
 
-class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> with WidgetsBindingObserver {
-  
+class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -62,7 +63,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> wit
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -75,32 +76,40 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> wit
             final _ = await ref.refresh(rewardHistoryControllerProvider.future);
           } catch (_) {}
         },
-        child: isOffline ? _buildOfflinePlaceholder() : historyAsync.when(
-          // ✅ SILENT REFRESH: Skip loading jika data sudah ada
-          skipLoadingOnReload: true,
-          skipLoadingOnRefresh: true,
-          data: (history) {
-            if (history.isEmpty) {
-              return ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                  const Center(child: Text("Belum ada riwayat penukaran.")),
-                ],
-              );
-            }
-            return ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-              padding: const EdgeInsets.all(20),
-              itemCount: history.length,
-              itemBuilder: (context, index) {
-                return _buildHistoryCard(history[index]);
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => _buildOfflinePlaceholder(),
-        ),
+        child: isOffline
+            ? _buildOfflinePlaceholder()
+            : historyAsync.when(
+                // ✅ SILENT REFRESH: Skip loading jika data sudah ada
+                skipLoadingOnReload: true,
+                skipLoadingOnRefresh: true,
+                data: (history) {
+                  if (history.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.3,
+                        ),
+                        const Center(
+                          child: Text("Belum ada riwayat penukaran."),
+                        ),
+                      ],
+                    );
+                  }
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    itemCount: history.length,
+                    itemBuilder: (context, index) {
+                      return _buildHistoryCard(history[index]);
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => _buildOfflinePlaceholder(),
+              ),
       ),
     );
   }
@@ -140,18 +149,29 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> wit
                             color: Colors.red.shade50,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.wifi_off_rounded, size: 40, color: Colors.red.shade400),
+                          child: Icon(
+                            Icons.wifi_off_rounded,
+                            size: 40,
+                            color: Colors.red.shade400,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           "Anda Sedang Offline",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey.shade800),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.grey.shade800,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -166,8 +186,10 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> wit
   }
 
   Widget _buildHistoryCard(UserRewardHistoryItem item) {
-    final IconData icon = item.type == 'Voucher' ? FontAwesomeIcons.ticket : FontAwesomeIcons.gift;
-    
+    final IconData icon = item.type == 'Voucher'
+        ? FontAwesomeIcons.ticket
+        : FontAwesomeIcons.gift;
+
     // Status Logic
     IconData statusIcon;
     Color statusColor;
@@ -197,7 +219,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> wit
             color: Color(0x11000000),
             blurRadius: 8,
             offset: Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -217,12 +239,20 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> wit
               children: [
                 Text(
                   item.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Kode: ${item.code}",
-                  style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500, fontSize: 13),
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
                 ),
                 Text(
                   dateLabel,
@@ -237,10 +267,14 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection> wit
               const SizedBox(height: 4),
               Text(
                 item.status.toUpperCase(),
-                style: TextStyle(fontSize: 9, color: statusColor, fontWeight: FontWeight.bold),
-              )
+                style: TextStyle(
+                  fontSize: 9,
+                  color: statusColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
