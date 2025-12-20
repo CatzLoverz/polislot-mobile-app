@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../auth/presentation/auth_controller.dart';
-// import '../../profile/presentation/providers/profile_ui_provider.dart';
+import '../../home/presentation/main_screen.dart'; // Import MainScreen Providers
+import '../../mission/presentation/mission_controller.dart'; // Import Mission Providers
+import '../../reward/presentation/reward_controller.dart'; // Import Reward Providers
 import '../../profile/presentation/sections/profile_main_section.dart';
 
 // Kita tidak perlu import edit/feedback section disini karena sudah via routes
@@ -19,6 +21,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _handleLogout() async {
     try {
       await ref.read(authControllerProvider.notifier).logout();
+
+      // ✅ RESET SEMUA STATE NAVIGASI & TAB
+      ref.invalidate(bottomNavIndexProvider); // Reset Tab Bawah ke Home
+      ref.invalidate(missionTabStateProvider); // Reset Tab Misi ke Default
+      ref.invalidate(rewardTabStateProvider); // Reset Tab Reward ke Default
+      // ref.invalidate(profileSectionProvider); // Reset Section Profile (jika perlu)
     } catch (_) {}
     if (!mounted) return;
     // Keluar dari MainScreen sepenuhnya

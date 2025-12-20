@@ -71,22 +71,30 @@ class DioClientService extends _$DioClientService {
             bool isAuthEndpoint =
                 path.contains('/login') || path.contains('/register');
             if (!isAuthEndpoint) {
-              debugPrint(
-                "🚨 401 Session Expired di ($path). Melakukan Force Logout...",
-              );
-              try {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
+              final prefs = await SharedPreferences.getInstance();
+              final token = prefs.getString('access_token');
+
+              // ✅ CEK: Hanya force logout jika token MASIH ADA di HP
+              // Jika token null, berarti user memang sudah logout manual, jadi jangan redirect lagi.
+              if (token != null && token.isNotEmpty) {
+                debugPrint(
+                  "🚨 401 Session Expired di ($path). Melakukan Force Logout...",
+                );
+
+                await prefs.clear(); // Hapus semua data sesi
+
                 if (navigatorKey.currentState != null) {
+                  // Gunakan pushNamedAndRemoveUntil agar tidak bisa back
                   navigatorKey.currentState!.pushNamedAndRemoveUntil(
                     '/loginRegis',
                     (route) => false,
                   );
                 }
-                return handler.reject(e);
-              } catch (err) {
-                debugPrint("❌ Gagal Logout Otomatis: $err");
+              } else {
+                debugPrint("Output 401 ignored: Token already cleared.");
               }
+
+              return handler.reject(e);
             }
           }
 
