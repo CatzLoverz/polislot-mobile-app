@@ -2,10 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 import '../security/encryption_interceptor.dart';
 import 'auth_interceptor.dart';
-import '../providers/connection_status_provider.dart'; 
+import '../providers/connection_status_provider.dart';
 import '../utils/navigator_key.dart';
 
 part 'dio_client.g.dart';
@@ -34,10 +34,11 @@ class DioClientService extends _$DioClientService {
 
           // WHITELIST AUTH: Kecualikan endpoint Auth dari blokir Offline
           // Agar user tetap bisa mencoba Login/Register/OTP meski status "Offline"
-          bool isAuthEndpoint = path.contains('/login') || 
-                                path.contains('/register') || 
-                                path.contains('/forgot') || 
-                                path.contains('/reset-pass');
+          bool isAuthEndpoint =
+              path.contains('/login') ||
+              path.contains('/register') ||
+              path.contains('/forgot') ||
+              path.contains('/reset-pass');
 
           // Blokir request HANYA JIKA Offline DAN BUKAN endpoint Auth
           if (isOffline && !isAuthEndpoint) {
@@ -46,34 +47,41 @@ class DioClientService extends _$DioClientService {
                 requestOptions: options,
                 type: DioExceptionType.connectionError,
                 error: "Offline Mode Active",
-                message: "Aplikasi sedang dalam mode offline. Refresh untuk mencoba lagi.",
+                message:
+                    "Aplikasi sedang dalam mode offline. Refresh untuk mencoba lagi.",
               ),
             );
           }
-          
+
           return handler.next(options);
         },
       ),
 
-      EncryptionInterceptor(),
       AuthInterceptor(),
+      EncryptionInterceptor(),
       InterceptorsWrapper(
         onResponse: (response, handler) {
           ref.read(connectionStatusProvider.notifier).setOnline();
           return handler.next(response);
         },
-        onError: (DioException e, handler) async { 
+        onError: (DioException e, handler) async {
           int? statusCode = e.response?.statusCode;
           final path = e.requestOptions.path;
           if (statusCode == 401) {
-            bool isAuthEndpoint = path.contains('/login') || path.contains('/register');
+            bool isAuthEndpoint =
+                path.contains('/login') || path.contains('/register');
             if (!isAuthEndpoint) {
-              debugPrint("🚨 401 Session Expired di ($path). Melakukan Force Logout...");
+              debugPrint(
+                "🚨 401 Session Expired di ($path). Melakukan Force Logout...",
+              );
               try {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
                 if (navigatorKey.currentState != null) {
-                  navigatorKey.currentState!.pushNamedAndRemoveUntil('/loginRegis', (route) => false);
+                  navigatorKey.currentState!.pushNamedAndRemoveUntil(
+                    '/loginRegis',
+                    (route) => false,
+                  );
                 }
                 return handler.reject(e);
               } catch (err) {
@@ -81,12 +89,12 @@ class DioClientService extends _$DioClientService {
               }
             }
           }
-          
-          if (e.type == DioExceptionType.connectionTimeout || 
-              e.type == DioExceptionType.receiveTimeout || 
+
+          if (e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
               e.type == DioExceptionType.connectionError) {
-             debugPrint("⚠️ Network Error ($path). Set Offline Mode.");
-             ref.read(connectionStatusProvider.notifier).setOffline();
+            debugPrint("⚠️ Network Error ($path). Set Offline Mode.");
+            ref.read(connectionStatusProvider.notifier).setOffline();
           }
 
           return handler.next(e);
@@ -104,7 +112,7 @@ class DioErrorHandler {
   static String parse(Object e) {
     if (e is DioException) {
       String errorMsg = "Terjadi kesalahan koneksi";
-      
+
       if (e.response != null && e.response?.data != null) {
         final data = e.response?.data;
         if (data is Map) {
@@ -114,30 +122,28 @@ class DioErrorHandler {
             errorMsg = data['error'];
           }
           if (data['errors'] != null && data['errors'] is Map) {
-             final errors = data['errors'] as Map;
-             if (errors.isNotEmpty) {
-               final firstKey = errors.keys.first;
-               final firstErrorList = errors[firstKey];
-               if (firstErrorList is List && firstErrorList.isNotEmpty) {
-                 errorMsg = firstErrorList.first;
-               }
-             }
+            final errors = data['errors'] as Map;
+            if (errors.isNotEmpty) {
+              final firstKey = errors.keys.first;
+              final firstErrorList = errors[firstKey];
+              if (firstErrorList is List && firstErrorList.isNotEmpty) {
+                errorMsg = firstErrorList.first;
+              }
+            }
           }
         }
-      } 
-      else if (e.error == "Offline Mode Active") {
+      } else if (e.error == "Offline Mode Active") {
         errorMsg = "Anda sedang offline. Tarik layar untuk menyegarkan.";
-      }
-      else if (e.type == DioExceptionType.connectionTimeout || 
-               e.type == DioExceptionType.receiveTimeout ||
-               e.type == DioExceptionType.sendTimeout) {
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
         errorMsg = "Koneksi timeout. Periksa internet Anda.";
       } else if (e.type == DioExceptionType.connectionError) {
         errorMsg = "Tidak dapat terhubung ke server.";
       }
 
       return errorMsg;
-    } 
+    }
     return e.toString().replaceAll('Exception: ', '');
   }
 }
