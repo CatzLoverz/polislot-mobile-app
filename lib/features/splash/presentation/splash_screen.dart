@@ -102,10 +102,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     if (!mounted) return;
 
-    if (!hasSeenPrivacy) {
-      Navigator.pushReplacementNamed(context, AppRoutes.privacyPolicy);
-    } else if (isLoggedIn) {
+    if (isLoggedIn) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
+    } else if (!hasSeenPrivacy) {
+      Navigator.pushReplacementNamed(context, AppRoutes.privacyPolicy);
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.loginRegis);
     }

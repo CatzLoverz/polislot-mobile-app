@@ -244,6 +244,7 @@ class AuthRepository {
       await prefs.setString('access_token', token);
       await prefs.setString('user_data', jsonEncode(userJson));
       await prefs.setBool('isLoggedIn', true);
+      await prefs.setBool('has_seen_privacy_policy', true);
       return User.fromJson(userJson);
     }
     throw Exception("Respon server tidak valid.");
