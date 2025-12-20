@@ -14,8 +14,8 @@ class RewardScreen extends ConsumerStatefulWidget {
   ConsumerState<RewardScreen> createState() => _RewardScreenState();
 }
 
-class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  bool isRewardTab = true;
+class _RewardScreenState extends ConsumerState<RewardScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animController;
   final ScrollController _scrollController = ScrollController();
 
@@ -23,7 +23,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -40,7 +40,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    final isRewardTab = ref.read(rewardTabStateProvider);
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       if (!isRewardTab) {
         ref.read(historyControllerProvider.notifier).loadMore();
       }
@@ -66,20 +68,31 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
   Widget _fadeSlide(Widget child, int index) {
     final start = (index * 0.1).clamp(0.0, 1.0);
     final end = (start + 0.5).clamp(0.0, 1.0);
-    
-    final slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeOut)),
+
+    final slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: Interval(start, end, curve: Curves.easeOut),
+          ),
+        );
+    final fade = CurvedAnimation(
+      parent: _animController,
+      curve: Interval(start, end, curve: Curves.easeIn),
     );
-    final fade = CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeIn));
 
     return SlideTransition(
       position: slide,
-      child: FadeTransition(opacity: fade, child: RepaintBoundary(child: child)),
+      child: FadeTransition(
+        opacity: fade,
+        child: RepaintBoundary(child: child),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isRewardTab = ref.watch(rewardTabStateProvider);
     final rewardDataAsync = ref.watch(rewardControllerProvider);
     final historyDataAsync = ref.watch(historyControllerProvider);
     final isOffline = ref.watch(connectionStatusProvider);
@@ -112,13 +125,15 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
           },
           child: SingleChildScrollView(
             controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Column(
               children: [
                 _buildHeaderCard(currentPoints),
                 const SizedBox(height: 18),
-                _buildTabBar(),
+                _buildTabBar(isRewardTab),
                 const SizedBox(height: 18),
 
                 // ✅ ANIMASI: AnimatedSwitcher agar seragam dengan Mission Screen
@@ -127,28 +142,29 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
                   child: isOffline
                       ? _buildOfflinePlaceholder()
                       : isRewardTab
-                          // --- TAB REWARD ---
-                          ? rewardDataAsync.when(
-                              skipLoadingOnReload: true,
-                              skipLoadingOnRefresh: true,
-                              data: (data) => _buildRewardList(data.rewards, currentPoints),
-                              loading: () => const Padding(
-                                padding: EdgeInsets.only(top: 50.0),
-                                child: Center(child: CircularProgressIndicator()),
-                              ),
-                              error: (err, stack) => _buildOfflinePlaceholder(),
-                            )
-                          // --- TAB RIWAYAT KOIN ---
-                          : historyDataAsync.when(
-                              skipLoadingOnReload: true,
-                              skipLoadingOnRefresh: true,
-                              data: (history) => _buildHistoryList(history),
-                              loading: () => const Padding(
-                                padding: EdgeInsets.only(top: 50.0),
-                                child: Center(child: CircularProgressIndicator()),
-                              ),
-                              error: (err, stack) => _buildOfflinePlaceholder(),
-                            ),
+                      // --- TAB REWARD ---
+                      ? rewardDataAsync.when(
+                          skipLoadingOnReload: true,
+                          skipLoadingOnRefresh: true,
+                          data: (data) =>
+                              _buildRewardList(data.rewards, currentPoints),
+                          loading: () => const Padding(
+                            padding: EdgeInsets.only(top: 50.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (err, stack) => _buildOfflinePlaceholder(),
+                        )
+                      // --- TAB RIWAYAT KOIN ---
+                      : historyDataAsync.when(
+                          skipLoadingOnReload: true,
+                          skipLoadingOnRefresh: true,
+                          data: (history) => _buildHistoryList(history),
+                          loading: () => const Padding(
+                            padding: EdgeInsets.only(top: 50.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (err, stack) => _buildOfflinePlaceholder(),
+                        ),
                 ),
               ],
             ),
@@ -168,7 +184,13 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 8, offset: Offset(0, 4))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -178,13 +200,20 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
               color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.monetization_on_rounded, color: Colors.white, size: 28),
+            child: const Icon(
+              Icons.monetization_on_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Total Koin Kamu", style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const Text(
+                "Total Koin Kamu",
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
               const SizedBox(height: 4),
               Text(
                 "$points Koin",
@@ -204,16 +233,18 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white24,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(bool isRewardTab) {
     return Container(
       height: 50,
       decoration: BoxDecoration(
@@ -230,7 +261,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       child: Stack(
         children: [
           AnimatedAlign(
-            alignment: isRewardTab ? Alignment.centerLeft : Alignment.centerRight,
+            alignment: isRewardTab
+                ? Alignment.centerLeft
+                : Alignment.centerRight,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             child: FractionallySizedBox(
@@ -254,8 +287,16 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
           ),
           Row(
             children: [
-              _tabButton("Toko Hadiah", isRewardTab, () => setState(() => isRewardTab = true)),
-              _tabButton("Riwayat Koin", !isRewardTab, () => setState(() => isRewardTab = false)),
+              _tabButton(
+                "Toko Hadiah",
+                isRewardTab,
+                () => ref.read(rewardTabStateProvider.notifier).setRewardTab(),
+              ),
+              _tabButton(
+                "Riwayat Koin",
+                !isRewardTab,
+                () => ref.read(rewardTabStateProvider.notifier).setHistoryTab(),
+              ),
             ],
           ),
         ],
@@ -287,7 +328,12 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     if (rewards.isEmpty) {
       return const Padding(
         padding: EdgeInsets.only(top: 50.0),
-        child: Center(child: Text("Belum ada hadiah tersedia.", style: TextStyle(color: Colors.grey))),
+        child: Center(
+          child: Text(
+            "Belum ada hadiah tersedia.",
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
       );
     }
 
@@ -295,7 +341,10 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       key: const ValueKey('RewardsList'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Daftar Reward", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const Text(
+          "Daftar Reward",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         const SizedBox(height: 14),
         for (int i = 0; i < rewards.length; i++)
           _fadeSlide(_rewardCard(rewards[i], currentPoints), i),
@@ -308,7 +357,12 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     if (history.isEmpty) {
       return const Padding(
         padding: EdgeInsets.only(top: 50.0),
-        child: Center(child: Text("Belum ada riwayat koin.", style: TextStyle(color: Colors.grey))),
+        child: Center(
+          child: Text(
+            "Belum ada riwayat koin.",
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
       );
     }
 
@@ -316,7 +370,10 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       key: const ValueKey('HistoryList'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Aktivitas Koin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const Text(
+          "Aktivitas Koin",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         const SizedBox(height: 14),
         for (int i = 0; i < history.length; i++)
           _fadeSlide(_historyCard(history[i]), i),
@@ -326,8 +383,12 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
 
   Widget _rewardCard(RewardItem item, int currentPoints) {
     final bool canExchange = currentPoints >= item.pointsRequired;
-    final IconData icon = item.type == 'Voucher' ? FontAwesomeIcons.ticket : FontAwesomeIcons.gift;
-    final Color color = item.type == 'Voucher' ? Colors.green : Colors.deepOrange;
+    final IconData icon = item.type == 'Voucher'
+        ? FontAwesomeIcons.ticket
+        : FontAwesomeIcons.gift;
+    final Color color = item.type == 'Voucher'
+        ? Colors.green
+        : Colors.deepOrange;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -338,9 +399,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8, 
-            offset: const Offset(0, 2)
-          )
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -361,13 +422,22 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
               children: [
                 Text(
                   item.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A253A)),
-                  maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Color(0xFF1A253A),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "${item.pointsRequired} Koin",
-                  style: const TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.w800, fontSize: 13),
+                  style: const TextStyle(
+                    color: Color(0xFF1565C0),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -379,7 +449,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               minimumSize: const Size(60, 36),
             ),
             child: const Text("Tukar", style: TextStyle(fontSize: 12)),
@@ -408,27 +480,27 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       case 'redeem':
         icon = FontAwesomeIcons.gift;
         color = Colors.purple;
-        
+
         if (item.points == null && item.isNegative) {
           titleText = "Penukaran Diterima";
-          descText = "Admin menerima penukaran hadiah ${item.title} Anda. Lihat bagian profile untuk riwayat kode penukaran.";
+          descText =
+              "Admin menerima penukaran hadiah ${item.title} Anda. Lihat bagian profile untuk riwayat kode penukaran.";
           hidePoints = true;
-        }
-        else if (item.points != null && item.isNegative) {
+        } else if (item.points != null && item.isNegative) {
           titleText = "Menukarkan Hadiah";
           descText = "Anda menukarkan hadiah berupa ${item.title}";
           hidePoints = false;
-        }
-        else {
+        } else {
           titleText = "Penukaran Ditolak";
-          descText = "Admin menolak penukaran hadiah ${item.title} Anda, Koin telah dikembalikan.";
-          hidePoints = false; 
+          descText =
+              "Admin menolak penukaran hadiah ${item.title} Anda, Koin telah dikembalikan.";
+          hidePoints = false;
         }
         break;
 
       case 'mission':
       default:
-        icon = FontAwesomeIcons.clipboardCheck; 
+        icon = FontAwesomeIcons.clipboardCheck;
         color = Colors.orange;
         titleText = "Menyelesaikan Misi";
         descText = "Anda telah menyelesaikan misi ${item.title}";
@@ -447,7 +519,11 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -465,7 +541,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
                 child: Center(child: Icon(icon, color: color, size: 24)),
               ),
               const SizedBox(width: 14),
-              
+
               // Tengah: Judul & Deskripsi
               Expanded(
                 child: Column(
@@ -473,13 +549,21 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
                   children: [
                     Text(
                       titleText,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A253A)),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF1A253A),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       descText,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.3),
-                      maxLines: 3, 
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        height: 1.3,
+                      ),
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -500,7 +584,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
               ],
             ],
           ),
-          
+
           const SizedBox(height: 12),
           const Divider(height: 1, thickness: 0.5),
           const SizedBox(height: 12),
@@ -513,7 +597,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
               style: TextStyle(
                 color: Colors.grey.shade500,
                 fontSize: 11,
-                fontStyle: FontStyle.italic
+                fontStyle: FontStyle.italic,
               ),
             ),
           ),
@@ -522,7 +606,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
     );
   }
 
-  // Offline Placeholder 
+  // Offline Placeholder
   Widget _buildOfflinePlaceholder() {
     return Container(
       width: double.infinity,
@@ -532,7 +616,11 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -540,11 +628,25 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
-            child: Icon(Icons.wifi_off_rounded, size: 40, color: Colors.red.shade400),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.wifi_off_rounded,
+              size: 40,
+              color: Colors.red.shade400,
+            ),
           ),
           const SizedBox(height: 16),
-          Text("Anda Sedang Offline", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey.shade800)),
+          Text(
+            "Anda Sedang Offline",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.grey.shade800,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
@@ -561,8 +663,16 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Cara Penukaran Hadiah", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1352C8))),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            "Cara Penukaran Hadiah",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1352C8),
+            ),
+          ),
           content: const Text(
             "Tukar hadiah di pusat informasi kampus dengan voucher kamu.\nPenukaran bisa dilakukan pukul 08.00 - 16.00.",
             textAlign: TextAlign.justify,
@@ -571,7 +681,13 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Tutup", style: TextStyle(color: Color(0xFF1352C8), fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Tutup",
+                style: TextStyle(
+                  color: Color(0xFF1352C8),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -584,7 +700,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -595,20 +713,29 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
                     child: Image.network(
                       item.fullImageUrl,
                       height: 150,
-                      width: double.maxFinite, 
+                      width: double.maxFinite,
                       fit: BoxFit.cover,
                       errorBuilder: (c, o, s) => Container(
                         height: 120,
                         width: double.maxFinite,
                         color: Colors.grey[200],
-                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
                 const SizedBox(height: 16),
-                const Text("Konfirmasi Penukaran", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const Text(
+                  "Konfirmasi Penukaran",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
                 const SizedBox(height: 8),
-                Text("Tukar ${item.pointsRequired} poin untuk ${item.name}?", textAlign: TextAlign.center),
+                Text(
+                  "Tukar ${item.pointsRequired} poin untuk ${item.name}?",
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
@@ -622,8 +749,16 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
                 Navigator.pop(context);
                 _processRedeem(item);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1352C8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-              child: const Text("Ya, Tukar", style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1352C8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                "Ya, Tukar",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -632,18 +767,29 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
   }
 
   Future<void> _processRedeem(RewardItem item) async {
-    showDialog(context: context, barrierDismissible: false, builder: (c) => const Center(child: CircularProgressIndicator()));
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
 
     try {
-      final code = await ref.read(rewardControllerProvider.notifier).redeem(item.id);
+      final code = await ref
+          .read(rewardControllerProvider.notifier)
+          .redeem(item.id);
       if (mounted) {
-        Navigator.pop(context); 
+        Navigator.pop(context);
         _showSuccessDialog(code!, item.name);
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red));
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -653,29 +799,57 @@ class _RewardScreenState extends ConsumerState<RewardScreen> with SingleTickerPr
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.check_circle, color: Colors.green, size: 60),
               const SizedBox(height: 16),
-              const Text("Penukaran Berhasil!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
-              Text("Selamat! Anda mendapatkan $rewardName", textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
-                child: Text(code, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: 1.5)),
+              const Text(
+                "Penukaran Berhasil!",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               const SizedBox(height: 8),
-              const Text("Tunjukkan kode ini di pusat informasi.", style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                "Selamat! Anda mendapatkan $rewardName",
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Text(
+                  code,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Tunjukkan kode ini di pusat informasi.",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Tutup", style: TextStyle(color: Color(0xFF1352C8))),
+              child: const Text(
+                "Tutup",
+                style: TextStyle(color: Color(0xFF1352C8)),
+              ),
             ),
           ],
         );
