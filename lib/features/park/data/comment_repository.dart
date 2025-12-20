@@ -25,7 +25,9 @@ class CommentRepository {
         queryParameters: {'park_subarea_id': subareaId, 'page': page},
       );
 
-      if (response.statusCode == 200 && response.data['status'] == 'success') {
+      if ((response.statusCode ?? 0) >= 200 &&
+          (response.statusCode ?? 0) < 300 &&
+          response.data['status'] == 'success') {
         final List list = response.data['data']['list'];
         return list.map((e) => Comment.fromJson(e)).toList();
       }

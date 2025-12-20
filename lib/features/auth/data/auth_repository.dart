@@ -26,15 +26,18 @@ class AuthRepository {
     try {
       // Tembak endpoint ringan dengan timeout CEPAT (3 detik)
       await _dio.get(
-        '/user', 
-        options: Options(sendTimeout: const Duration(seconds: 5), receiveTimeout: const Duration(seconds: 5)),
+        '/user',
+        options: Options(
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
       );
       return true; // Sukses
     } catch (e) {
       // Jika 401, berarti server NYAMBUNG (cuma token salah).
       // Kembalikan TRUE agar sistem tahu kita "Online", sehingga proses logout bisa jalan.
       if (e is DioException && e.response?.statusCode == 401) return true;
-      
+
       // Timeout / SocketException -> Benar-benar OFFLINE
       return false;
     }
@@ -58,7 +61,7 @@ class AuthRepository {
   Future<User> fetchUserProfile() async {
     try {
       final response = await _dio.get('/user');
-      
+
       final dynamic data = response.data;
       Map<String, dynamic> userJson;
 
@@ -80,7 +83,7 @@ class AuthRepository {
       // Simpan pembaruan ke lokal
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_data', jsonEncode(userJson));
-      
+
       return User.fromJson(userJson);
     } catch (e) {
       // Rethrow agar Controller bisa menangkap Error 401
@@ -89,73 +92,136 @@ class AuthRepository {
   }
 
   // --- METHOD AUTH LAINNYA (PASTIKAN TETAP ADA) ---
-  
+
   Future<User> login({required String email, required String password}) async {
     try {
-      final response = await _dio.post('/login-attempt', data: {'email': email, 'password': password});
+      final response = await _dio.post(
+        '/login-attempt',
+        data: {'email': email, 'password': password},
+      );
       return _handleAuthResponse(response.data);
-    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
   }
 
-  Future<void> register({required String name, required String email, required String password, required String confirmPassword}) async {
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
     try {
-      final response = await _dio.post('/register-attempt', data: {'name': name, 'email': email, 'password': password, 'password_confirmation': confirmPassword});
-      if (response.statusCode != 201 && response.data['status'] != 'success') {
-        throw Exception(response.data['message'] ?? "Registrasi gagal");
-      }
-    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
+      await _dio.post(
+        '/register-attempt',
+        data: {
+          'name': name,
+          'email': email,
+          'password': password,
+          'password_confirmation': confirmPassword,
+        },
+      );
+      // Dio validates 200-299 automatically
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
   }
 
-  Future<User> registerOtpVerify({required String email, required String otp}) async {
+  Future<User> registerOtpVerify({
+    required String email,
+    required String otp,
+  }) async {
     try {
-      final response = await _dio.post('/register-otp-verify', data: {'email': email, 'otp': otp});
+      final response = await _dio.post(
+        '/register-otp-verify',
+        data: {'email': email, 'otp': otp},
+      );
       return _handleAuthResponse(response.data);
-    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
   }
 
   Future<void> registerOtpResend({required String email}) async {
-    try { await _dio.post('/register-otp-resend', data: {'email': email}); } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
+    try {
+      await _dio.post('/register-otp-resend', data: {'email': email});
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
   }
 
   // Kirim OTP Forgot Password
   Future<void> forgotPasswordVerify({required String email}) async {
     try {
-      final response = await _dio.post('/forgot-attempt', data: {'email': email});
-      if (response.statusCode != 200 && response.data['status'] != 'success') {
-         throw Exception(response.data['message'] ?? "Gagal mengirim OTP");
-      }
-    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
+      await _dio.post('/forgot-attempt', data: {'email': email});
+      // Dio validates 200-299 automatically
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
   }
 
   // Verifikasi OTP Forgot Password
-  Future<void> forgotPasswordOtpVerify({required String email, required String otp}) async {
+  Future<void> forgotPasswordOtpVerify({
+    required String email,
+    required String otp,
+  }) async {
     try {
-      final response = await _dio.post('/forgot-otp-verify', data: {'email': email, 'otp': otp});
-      if (response.statusCode != 200) throw Exception(response.data['message']);
-    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
+      await _dio.post('/forgot-otp-verify', data: {'email': email, 'otp': otp});
+      // Dio validates 200-299 automatically
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
   }
 
   Future<void> forgotPasswordOtpResend({required String email}) async {
-    try { await _dio.post('/forgot-otp-resend', data: {'email': email}); } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
-  }
-  
-  Future<void> resetPassword({required String email, required String password, required String confirmPassword}) async {
     try {
-      final response = await _dio.post('/reset-pass-attempt', data: {'email': email, 'password': password, 'password_confirmation': confirmPassword});
-      if (response.statusCode != 200) throw Exception(response.data['message']);
-    } catch (e) { throw Exception(DioErrorHandler.parse(e)); }
+      await _dio.post('/forgot-otp-resend', data: {'email': email});
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    try {
+      await _dio.post(
+        '/reset-pass-attempt',
+        data: {
+          'email': email,
+          'password': password,
+          'password_confirmation': confirmPassword,
+        },
+      );
+      // Dio validates 200-299 automatically
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
   }
 
   // Method updateProfile (gunakan implementasi ProfileRepository, disini placeholder)
-  Future<User> updateProfile({required String name, File? avatar, String? currentPassword, String? newPassword, String? confirmPassword}) async {
-      throw UnimplementedError(); 
+  Future<User> updateProfile({
+    required String name,
+    File? avatar,
+    String? currentPassword,
+    String? newPassword,
+    String? confirmPassword,
+  }) async {
+    throw UnimplementedError();
   }
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
     if (token != null) {
-      try { await _dio.post('/logout', options: Options(headers: {'Authorization': 'Bearer $token'})); } catch (_) {}
+      try {
+        await _dio.post(
+          '/logout',
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+      } catch (_) {}
     }
     await prefs.clear();
   }
@@ -169,7 +235,9 @@ class AuthRepository {
         payload = data;
       }
     }
-    if (payload != null && payload.containsKey('access_token') && payload.containsKey('user')) {
+    if (payload != null &&
+        payload.containsKey('access_token') &&
+        payload.containsKey('user')) {
       final token = payload['access_token'];
       final userJson = payload['user'];
       final prefs = await SharedPreferences.getInstance();
