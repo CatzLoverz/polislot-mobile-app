@@ -48,11 +48,13 @@ class EncryptionInterceptor extends Interceptor {
           final token = authHeader.substring(7); // Ambil token asli
           final encryptedToken = aesEncrypter.encrypt(token, iv: aesIv).base64;
 
-          options.headers.remove(authKey); // Hapus token asli
           options.headers['X-Auth-Token'] =
               encryptedToken; // Kirim token terenkripsi
-
         }
+
+        // 🚨 ALWAYS REMOVE RAW HEADER
+        // Mencegah leakage dan error 403 di server (karena strict check)
+        options.headers.remove(authKey);
       }
 
       // 5. BODY ENCRYPTION (Hanya jika ada data)
