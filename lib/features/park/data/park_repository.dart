@@ -44,16 +44,23 @@ class ParkRepository {
   }
 
   // Kirim Validasi
-  Future<String> sendValidation(int subareaId, String statusContent) async {
+  Future<String> sendValidation(
+    int subareaId,
+    String statusContent, {
+    double? lat,
+    double? lng,
+  }) async {
     try {
-      final response = await _dio.post(
-        '/validation',
-        data: {
-          'park_subarea_id': subareaId,
-          'user_validation_content':
-              statusContent, // 'banyak', 'terbatas', 'penuh'
-        },
-      );
+      final body = {
+        'park_subarea_id': subareaId,
+        'user_validation_content': statusContent,
+      };
+      if (lat != null && lng != null) {
+        body['latitude'] = lat;
+        body['longitude'] = lng;
+      }
+
+      final response = await _dio.post('/validation', data: body);
       return response.data['message'] ?? "Validasi berhasil.";
     } catch (e) {
       if (e is DioException && e.response?.data != null) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import 'park_controller.dart';
 import '../data/park_model.dart';
@@ -21,9 +22,79 @@ class ParkScreen extends ConsumerStatefulWidget {
 
 class _ParkScreenState extends ConsumerState<ParkScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
+  GoogleMapController? _controller;
+  bool _isMyLocationEnabled = false;
+  Future<Set<Marker>>? _markersFuture;
+  List<ParkSubareaVisual>? _lastSubareas;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationPermission();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      if (mounted) setState(() => _isMyLocationEnabled = true);
+    }
+  }
 
   // State untuk Tipe Map (Normal/Satelit)
   MapType _currentMapType = MapType.normal;
+
+  // Helper: Get Location
+  Future<Position?> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // 1. Cek Service
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        AppSnackBars.show(
+          context,
+          "Layanan lokasi tidak aktif.",
+          isError: true,
+        );
+      }
+      return null;
+    }
+
+    // 2. Cek Permission
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          AppSnackBars.show(context, "Izin lokasi ditolak.", isError: true);
+        }
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        AppSnackBars.show(
+          context,
+          "Izin lokasi ditolak permanen. Cek pengaturan.",
+          isError: true,
+        );
+      }
+      return null;
+    }
+
+    // 3. Get Position
+    // Use LocationSettings instead of deprecated timeLimit
+    return await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(timeLimit: Duration(seconds: 5)),
+    );
+  }
 
   Future<void> _refreshMapData() async {
     final newData = await ref.refresh(
@@ -98,8 +169,10 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Tidak dapat membuka aplikasi peta.")),
+        AppSnackBars.show(
+          context,
+          "Tidak dapat membuka aplikasi peta.",
+          isError: true,
         );
       }
     }
@@ -217,123 +290,200 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
         ],
       ),
       body: parkDataAsync.when(
-        data: (data) => Column(
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  // FutureBuilder untuk Marker karena butuh waktu generate gambar
-                  FutureBuilder<Set<Marker>>(
-                    future: _generateMarkers(data.subareas),
-                    builder: (context, snapshot) {
-                      return GoogleMap(
-                        mapType: _currentMapType,
-                        initialCameraPosition: _kPolibatam,
-                        polygons: _buildPolygons(data.subareas),
-                        // Gunakan marker dari FutureBuilder
-                        markers: snapshot.hasData ? snapshot.data! : {},
-                        zoomControlsEnabled: false,
-                        mapToolbarEnabled: false,
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: false,
-                        padding: const EdgeInsets.only(
-                          bottom: 20,
-                        ), // Tambahan padding agar logo Google naik sedikit
-                        onMapCreated: (c) {
-                          _mapController.complete(c);
-                          if (data.subareas.isNotEmpty &&
-                              data.subareas.first.polygonPoints.isNotEmpty) {
-                            c.animateCamera(
-                              CameraUpdate.newLatLngZoom(
-                                data.subareas.first.polygonPoints.first,
-                                18,
-                              ),
-                            );
-                          }
-                        },
-                        onTap: (_) => ref
-                            .read(selectedSubareaProvider.notifier)
-                            .set(null),
-                      );
-                    },
-                  ),
+        data: (data) {
+          // Cache Future to prevent infinite rebuild loop
+          if (_markersFuture == null || _lastSubareas != data.subareas) {
+            _lastSubareas = data.subareas;
+            _markersFuture = _generateMarkers(data.subareas);
+          }
 
-                  // A. Switch Tampilan (Satelit/Biasa)
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: FloatingActionButton.small(
-                      heroTag: "mapTypeBtn",
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        _currentMapType == MapType.normal
-                            ? Icons.satellite_alt
-                            : Icons.map,
-                        color: const Color(0xFF1565C0),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _currentMapType = _currentMapType == MapType.normal
-                              ? MapType.hybrid
-                              : MapType.normal;
-                        });
+          return Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    // REVERTED: Using FutureBuilder as requested by user
+                    FutureBuilder<Set<Marker>>(
+                      future: _markersFuture,
+                      builder: (context, snapshot) {
+                        return GoogleMap(
+                          mapType: _currentMapType,
+                          initialCameraPosition: _kPolibatam,
+                          polygons: _buildPolygons(data.subareas),
+                          markers: snapshot.data ?? {},
+                          zoomControlsEnabled: false,
+                          mapToolbarEnabled: false,
+                          myLocationEnabled: _isMyLocationEnabled,
+                          myLocationButtonEnabled: false,
+                          padding: const EdgeInsets.only(bottom: 20),
+                          onMapCreated: (c) {
+                            _controller = c;
+                            // CRITICAL FIX: Prevent crash on rebuild
+                            if (!_mapController.isCompleted) {
+                              _mapController.complete(c);
+                            }
+
+                            if (data.subareas.isNotEmpty &&
+                                data.subareas.first.polygonPoints.isNotEmpty) {
+                              c.animateCamera(
+                                CameraUpdate.newLatLngZoom(
+                                  data.subareas.first.polygonPoints.first,
+                                  18,
+                                ),
+                              );
+                            }
+                          },
+
+                          onTap: (_) => ref
+                              .read(selectedSubareaProvider.notifier)
+                              .set(null),
+                        );
                       },
                     ),
-                  ),
 
-                  // B. Code Area Label
-                  Positioned(
-                    bottom:
-                        16, // Tidak perlu MediaQuery padding karena body di-resize Scaffold
-                    left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                    // A. Switch Tampilan (Satelit/Biasa)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: FloatingActionButton.small(
+                        heroTag: "mapTypeBtn",
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          _currentMapType == MapType.normal
+                              ? Icons.satellite_alt
+                              : Icons.map,
+                          color: const Color(0xFF1565C0),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _currentMapType = _currentMapType == MapType.normal
+                                ? MapType.hybrid
+                                : MapType.normal;
+                          });
+                        },
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
+                    ),
+
+                    // B. Code Area Label
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1565C0),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          "AREA ${data.areaCode}",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        "AREA ${data.areaCode}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
                         ),
                       ),
                     ),
-                  ),
 
-                  // C. Info Button (Membuka Legend)
-                  Positioned(
-                    bottom: 16, // Tidak perlu MediaQuery padding
-                    right: 16,
-                    child: FloatingActionButton.small(
-                      heroTag: "infoBtn",
-                      backgroundColor: Colors.white,
-                      onPressed: () => _showLegendDialog(context),
-                      child: const Icon(
-                        Icons.info_outline_rounded,
-                        color: Color(0xFF1565C0),
+                    // C. Action Buttons (Recenter & Info)
+                    Positioned(
+                      bottom: 16,
+                      right: 16,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Button: Center to User Location
+                          FloatingActionButton.small(
+                            heroTag: "userLocBtn",
+                            backgroundColor: Colors.white,
+                            onPressed: () async {
+                              final controller = _controller;
+                              if (controller == null) return;
+
+                              final position = await _determinePosition();
+                              if (position != null) {
+                                controller.animateCamera(
+                                  CameraUpdate.newLatLngZoom(
+                                    LatLng(
+                                      position.latitude,
+                                      position.longitude,
+                                    ),
+                                    17.5,
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Icon(
+                              Icons.my_location,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Button: Center to Area
+                          FloatingActionButton.small(
+                            heroTag: "centerAreaBtn",
+                            backgroundColor: Colors.white,
+                            onPressed: () async {
+                              final controller = _controller;
+                              if (controller == null) return;
+
+                              if (data.subareas.isNotEmpty &&
+                                  data
+                                      .subareas
+                                      .first
+                                      .polygonPoints
+                                      .isNotEmpty) {
+                                controller.animateCamera(
+                                  CameraUpdate.newLatLngZoom(
+                                    data.subareas.first.polygonPoints.first,
+                                    18,
+                                  ),
+                                );
+                              } else {
+                                controller.animateCamera(
+                                  CameraUpdate.newCameraPosition(_kPolibatam),
+                                );
+                              }
+                            },
+                            child: const Icon(
+                              Icons.center_focus_strong,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Info Button (Existing)
+                          FloatingActionButton.small(
+                            heroTag: "infoBtn",
+                            backgroundColor: Colors.white,
+                            onPressed: () => _showLegendDialog(context),
+                            child: const Icon(
+                              Icons.info_outline_rounded,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // Detail Section (Card di bawah) dengan SafeArea
-            _buildDetailSection(selectedSubarea, data.cooldown),
-          ],
-        ),
+              // Detail Section (Card di bawah) dengan SafeArea
+              _buildDetailSection(selectedSubarea, data.cooldown),
+            ],
+          );
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text("Error: $err")),
       ),
@@ -890,9 +1040,36 @@ class _ValidationSheetState extends ConsumerState<_ValidationSheet> {
   }
 
   Future<void> _submit() async {
+    // Try get location (fails silently if no permission/service)
+    double? lat;
+    double? lng;
+    try {
+      // Cek permission sekilas
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        Position position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            timeLimit: Duration(seconds: 5),
+          ),
+        );
+        lat = position.latitude;
+        lng = position.longitude;
+      }
+    } catch (_) {}
+
     final (success, message) = await ref
         .read(validationActionControllerProvider.notifier)
-        .submitValidation(widget.subareaId, _selectedStatus!);
+        .submitValidation(
+          widget.subareaId,
+          _selectedStatus!,
+          lat: lat,
+          lng: lng,
+        );
 
     if (mounted) {
       Navigator.pop(context);

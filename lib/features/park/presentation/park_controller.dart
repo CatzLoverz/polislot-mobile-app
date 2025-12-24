@@ -37,11 +37,21 @@ class ValidationActionController extends _$ValidationActionController {
   @override
   FutureOr<void> build() {}
 
-  Future<(bool, String)> submitValidation(int subareaId, String status) async {
+  Future<(bool, String)> submitValidation(
+    int subareaId,
+    String status, {
+    double? lat,
+    double? lng,
+  }) async {
     state = const AsyncLoading();
     try {
       final repo = ref.read(parkRepositoryInstanceProvider);
-      final message = await repo.sendValidation(subareaId, status);
+      final message = await repo.sendValidation(
+        subareaId,
+        status,
+        lat: lat,
+        lng: lng,
+      );
       state = const AsyncData(null);
       return (true, message);
     } catch (e, st) {
