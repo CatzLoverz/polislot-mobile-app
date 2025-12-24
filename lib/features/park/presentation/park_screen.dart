@@ -96,24 +96,6 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     );
   }
 
-  Future<void> _refreshMapData() async {
-    final newData = await ref.refresh(
-      parkVisualizationControllerProvider(widget.areaId).future,
-    );
-
-    // Update selected subarea jika sedang ada yang dipilih
-    final currentSelected = ref.read(selectedSubareaProvider);
-    if (currentSelected != null) {
-      try {
-        final updatedSubarea = newData.subareas.firstWhere(
-          (element) => element.id == currentSelected.id,
-          orElse: () => currentSelected,
-        );
-        ref.read(selectedSubareaProvider.notifier).set(updatedSubarea);
-      } catch (_) {}
-    }
-  }
-
   // Warna Status
   final Color _colorFull = Colors.red.withValues(alpha: 0.6);
   final Color _colorLimited = Colors.amber.withValues(alpha: 0.6);
@@ -150,6 +132,21 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
         return 0.3;
       default:
         return 0.0;
+    }
+  }
+
+  // Unified Handler: Select Subarea + Refresh + Center Camera
+  void _onSubareaTap(ParkSubareaVisual sub) {
+    // 1. Set State
+    ref.read(selectedSubareaProvider.notifier).set(sub);
+
+    // 2. Trigger Silent Refresh
+    ref.invalidate(parkVisualizationControllerProvider(widget.areaId));
+
+    // 3. Animate Camera to Subarea Center
+    if (_controller != null) {
+      // Selalu gunakan sub.center agar fokus tepat di tengah area/icon
+      _controller!.animateCamera(CameraUpdate.newLatLngZoom(sub.center, 19.0));
     }
   }
 
@@ -245,7 +242,8 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
           icon: icon,
           anchor: const Offset(0.5, 0.5), // Center anchor
           // Saat label diklik, lakukan hal yang sama seperti polygon diklik
-          onTap: () => ref.read(selectedSubareaProvider.notifier).set(sub),
+          // Saat label diklik, lakukan hal yang sama seperti polygon diklik
+          onTap: () => _onSubareaTap(sub),
         ),
       );
     }
@@ -254,10 +252,56 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch provider
     final parkDataAsync = ref.watch(
       parkVisualizationControllerProvider(widget.areaId),
     );
     final selectedSubarea = ref.watch(selectedSubareaProvider);
+
+    // Listener: Sync Selected Subarea with Fresh Data
+    ref.listen<
+      AsyncValue<ParkVisualData>
+    >(parkVisualizationControllerProvider(widget.areaId), (_, next) {
+      next.whenData((newData) {
+        final current = ref.read(selectedSubareaProvider);
+        if (current != null) {
+          try {
+            // Cari versi terbaru dari subarea yang sedang dipilih
+            final updated = newData.subareas.firstWhere(
+              (s) => s.id == current.id,
+            );
+            // Update state agar UI detail card berubah
+            ref.read(selectedSubareaProvider.notifier).set(updated);
+          } catch (_) {
+            // Jika subarea hilang dari data baru (jarang terjadi), biarkan atau deselect via catch
+          }
+        }
+      });
+    });
+
+    // Logic: Initial Loading (No Data yet)
+    if (parkDataAsync.isLoading && !parkDataAsync.hasValue) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // Logic: Error (No Data)
+    if (parkDataAsync.hasError && !parkDataAsync.hasValue) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("Error")),
+        body: Center(child: Text("Gagal memuat data: ${parkDataAsync.error}")),
+      );
+    }
+
+    // Logic: Has Data (Maybe Loading/Refreshing silently)
+    // If we have data, we render the screen.
+    final data = parkDataAsync.value!;
+    final isRefreshing = parkDataAsync.isLoading; // True if refreshing
+
+    // Cache Future for markers (existing logic)
+    if (_markersFuture == null || _lastSubareas != data.subareas) {
+      _lastSubareas = data.subareas;
+      _markersFuture = _generateMarkers(data.subareas);
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -284,208 +328,240 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: _refreshMapData,
+            onPressed: () {
+              // Manual Refresh triggers the spinner
+              ref.invalidate(
+                parkVisualizationControllerProvider(widget.areaId),
+              );
+            },
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
           ),
         ],
       ),
-      body: parkDataAsync.when(
-        data: (data) {
-          // Cache Future to prevent infinite rebuild loop
-          if (_markersFuture == null || _lastSubareas != data.subareas) {
-            _lastSubareas = data.subareas;
-            _markersFuture = _generateMarkers(data.subareas);
-          }
+      body: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                // 1. Google Map
+                FutureBuilder<Set<Marker>>(
+                  future: _markersFuture,
+                  builder: (context, snapshot) {
+                    return GoogleMap(
+                      mapType: _currentMapType,
+                      initialCameraPosition: _kPolibatam,
+                      polygons: _buildPolygons(data.subareas),
+                      markers: snapshot.data ?? {},
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      myLocationEnabled: _isMyLocationEnabled,
+                      myLocationButtonEnabled: false,
+                      padding: const EdgeInsets.only(bottom: 20),
+                      onMapCreated: (c) {
+                        _controller = c;
+                        if (!_mapController.isCompleted) {
+                          _mapController.complete(c);
+                        }
 
-          return Column(
-            children: [
-              Expanded(
-                child: Stack(
-                  children: [
-                    // REVERTED: Using FutureBuilder as requested by user
-                    FutureBuilder<Set<Marker>>(
-                      future: _markersFuture,
-                      builder: (context, snapshot) {
-                        return GoogleMap(
-                          mapType: _currentMapType,
-                          initialCameraPosition: _kPolibatam,
-                          polygons: _buildPolygons(data.subareas),
-                          markers: snapshot.data ?? {},
-                          zoomControlsEnabled: false,
-                          mapToolbarEnabled: false,
-                          myLocationEnabled: _isMyLocationEnabled,
-                          myLocationButtonEnabled: false,
-                          padding: const EdgeInsets.only(bottom: 20),
-                          onMapCreated: (c) {
-                            _controller = c;
-                            // CRITICAL FIX: Prevent crash on rebuild
-                            if (!_mapController.isCompleted) {
-                              _mapController.complete(c);
-                            }
-
-                            if (data.subareas.isNotEmpty &&
-                                data.subareas.first.polygonPoints.isNotEmpty) {
-                              c.animateCamera(
-                                CameraUpdate.newLatLngZoom(
-                                  data.subareas.first.polygonPoints.first,
-                                  18,
-                                ),
-                              );
-                            }
-                          },
-
-                          onTap: (_) => ref
-                              .read(selectedSubareaProvider.notifier)
-                              .set(null),
-                        );
+                        if (data.subareas.isNotEmpty &&
+                            data.subareas.first.polygonPoints.isNotEmpty) {
+                          c.animateCamera(
+                            CameraUpdate.newLatLngZoom(
+                              data.subareas.first.polygonPoints.first,
+                              18,
+                            ),
+                          );
+                        }
                       },
-                    ),
+                      onTap: (_) =>
+                          ref.read(selectedSubareaProvider.notifier).set(null),
+                    );
+                  },
+                ),
 
-                    // A. Switch Tampilan (Satelit/Biasa)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: FloatingActionButton.small(
-                        heroTag: "mapTypeBtn",
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          _currentMapType == MapType.normal
-                              ? Icons.satellite_alt
-                              : Icons.map,
-                          color: const Color(0xFF1565C0),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _currentMapType = _currentMapType == MapType.normal
-                                ? MapType.hybrid
-                                : MapType.normal;
-                          });
-                        },
-                      ),
+                // 2. Map Type Button
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: FloatingActionButton.small(
+                    heroTag: "mapTypeBtn",
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      _currentMapType == MapType.normal
+                          ? Icons.satellite_alt
+                          : Icons.map,
+                      color: const Color(0xFF1565C0),
                     ),
+                    onPressed: () {
+                      setState(() {
+                        _currentMapType = _currentMapType == MapType.normal
+                            ? MapType.hybrid
+                            : MapType.normal;
+                      });
+                    },
+                  ),
+                ),
 
-                    // B. Code Area Label
-                    Positioned(
-                      bottom: 16,
-                      left: 16,
+                // 3. Loading Overlay (Spinner Only) - "Swipe Down" Style
+                if (isRefreshing)
+                  Positioned(
+                    top: 16,
+                    left: 0,
+                    right: 0,
+                    child: Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
+                          horizontal: 16,
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1565C0),
-                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: Text(
-                          "AREA ${data.areaCode}",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF1565C0),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "Memuat data...",
+                              style: TextStyle(
+                                color: Color(0xFF1565C0),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
+                  ),
 
-                    // C. Action Buttons (Recenter & Info)
-                    Positioned(
-                      bottom: 16,
-                      right: 16,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Button: Center to User Location
-                          FloatingActionButton.small(
-                            heroTag: "userLocBtn",
-                            backgroundColor: Colors.white,
-                            onPressed: () async {
-                              final controller = _controller;
-                              if (controller == null) return;
-
-                              final position = await _determinePosition();
-                              if (position != null) {
-                                controller.animateCamera(
-                                  CameraUpdate.newLatLngZoom(
-                                    LatLng(
-                                      position.latitude,
-                                      position.longitude,
-                                    ),
-                                    17.5,
-                                  ),
-                                );
-                              }
-                            },
-                            child: const Icon(
-                              Icons.my_location,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Button: Center to Area
-                          FloatingActionButton.small(
-                            heroTag: "centerAreaBtn",
-                            backgroundColor: Colors.white,
-                            onPressed: () async {
-                              final controller = _controller;
-                              if (controller == null) return;
-
-                              if (data.subareas.isNotEmpty &&
-                                  data
-                                      .subareas
-                                      .first
-                                      .polygonPoints
-                                      .isNotEmpty) {
-                                controller.animateCamera(
-                                  CameraUpdate.newLatLngZoom(
-                                    data.subareas.first.polygonPoints.first,
-                                    18,
-                                  ),
-                                );
-                              } else {
-                                controller.animateCamera(
-                                  CameraUpdate.newCameraPosition(_kPolibatam),
-                                );
-                              }
-                            },
-                            child: const Icon(
-                              Icons.center_focus_strong,
-                              color: Color(0xFF1565C0),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Info Button (Existing)
-                          FloatingActionButton.small(
-                            heroTag: "infoBtn",
-                            backgroundColor: Colors.white,
-                            onPressed: () => _showLegendDialog(context),
-                            child: const Icon(
-                              Icons.info_outline_rounded,
-                              color: Color(0xFF1565C0),
-                            ),
-                          ),
-                        ],
+                // 4. Area Label
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1565C0),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      "AREA ${data.areaCode}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
 
-              // Detail Section (Card di bawah) dengan SafeArea
-              _buildDetailSection(selectedSubarea, data.cooldown),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text("Error: $err")),
+                // 5. Action Buttons
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Button: Center to User Location
+                      FloatingActionButton.small(
+                        heroTag: "userLocBtn",
+                        backgroundColor: Colors.white,
+                        onPressed: () async {
+                          final controller = _controller;
+                          if (controller == null) return;
+
+                          final position = await _determinePosition();
+                          if (position != null) {
+                            controller.animateCamera(
+                              CameraUpdate.newLatLngZoom(
+                                LatLng(position.latitude, position.longitude),
+                                17.5,
+                              ),
+                            );
+                          }
+                        },
+                        child: const Icon(
+                          Icons.my_location,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Button: Center to Area
+                      FloatingActionButton.small(
+                        heroTag: "centerAreaBtn",
+                        backgroundColor: Colors.white,
+                        onPressed: () async {
+                          final controller = _controller;
+                          if (controller == null) return;
+
+                          if (data.subareas.isNotEmpty &&
+                              data.subareas.first.polygonPoints.isNotEmpty) {
+                            controller.animateCamera(
+                              CameraUpdate.newLatLngZoom(
+                                data.subareas.first.polygonPoints.first,
+                                18,
+                              ),
+                            );
+                          } else {
+                            controller.animateCamera(
+                              CameraUpdate.newCameraPosition(_kPolibatam),
+                            );
+                          }
+                        },
+                        child: const Icon(
+                          Icons.center_focus_strong,
+                          color: Color(0xFF1565C0),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Info Button
+                      FloatingActionButton.small(
+                        heroTag: "infoBtn",
+                        backgroundColor: Colors.white,
+                        onPressed: () => _showLegendDialog(context),
+                        child: const Icon(
+                          Icons.info_outline_rounded,
+                          color: Color(0xFF1565C0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Detail Section
+          _buildDetailSection(selectedSubarea, data.cooldown),
+        ],
       ),
     );
   }
@@ -514,7 +590,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
         strokeColor: _strokeColor,
         strokeWidth: 2,
         consumeTapEvents: true,
-        onTap: () => ref.read(selectedSubareaProvider.notifier).set(sub),
+        onTap: () => _onSubareaTap(sub),
       );
     }).toSet();
   }
@@ -716,7 +792,12 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                               ),
                             ),
                           ).then((_) {
-                            _refreshMapData();
+                            // Silent Refresh saat kembali dari komentar
+                            ref.invalidate(
+                              parkVisualizationControllerProvider(
+                                widget.areaId,
+                              ),
+                            );
                           });
                         },
                         child: Column(
@@ -1075,6 +1156,7 @@ class _ValidationSheetState extends ConsumerState<_ValidationSheet> {
       Navigator.pop(context);
       if (success) {
         AppSnackBars.show(context, message);
+        // Silent Refresh (memicu loading state di parent tanpa blank screen)
         ref.invalidate(parkVisualizationControllerProvider(widget.areaId));
       } else {
         AppSnackBars.show(context, message, isError: true);
