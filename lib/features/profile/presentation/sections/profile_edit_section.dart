@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/utils/validator_utils.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../presentation/profile_controller.dart';
 
@@ -59,12 +60,14 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
     final pass = _newPassController.text;
     final current = _currentPassController.text;
 
+    final rules = ValidatorUtils.getPasswordRuleStatus(pass);
+
     setState(() {
-      _hasMinLength = pass.length >= 8;
-      _hasUppercase = pass.contains(RegExp(r'[A-Z]'));
-      _hasLowercase = pass.contains(RegExp(r'[a-z]'));
-      _hasNumber = pass.contains(RegExp(r'[0-9]'));
-      _hasSymbol = pass.contains(RegExp(r'[^a-zA-Z0-9]'));
+      _hasMinLength = rules['minLength'] ?? false;
+      _hasUppercase = rules['hasUppercase'] ?? false;
+      _hasLowercase = rules['hasLowercase'] ?? false;
+      _hasNumber = rules['hasNumber'] ?? false;
+      _hasSymbol = rules['hasSymbol'] ?? false;
       _isNotSameAsCurrent = pass.isNotEmpty && pass != current;
     });
     _validateMatch();
@@ -107,10 +110,11 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
     }
 
     if (_newPassController.text.isNotEmpty) {
-      if (!_hasMinLength || !_hasUppercase || !_hasNumber || !_hasSymbol) {
+      // ✅ Gunakan Helper Sederhana untuk cek final
+      if (!ValidatorUtils.isValidPassword(_newPassController.text)) {
         AppSnackBars.show(
           context,
-          "Password baru belum memenuhi syarat keamanan",
+          ValidatorUtils.passwordRequirementMsg,
           isError: true,
         );
         return;

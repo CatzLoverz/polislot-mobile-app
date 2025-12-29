@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:polislot_mobile_catz/core/utils/snackbar_utils.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/utils/validator_utils.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/custom_textfield.dart';
 import '../../../core/widgets/custom_button.dart';
@@ -22,11 +23,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
 
-  // 1️⃣ CONTROLLER KHUSUS BACKGROUND (LOOPING)
+  // CONTROLLER KHUSUS BACKGROUND (LOOPING)
   late final AnimationController _backgroundCtrl;
   late final Animation<double> _breathingAnim;
 
-  // 2️⃣ CONTROLLER KHUSUS KONTEN (SEKALI JALAN / ONE-SHOT)
+  // CONTROLLER KHUSUS KONTEN (SEKALI JALAN / ONE-SHOT)
   late final AnimationController _entryCtrl;
   late final Animation<double> _fadeAnim;
   late final Animation<double> _scaleLogoAnim;
@@ -86,33 +87,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       return;
     }
 
-    // 1️⃣ Validasi Email (Regex)
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(_emailController.text.trim())) {
-      AppSnackBars.show(
-        context,
-        "Format email tidak valid",
-        isError: true,
-      );
+    // Validasi Email (Regex)
+    if (!ValidatorUtils.isValidEmail(_emailController.text)) {
+      AppSnackBars.show(context, "Format email tidak valid", isError: true);
       return;
     }
 
-    // 2️⃣ Validasi Password (Client Side - Comprehensive)
-    final pass = _passwordController.text;
-    final hasMinLength = pass.length >= 8;
-    final hasUppercase = pass.contains(RegExp(r'[A-Z]'));
-    final hasLowercase = pass.contains(RegExp(r'[a-z]'));
-    final hasNumber = pass.contains(RegExp(r'[0-9]'));
-    final hasSymbol = pass.contains(RegExp(r'[^a-zA-Z0-9]'));
-
-    if (!hasMinLength ||
-        !hasUppercase ||
-        !hasLowercase ||
-        !hasNumber ||
-        !hasSymbol) {
+    // Validasi Password (Client Side - Comprehensive)
+    if (!ValidatorUtils.isValidPassword(_passwordController.text)) {
       AppSnackBars.show(
         context,
-        "Password harus memiliki minimal 8 karakter, huruf besar, huruf kecil, angka, dan simbol.",
+        ValidatorUtils.passwordRequirementMsg,
         isError: true,
       );
       return;
@@ -136,7 +121,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           confirmPassword: _confirmController.text,
         );
 
-    // ✅ FIX ASYNC GAP: Cek mounted sebelum pakai context
+    // FIX ASYNC GAP: Cek mounted sebelum pakai context
     if (!mounted) return;
 
     if (success) {
@@ -207,7 +192,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         },
                       ),
 
-                      // 📍 ICON PIN LOGO (POP UP)
+                      // ICON PIN LOGO (POP UP)
                       // Menggunakan ScaleTransition dari _entryCtrl (Bukan _backgroundCtrl)
                       ScaleTransition(
                         scale: _scaleLogoAnim,
@@ -243,7 +228,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         // Input Nama
                         CustomTextField(
                           hint: 'Nama Lengkap',
-                          prefixIcon: Icons.person, // ✅ Pakai prefixIcon
+                          prefixIcon: Icons.person, 
                           controller: _nameController,
                           textInputAction: TextInputAction.next,
                         ),
@@ -252,7 +237,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         // Input Email
                         CustomTextField(
                           hint: 'Email',
-                          prefixIcon: Icons.email, // ✅ Pakai prefixIcon
+                          prefixIcon: Icons.email,
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
@@ -262,7 +247,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         // Input Password
                         CustomTextField(
                           hint: 'Kata Sandi',
-                          prefixIcon: Icons.lock, // ✅ Pakai prefixIcon
+                          prefixIcon: Icons.lock, 
                           obscure: true,
                           controller: _passwordController,
                           textInputAction: TextInputAction.next,
@@ -301,7 +286,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         // Konfirmasi Password
                         CustomTextField(
                           hint: 'Konfirmasi Kata Sandi',
-                          prefixIcon: Icons.lock_outline, // ✅ Pakai prefixIcon
+                          prefixIcon: Icons.lock_outline,
                           obscure: true,
                           controller: _confirmController,
                           textInputAction: TextInputAction.done,

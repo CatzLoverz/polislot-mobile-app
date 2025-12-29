@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/utils/validator_utils.dart';
 import 'auth_controller.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
@@ -9,7 +10,8 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key, this.email});
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -18,14 +20,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   late String _email;
 
-  // Warna sesuai file lama
+  // Warna sesuai file lama (Dikembalikan)
   static const Color _deepBlue = Color(0xFF0D47A1);
 
   @override
   void initState() {
     super.initState();
     _email = widget.email ?? '';
-    
+
     // Safety check jika email kosong (reload/navigasi manual)
     if (_email.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -42,14 +44,43 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
-    if (!_formKey.currentState!.validate()) return;
+    // 0. Manual Validation (Snackbar Style)
+    if (_passwordController.text.isEmpty) {
+      AppSnackBars.show(context, "Password tidak boleh kosong", isError: true);
+      return;
+    }
+
+    if (!ValidatorUtils.isValidPassword(_passwordController.text)) {
+      AppSnackBars.show(
+        context,
+        ValidatorUtils.passwordRequirementMsg,
+        isError: true,
+      );
+      return;
+    }
+
+    if (_confirmPasswordController.text.isEmpty) {
+      AppSnackBars.show(
+        context,
+        "Konfirmasi password tidak boleh kosong",
+        isError: true,
+      );
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      AppSnackBars.show(context, "Password tidak cocok", isError: true);
+      return;
+    }
 
     // 1. Panggil AuthController
-    final success = await ref.read(authControllerProvider.notifier).resetPassword(
-      email: _email,
-      password: _passwordController.text,
-      confirmPassword: _confirmPasswordController.text,
-    );
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .resetPassword(
+          email: _email,
+          password: _passwordController.text,
+          confirmPassword: _confirmPasswordController.text,
+        );
 
     // 2. Cek Mounted (Async Gap Fix)
     if (!mounted) return;
@@ -57,19 +88,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     // 3. Handle Hasil
     if (success) {
       AppSnackBars.show(context, "Password Berhasil Direset! Silakan Login.");
-      
+
       // Tunggu sebentar agar user baca snackbar (Opsional, UX)
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
 
       // Kembali ke Login Screen dan hapus history
       Navigator.pushNamedAndRemoveUntil(
-        context, 
-        AppRoutes.login, 
-        (route) => false
+        context,
+        AppRoutes.login,
+        (route) => false,
       );
     } else {
-      final error = ref.read(authControllerProvider).error.toString().replaceAll('Exception: ', '');
+      final error = ref
+          .read(authControllerProvider)
+          .error
+          .toString()
+          .replaceAll('Exception: ', '');
       AppSnackBars.show(context, error, isError: true);
     }
   }
@@ -113,21 +148,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 Text(
                   'Masukkan kata sandi baru untuk akun $_email',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 15),
                 ),
                 const SizedBox(height: 30),
 
-                // 🔒 Password Baru (Tanpa Mata)
+                // Password Baru (Tanpa Mata)
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true, // Selalu tersembunyi
                   decoration: InputDecoration(
                     labelText: 'Password Baru',
                     prefixIcon: const Icon(Icons.lock_outline),
-                    // Suffix Icon dihapus sesuai permintaan
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -135,15 +166,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: _deepBlue, width: 2),
                     ),
+                    // Suffix Icon dihapus sesuai permintaan
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Password tidak boleh kosong';
-                    if (v.length < 8) return 'Password minimal 8 karakter';
-                    return null;
-                  },
+                  // Validator Property dihapus (Pindah ke logic submit/Snackbar)
                 ),
-                
-                // ℹ️ HELPER TEXT (Syarat Password dengan Bintang Merah)
+
+                // HELPER TEXT (Syarat Password dengan Bintang Merah)
                 Padding(
                   padding: const EdgeInsets.only(top: 8, bottom: 20, left: 5),
                   child: RichText(
@@ -151,25 +179,28 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       children: const [
                         TextSpan(
-                          text: '* ', 
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)
+                          text: '* ',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         TextSpan(
-                          text: 'Min. 8 karakter, mengandung huruf besar/kecil, angka dan simbol.'
+                          text:
+                              'Min. 8 karakter, mengandung huruf besar/kecil, angka dan simbol.',
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                // 🔒 Konfirmasi Password (Tanpa Mata)
+                // Konfirmasi Password
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: true, // Selalu tersembunyi
                   decoration: InputDecoration(
                     labelText: 'Konfirmasi Password',
                     prefixIcon: const Icon(Icons.lock_reset),
-                    // Suffix Icon dihapus
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -178,15 +209,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       borderSide: const BorderSide(color: _deepBlue, width: 2),
                     ),
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Konfirmasi password tidak boleh kosong';
-                    if (v != _passwordController.text) return 'Password tidak cocok';
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 30),
 
-                // 🔘 Tombol Reset Password
+                // Tombol Reset Password
                 ElevatedButton(
                   onPressed: isLoading ? null : _resetPassword,
                   style: ElevatedButton.styleFrom(

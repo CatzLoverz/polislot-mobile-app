@@ -23,8 +23,7 @@ class AppRoutes {
   // ===========================================================================
   static const String splash = '/';
   static const String privacyPolicy = '/privacyPolicy';
-  static const String loginRegis =
-      '/loginRegis'; // Halaman Pilihan (Masuk/Daftar)
+  static const String loginRegis = '/loginRegis'; // Halaman Pilihan (Masuk/Daftar)
   static const String login = '/login';
   static const String register = '/register';
 
