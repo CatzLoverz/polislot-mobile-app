@@ -181,6 +181,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF3F6FB),
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: const Text(
+          'Home',
+          style: TextStyle(color: Colors.black87, fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -199,21 +209,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               parent: BouncingScrollPhysics(),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                100,
+              ), // Adjusted padding to match other screens (added bottom padding)
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Home',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A253A),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
                   _buildGreetingCard(user?.name ?? "Mahasiswa"),
                   const SizedBox(height: 16),
 

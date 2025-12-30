@@ -193,19 +193,23 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
     // Status Logic
     IconData statusIcon;
     Color statusColor;
+    String statusText;
     String dateLabel = "Dibuat: ${item.createdAt}";
 
     if (item.status == 'accepted') {
       statusIcon = Icons.check_circle;
       statusColor = Colors.green;
+      statusText = "Diterima";
       dateLabel = "Diterima: ${item.updatedAt}";
     } else if (item.status == 'rejected') {
       statusIcon = Icons.cancel;
       statusColor = Colors.red;
+      statusText = "Ditolak";
       dateLabel = "Ditolak: ${item.updatedAt}";
     } else {
       statusIcon = Icons.access_time_filled;
       statusColor = Colors.orange;
+      statusText = "Menunggu";
     }
 
     return Container(
@@ -266,7 +270,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
               Icon(statusIcon, color: statusColor, size: 26),
               const SizedBox(height: 4),
               Text(
-                item.status.toUpperCase(),
+                statusText,
                 style: TextStyle(
                   fontSize: 9,
                   color: statusColor,

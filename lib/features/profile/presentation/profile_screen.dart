@@ -80,6 +80,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: Colors.white,
         elevation: 2,
         centerTitle: true,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Profil',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),

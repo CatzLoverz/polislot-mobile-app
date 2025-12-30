@@ -105,11 +105,11 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
         backgroundColor: const Color(0xFFF3F6FB),
         elevation: 0,
         automaticallyImplyLeading: false,
+        centerTitle: true,
         title: const Text(
           "Reward & Penukaran",
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
       ),
       body: SafeArea(
         child: RefreshIndicator(
