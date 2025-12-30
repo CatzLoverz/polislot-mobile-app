@@ -26,6 +26,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
   bool _isMyLocationEnabled = false;
   Future<Set<Marker>>? _markersFuture;
   List<ParkSubareaVisual>? _lastSubareas;
+  bool _isManualRefresh = false; // Internal flag tracking manual refresh
 
   @override
   void initState() {
@@ -279,6 +280,15 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
       });
     });
 
+    // Listener: Reset _isManualRefresh when loading finishes
+    ref.listen<
+      AsyncValue<ParkVisualData>
+    >(parkVisualizationControllerProvider(widget.areaId), (_, next) {
+      if (!next.isLoading && _isManualRefresh) {
+        _isManualRefresh = false;
+      }
+    });
+
     // Logic: Initial Loading (No Data yet)
     if (parkDataAsync.isLoading && !parkDataAsync.hasValue) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -295,7 +305,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     // Logic: Has Data (Maybe Loading/Refreshing silently)
     // If we have data, we render the screen.
     final data = parkDataAsync.value!;
-    final isRefreshing = parkDataAsync.isLoading; // True if refreshing
+    final isRefreshing = parkDataAsync.isLoading && _isManualRefresh;
 
     // Cache Future for markers (existing logic)
     if (_markersFuture == null || _lastSubareas != data.subareas) {
@@ -330,6 +340,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
           IconButton(
             onPressed: () {
               // Manual Refresh triggers the spinner
+              setState(() => _isManualRefresh = true);
               ref.invalidate(
                 parkVisualizationControllerProvider(widget.areaId),
               );

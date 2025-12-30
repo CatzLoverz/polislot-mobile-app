@@ -93,65 +93,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               color: Color(0xFF1352C8),
             ),
           ),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 400,
-            child: infoList.isEmpty
-                ? const Center(child: Text("Tidak ada pengumuman."))
-                : ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: infoList.length,
-                    separatorBuilder: (ctx, i) => const Divider(height: 24),
-                    itemBuilder: (context, index) {
-                      final info = infoList[index];
-                      String dateStr = '-';
-                      if (info.createdAt != null) {
-                        try {
-                          dateStr = DateFormat(
-                            'd MMM y, HH:mm',
-                            'id_ID',
-                          ).format(info.createdAt!);
-                        } catch (e) {
-                          dateStr = info.createdAt.toString();
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 400),
+            child: SizedBox(
+              width: double.maxFinite,
+              child: infoList.isEmpty
+                  ? const Center(child: Text("Tidak ada pengumuman."))
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: infoList.length,
+                      separatorBuilder: (ctx, i) => const Divider(height: 24),
+                      itemBuilder: (context, index) {
+                        final info = infoList[index];
+                        String dateStr = '-';
+                        if (info.createdAt != null) {
+                          try {
+                            dateStr = DateFormat(
+                              'd MMM y, HH:mm',
+                              'id_ID',
+                            ).format(info.createdAt!);
+                          } catch (e) {
+                            dateStr = info.createdAt.toString();
+                          }
                         }
-                      }
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            info.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            info.content,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.4,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.justify,
-                          ),
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              dateStr,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              info.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                            const SizedBox(height: 8),
+                            Text(
+                              info.content,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.4,
+                                color: Colors.black87,
+                              ),
+                              textAlign: TextAlign.justify,
+                            ),
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                dateStr,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+            ),
           ),
           actions: [
             TextButton(
@@ -256,7 +258,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
                   // ✅ LIST PARKIR DINAMIS DARI API
                   if (isOffline)
-                    _buildInfoBoardPlaceholder(isError: true)
+                    _buildParkingOffline()
                   else
                     parkListAsync.when(
                       skipLoadingOnReload: true,
@@ -277,21 +279,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         );
                       },
                       loading: () => _buildParkingListLoading(),
-                      error: (err, stack) =>
-                          _buildInfoBoardPlaceholder(isError: true),
+                      error: (err, stack) => _buildParkingOffline(),
                     ),
 
                   const SizedBox(height: 16),
 
                   if (isOffline)
-                    const SizedBox.shrink() // Leaderboard offline biar hidden aja atau placeholder
+                    _buildLeaderboardOffline()
                   else
                     missionAsync.when(
                       skipLoadingOnReload: true,
                       skipLoadingOnRefresh: true,
                       data: (data) => _buildLeaderboardCard(data.leaderboard),
                       loading: () => _buildLeaderboardLoading(),
-                      error: (err, stack) => const SizedBox.shrink(),
+                      error: (err, stack) => _buildLeaderboardOffline(),
                     ),
 
                   const SizedBox(height: 80),
@@ -812,6 +813,133 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             }),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLeaderboardOffline() {
+    return _customCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, color: Color(0xFF1352C8)),
+              SizedBox(width: 8),
+              Text(
+                "Peringkat Teratas",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF1A253A),
+                ),
+              ),
+            ],
+          ),
+          const Divider(),
+          const SizedBox(height: 16),
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.wifi_off_rounded,
+                    color: Colors.red.shade400,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Anda Sedang Offline",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade700,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParkingOffline() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Anda Sedang Offline",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              width: 80,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.wifi_off_rounded, color: Colors.grey, size: 32),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

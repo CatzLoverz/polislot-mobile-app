@@ -277,10 +277,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                           },
                         );
                       },
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      loading: () => _buildCommentLoading(),
                       error: (err, stack) =>
-                          _buildScrollablePlaceholder(Text("Error: $err")),
+                          _buildScrollablePlaceholder(_buildOfflineCard()),
                     ),
             ),
           ),
@@ -606,6 +605,74 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCommentLoading() {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: 5,
+      separatorBuilder: (_, _) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 120,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: 200,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
