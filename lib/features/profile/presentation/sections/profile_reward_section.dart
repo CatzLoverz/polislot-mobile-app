@@ -107,7 +107,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
                     },
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => _buildHistoryLoading(),
                 error: (err, stack) => _buildOfflinePlaceholder(),
               ),
       ),
@@ -199,17 +199,17 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
     if (item.status == 'accepted') {
       statusIcon = Icons.check_circle;
       statusColor = Colors.green;
-      statusText = "Diterima";
+      statusText = "DITERIMA";
       dateLabel = "Diterima: ${item.updatedAt}";
     } else if (item.status == 'rejected') {
       statusIcon = Icons.cancel;
       statusColor = Colors.red;
-      statusText = "Ditolak";
+      statusText = "DITOLAK";
       dateLabel = "Ditolak: ${item.updatedAt}";
     } else {
       statusIcon = Icons.access_time_filled;
       statusColor = Colors.orange;
-      statusText = "Menunggu";
+      statusText = "MENUNGGU";
     }
 
     return Container(
@@ -281,6 +281,98 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHistoryLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x11000000),
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 150,
+                      height: 13,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 100,
+                      height: 11,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: const BoxDecoration(
+                      color: Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: 40,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

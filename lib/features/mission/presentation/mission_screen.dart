@@ -13,14 +13,15 @@ class MissionScreen extends ConsumerStatefulWidget {
   ConsumerState<MissionScreen> createState() => _MissionScreenState();
 }
 
-class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _MissionScreenState extends ConsumerState<MissionScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -48,10 +49,14 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
 
   IconData _getMissionIcon(String metricCode) {
     switch (metricCode.toUpperCase()) {
-      case 'VALIDATION_ACTION': return FontAwesomeIcons.squareCheck;
-      case 'PROFILE_UPDATE': return FontAwesomeIcons.userPen;
-      case 'LOGIN_ACTION': return FontAwesomeIcons.rightToBracket;
-      default: return FontAwesomeIcons.star;
+      case 'VALIDATION_ACTION':
+        return FontAwesomeIcons.squareCheck;
+      case 'PROFILE_UPDATE':
+        return FontAwesomeIcons.userPen;
+      case 'LOGIN_ACTION':
+        return FontAwesomeIcons.rightToBracket;
+      default:
+        return FontAwesomeIcons.star;
     }
   }
 
@@ -64,13 +69,23 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   Widget _fadeSlide(Widget child, int index) {
     final start = (index * 0.1).clamp(0.0, 1.0);
     final end = (start + 0.5).clamp(0.0, 1.0);
-    final slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeOut)),
+    final slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: Interval(start, end, curve: Curves.easeOut),
+          ),
+        );
+    final fade = CurvedAnimation(
+      parent: _animController,
+      curve: Interval(start, end, curve: Curves.easeIn),
     );
-    final fade = CurvedAnimation(parent: _animController, curve: Interval(start, end, curve: Curves.easeIn));
     return SlideTransition(
-      position: slide, 
-      child: FadeTransition(opacity: fade, child: RepaintBoundary(child: child))
+      position: slide,
+      child: FadeTransition(
+        opacity: fade,
+        child: RepaintBoundary(child: child),
+      ),
     );
   }
 
@@ -78,11 +93,12 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
   Widget build(BuildContext context) {
     final missionDataAsync = ref.watch(missionControllerProvider);
     final isOffline = ref.watch(connectionStatusProvider);
-    
+
     // ✅ WATCH PROVIDER BARU
     final isMissionTab = ref.watch(missionTabStateProvider);
 
-    final stats = missionDataAsync.asData?.value.stats ?? 
+    final stats =
+        missionDataAsync.asData?.value.stats ??
         UserStats(totalCompleted: 0, lifetimePoints: 0);
 
     return Scaffold(
@@ -107,7 +123,9 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
               } catch (_) {}
             },
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,21 +138,16 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
 
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: isOffline 
+                    child: isOffline
                         ? _buildOfflinePlaceholder()
                         : missionDataAsync.when(
                             skipLoadingOnReload: true,
                             skipLoadingOnRefresh: true,
-                            data: (data) => isMissionTab 
+                            data: (data) => isMissionTab
                                 ? _buildMissionsList(data.missions)
                                 : _buildLeaderboard(data.leaderboard),
                             error: (err, stack) => _buildOfflinePlaceholder(),
-                            loading: () => const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(40.0),
-                                child: CircularProgressIndicator(color: Color(0xFF1352C8)),
-                              ),
-                            ),
+                            loading: () => _buildMissionLoading(),
                           ),
                   ),
                 ],
@@ -144,47 +157,62 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
 
           if (!isMissionTab && missionDataAsync.asData != null)
             Positioned(
-              left: 0, right: 0, bottom: 0,
-              child: _buildUserPositionCard(missionDataAsync.asData!.value.userRank),
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildUserPositionCard(
+                missionDataAsync.asData!.value.userRank,
+              ),
             ),
         ],
       ),
     );
   }
 
-
   Widget _buildOfflinePlaceholder() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white, 
-        borderRadius: BorderRadius.circular(16), 
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-        ]
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(16), 
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.red.shade50, 
-              shape: BoxShape.circle
-            ), 
-            child: Icon(Icons.wifi_off_rounded, size: 40, color: Colors.red.shade400)
+              color: Colors.red.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.wifi_off_rounded,
+              size: 40,
+              color: Colors.red.shade400,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             "Anda Sedang Offline",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey.shade800)
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.grey.shade800,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.", 
-            textAlign: TextAlign.center, 
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14)
+            "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
           ),
         ],
       ),
@@ -195,42 +223,60 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)], 
-          begin: Alignment.topLeft, 
-          end: Alignment.bottomRight
-        ), 
-        borderRadius: BorderRadius.circular(18)
+          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
       ),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _statBox(
-            icon: Icons.verified_rounded, 
-            color: Colors.amber, 
-            title: "Total Misi Selesai", 
-            value: stats.totalCompleted.toString()
+            icon: Icons.verified_rounded,
+            color: Colors.amber,
+            title: "Total Misi Selesai",
+            value: stats.totalCompleted.toString(),
           ),
           Container(width: 1, height: 50, color: Colors.white24),
           _statBox(
-            icon: Icons.monetization_on_rounded, 
-            color: Colors.greenAccent, 
-            title: "Lifetime Koin", 
-            value: stats.lifetimePoints.toString()
+            icon: Icons.monetization_on_rounded,
+            color: Colors.greenAccent,
+            title: "Lifetime Koin",
+            value: stats.lifetimePoints.toString(),
           ),
         ],
       ),
     );
   }
 
-  Widget _statBox({required IconData icon, required Color color, required String title, required String value}) {
+  Widget _statBox({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String value,
+  }) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 32), 
-        const SizedBox(height: 6), 
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)), 
-        Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13))
-      ]
+        Icon(icon, color: color, size: 32),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
+        Text(
+          title,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 
@@ -240,12 +286,20 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Stack(
         children: [
           AnimatedAlign(
-            alignment: isMissionTab ? Alignment.centerLeft : Alignment.centerRight,
+            alignment: isMissionTab
+                ? Alignment.centerLeft
+                : Alignment.centerRight,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             child: Container(
@@ -254,7 +308,13 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
               decoration: BoxDecoration(
                 color: const Color(0xFF1565C0),
                 borderRadius: BorderRadius.circular(25),
-                boxShadow: [BoxShadow(color: const Color(0xFF1565C0).withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1565C0).withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
             ),
           ),
@@ -263,20 +323,37 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
               Expanded(
                 child: GestureDetector(
                   // ✅ GUNAKAN METHOD DARI NOTIFIER
-                  onTap: () => ref.read(missionTabStateProvider.notifier).setMission(),
+                  onTap: () =>
+                      ref.read(missionTabStateProvider.notifier).setMission(),
                   behavior: HitTestBehavior.opaque,
                   child: Center(
-                    child: Text("Misi", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isMissionTab ? Colors.white : Colors.grey[600])),
+                    child: Text(
+                      "Misi",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: isMissionTab ? Colors.white : Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ),
               ),
               Expanded(
                 child: GestureDetector(
                   // ✅ GUNAKAN METHOD DARI NOTIFIER
-                  onTap: () => ref.read(missionTabStateProvider.notifier).setLeaderboard(),
+                  onTap: () => ref
+                      .read(missionTabStateProvider.notifier)
+                      .setLeaderboard(),
                   behavior: HitTestBehavior.opaque,
                   child: Center(
-                    child: Text("Leaderboard", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: !isMissionTab ? Colors.white : Colors.grey[600])),
+                    child: Text(
+                      "Leaderboard",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: !isMissionTab ? Colors.white : Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -289,16 +366,24 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
 
   Widget _buildMissionsList(List<MissionItem> missions) {
     if (missions.isEmpty) {
-      return const Center(child: Padding(
-        padding: EdgeInsets.all(20.0),
-        child: Text("Belum ada misi aktif saat ini.", style: TextStyle(color: Colors.grey)),
-      ));
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20.0),
+          child: Text(
+            "Belum ada misi aktif saat ini.",
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
     }
     return Column(
       key: const ValueKey('MissionsList'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Daftar Misi Kamu", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const Text(
+          "Daftar Misi Kamu",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         const SizedBox(height: 14),
         for (int i = 0; i < missions.length; i++)
           _fadeSlide(_missionCard(missions[i]), i),
@@ -316,7 +401,13 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,18 +416,46 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFF1352C8).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: Icon(_getMissionIcon(m.metricCode), color: const Color(0xFF1352C8), size: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1352C8).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _getMissionIcon(m.metricCode),
+                  color: const Color(0xFF1352C8),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(m.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
-              Text("+${m.points} koin", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(
+                  m.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              Text(
+                "+${m.points} koin",
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(m.description, style: const TextStyle(color: Colors.black54, fontSize: 13, height: 1.4)),
+          Text(
+            m.description,
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
           const SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -351,7 +470,14 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
                 ),
               ),
               const SizedBox(width: 10),
-              Text("${(displayPercent * 100).toInt()}%", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: progressColor)),
+              Text(
+                "${(displayPercent * 100).toInt()}%",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: progressColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -372,25 +498,39 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
                     children: [
                       Icon(Icons.check_circle, size: 16, color: Colors.green),
                       SizedBox(width: 6),
-                      Text("Misi Selesai", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      Text(
+                        "Misi Selesai",
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   if (m.completedAt != null)
-                    Text("Selesai pada: ${m.completedAt}", style: const TextStyle(color: Colors.green, fontSize: 10)),
+                    Text(
+                      "Selesai pada: ${m.completedAt}",
+                      style: const TextStyle(color: Colors.green, fontSize: 10),
+                    ),
                 ],
               ),
-            )
+            ),
         ],
       ),
     );
   }
 
   Widget _buildLeaderboard(List<LeaderboardItem> leaderboard) {
-    if (leaderboard.isEmpty) { 
-      return const Center(child: Padding(
-        padding: EdgeInsets.all(20),
-        child: Text("Belum ada data leaderboard.", style: TextStyle(color: Colors.grey)),
-      ));
+    if (leaderboard.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Text(
+            "Belum ada data leaderboard.",
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
     }
     final top3 = leaderboard.take(3).toList();
     final rest = leaderboard.skip(3).toList();
@@ -401,7 +541,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
       children: [
         _buildPodium(top3),
         const SizedBox(height: 16),
-        
+
         if (rest.isNotEmpty) ...[
           _buildTierHeader("Peringkat Lainnya"),
           const SizedBox(height: 10),
@@ -410,16 +550,20 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 6,
+                ),
+              ],
             ),
             child: Column(
               children: [
-                for (int i = 0; i < rest.length; i++)
-                  _leaderboardTile(rest[i]),
+                for (int i = 0; i < rest.length; i++) _leaderboardTile(rest[i]),
               ],
             ),
           ),
-        ]
+        ],
       ],
     );
   }
@@ -431,11 +575,14 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (top3.length > 1) Expanded(child: _podiumItem(top3[1], 140, Colors.grey.shade400)),
+          if (top3.length > 1)
+            Expanded(child: _podiumItem(top3[1], 140, Colors.grey.shade400)),
           const SizedBox(width: 8),
-          if (top3.isNotEmpty) Expanded(child: _podiumItem(top3[0], 180, Colors.amber)),
+          if (top3.isNotEmpty)
+            Expanded(child: _podiumItem(top3[0], 180, Colors.amber)),
           const SizedBox(width: 8),
-          if (top3.length > 2) Expanded(child: _podiumItem(top3[2], 110, Colors.brown.shade400)),
+          if (top3.length > 2)
+            Expanded(child: _podiumItem(top3[2], 110, Colors.brown.shade400)),
         ],
       ),
     );
@@ -448,72 +595,139 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
         CircleAvatar(
           radius: user.rank == 1 ? 32 : 26,
           backgroundColor: color.withValues(alpha: 0.2),
-          backgroundImage: user.fullAvatarUrl.isNotEmpty 
-              ? NetworkImage(user.fullAvatarUrl) 
+          backgroundImage: user.fullAvatarUrl.isNotEmpty
+              ? NetworkImage(user.fullAvatarUrl)
               : null,
-          child: user.fullAvatarUrl.isEmpty 
+          child: user.fullAvatarUrl.isEmpty
               ? Icon(Icons.person, color: color, size: user.rank == 1 ? 32 : 24)
               : null,
         ),
         const SizedBox(height: 8),
-        
+
         SizedBox(
           height: 20,
           child: _MarqueeText(
-            text: user.name, 
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)
+            text: user.name,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
-        
-        Text("${user.points} Koin", style: const TextStyle(fontSize: 11, color: Colors.black54)),
+
+        Text(
+          "${user.points} Koin",
+          style: const TextStyle(fontSize: 11, color: Colors.black54),
+        ),
         const SizedBox(height: 8),
         Container(
-          width: double.infinity, height: height,
-          decoration: BoxDecoration(color: color, borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 4))]),
-          child: Center(child: Text("#${user.rank}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white))),
+          width: double.infinity,
+          height: height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.4),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              "#${user.rank}",
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
         ),
       ],
     );
   }
 
   Widget _leaderboardTile(LeaderboardItem user) {
-    final bgColor = user.isCurrentUser ? const Color(0xFF1352C8).withValues(alpha: 0.1) : Colors.transparent;
+    final bgColor = user.isCurrentUser
+        ? const Color(0xFF1352C8).withValues(alpha: 0.1)
+        : Colors.transparent;
 
     return Container(
       color: bgColor,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Row(
         children: [
-          SizedBox(width: 30, child: Text("#${user.rank}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey))),
+          SizedBox(
+            width: 30,
+            child: Text(
+              "#${user.rank}",
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
           const SizedBox(width: 10),
-          
+
           CircleAvatar(
-            radius: 18, 
+            radius: 18,
             backgroundColor: Colors.grey.shade200,
-            backgroundImage: user.fullAvatarUrl.isNotEmpty 
-                ? NetworkImage(user.fullAvatarUrl) 
+            backgroundImage: user.fullAvatarUrl.isNotEmpty
+                ? NetworkImage(user.fullAvatarUrl)
                 : null,
-            child: user.fullAvatarUrl.isEmpty 
+            child: user.fullAvatarUrl.isEmpty
                 ? const Icon(Icons.person, color: Colors.black54, size: 20)
                 : null,
           ),
-          
+
           const SizedBox(width: 12),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final textSpan = TextSpan(text: user.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14));
-                final tp = TextPainter(text: textSpan, maxLines: 1, textDirection: TextDirection.ltr);
+                final textSpan = TextSpan(
+                  text: user.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                );
+                final tp = TextPainter(
+                  text: textSpan,
+                  maxLines: 1,
+                  textDirection: TextDirection.ltr,
+                );
                 tp.layout(maxWidth: constraints.maxWidth);
-                
+
                 if (tp.didExceedMaxLines) {
-                  return SizedBox(height: 20, child: _MarqueeText(text: user.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), alignment: Alignment.centerLeft));
+                  return SizedBox(
+                    height: 20,
+                    child: _MarqueeText(
+                      text: user.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      alignment: Alignment.centerLeft,
+                    ),
+                  );
                 }
-                return Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14));
+                return Text(
+                  user.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                );
               },
             ),
           ),
-          Text("${user.points} Koin", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1352C8))),
+          Text(
+            "${user.points} Koin",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1352C8),
+            ),
+          ),
         ],
       ),
     );
@@ -523,7 +737,17 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
     return Row(
       children: [
         const Expanded(child: Divider(color: Colors.grey, thickness: 0.5)),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         const Expanded(child: Divider(color: Colors.grey, thickness: 0.5)),
       ],
     );
@@ -533,18 +757,136 @@ class _MissionScreenState extends ConsumerState<MissionScreen> with SingleTicker
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF2196F3)]), borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: const Color(0x44000000), blurRadius: 12, offset: const Offset(0, -2))]),
-      child: Row(
-        children: [
-          Container(width: 50, height: 50, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)), child: Center(child: Text("#${user.rank}", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)))),
-          const SizedBox(width: 16),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text("Posisi Kamu", style: TextStyle(color: Colors.white70, fontSize: 12)),
-            SizedBox(height: 20, child: _MarqueeText(text: user.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold), alignment: Alignment.centerLeft)),
-            Text("${user.points} Koin", style: const TextStyle(color: Colors.white, fontSize: 14))
-          ])),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0x44000000),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
         ],
       ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                "#${user.rank}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Posisi Kamu",
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                SizedBox(
+                  height: 20,
+                  child: _MarqueeText(
+                    text: user.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+                Text(
+                  "${user.points} Koin",
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMissionLoading() {
+    return Column(
+      children: List.generate(3, (index) {
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(
+                height: 12,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 12,
+                width: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
@@ -591,12 +933,18 @@ class _MarqueeTextState extends State<_MarqueeText> {
       }
 
       final maxScroll = _scrollController.position.maxScrollExtent;
-      if (maxScroll <= 0) break; 
+      if (maxScroll <= 0) break;
 
       final duration = Duration(milliseconds: (maxScroll * 25).toInt() + 1000);
       try {
-        await _scrollController.animateTo(maxScroll, duration: duration, curve: Curves.linear);
-      } catch (e) { break; }
+        await _scrollController.animateTo(
+          maxScroll,
+          duration: duration,
+          curve: Curves.linear,
+        );
+      } catch (e) {
+        break;
+      }
 
       if (!mounted || _isDisposed) break;
 
@@ -605,8 +953,14 @@ class _MarqueeTextState extends State<_MarqueeText> {
       if (!mounted || _isDisposed) break;
 
       try {
-        await _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 800), curve: Curves.easeOut);
-      } catch (e) { break; }
+        await _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOut,
+        );
+      } catch (e) {
+        break;
+      }
 
       if (!mounted || _isDisposed) break;
 

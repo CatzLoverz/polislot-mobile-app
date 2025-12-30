@@ -188,7 +188,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         centerTitle: true,
         title: const Text(
           'Home',
-          style: TextStyle(color: Colors.black87, fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SafeArea(
@@ -252,8 +256,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
                   // ✅ LIST PARKIR DINAMIS DARI API
                   if (isOffline)
-                    // Placeholder offline jika needed, atau biarkan kosong
-                    const SizedBox.shrink()
+                    _buildInfoBoardPlaceholder(isError: true)
                   else
                     parkListAsync.when(
                       skipLoadingOnReload: true,
@@ -274,18 +277,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         );
                       },
                       loading: () => _buildParkingListLoading(),
-                      error: (err, stack) => Center(
-                        child: Text(
-                          "Gagal memuat area parkir.",
-                          style: TextStyle(color: Colors.red.shade400),
-                        ),
-                      ),
+                      error: (err, stack) =>
+                          _buildInfoBoardPlaceholder(isError: true),
                     ),
 
                   const SizedBox(height: 16),
 
                   if (isOffline)
-                    _buildLeaderboardOffline()
+                    const SizedBox.shrink() // Leaderboard offline biar hidden aja atau placeholder
                   else
                     missionAsync.when(
                       skipLoadingOnReload: true,
@@ -742,6 +741,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
+  Widget _buildLeaderboardLoading() {
+    return _customCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: Colors.grey,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 200,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+          const Divider(),
+          Column(
+            children: List.generate(3, (index) {
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 60,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLeaderboardCard(List<LeaderboardItem> leaderboard) {
     final top3 = leaderboard.take(3).toList();
 
@@ -782,76 +856,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 }).toList(),
               ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLeaderboardOffline() {
-    return _customCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.emoji_events_rounded, color: Color(0xFF1352C8)),
-              SizedBox(width: 8),
-              Text(
-                "Peringkat Teratas",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Color(0xFF1A253A),
-                ),
-              ),
-            ],
-          ),
-          const Divider(),
-          const SizedBox(height: 16),
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.wifi_off_rounded,
-                    color: Colors.red.shade400,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Anda Sedang Offline",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red.shade700,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLeaderboardLoading() {
-    return _customCard(
-      child: const SizedBox(
-        height: 150,
-        child: Center(
-          child: CircularProgressIndicator(color: Color(0xFF1352C8)),
         ),
       ),
     );
