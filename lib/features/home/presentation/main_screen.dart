@@ -30,6 +30,7 @@ class MainScreen extends ConsumerStatefulWidget {
 class _MainScreenState extends ConsumerState<MainScreen> {
   int _previousIndex = 0; 
   late final PageController _pageController;
+  bool _isPageChangingProgrammatically = false;
   
   final List<Widget> _pages = [
     const HomeScreen(),
@@ -60,6 +61,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
 
     _previousIndex = currentIndex;
+    _isPageChangingProgrammatically = true;
     
     // ✅ Update state via method Notifier
     ref.read(bottomNavIndexProvider.notifier).setIndex(index);
@@ -90,13 +92,21 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final selectedIndex = ref.watch(bottomNavIndexProvider);
 
     // ✅ Listen Perubahan
-    ref.listen<int>(bottomNavIndexProvider, (previous, next) {
-      if (_pageController.hasClients && _pageController.page?.round() != next) {
-        _pageController.animateToPage(
-          next, 
-          duration: const Duration(milliseconds: 300), 
-          curve: Curves.easeInOut
-        );
+    ref.listen<int>(bottomNavIndexProvider, (previous, next) async {
+      if (_isPageChangingProgrammatically && _pageController.hasClients) {
+        if (_pageController.page?.round() != next) {
+          if ((next - (previous ?? 0)).abs() > 1) {
+            _pageController.jumpToPage(next);
+            await Future.delayed(const Duration(milliseconds: 50));
+          } else {
+            await _pageController.animateToPage(
+              next, 
+              duration: const Duration(milliseconds: 300), 
+              curve: Curves.easeInOut
+            );
+          }
+        }
+        _isPageChangingProgrammatically = false;
       }
     });
 
@@ -116,6 +126,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         if (selectedIndex != 0) {
           final target = (_previousIndex != 0) ? _previousIndex : 0;
           _previousIndex = 0;
+          _isPageChangingProgrammatically = true;
           ref.read(bottomNavIndexProvider.notifier).setIndex(target);
           return;
         }
@@ -129,7 +140,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           child: PageView(
             controller: _pageController,
             onPageChanged: (index) {
-              _onTabChanged(index);
+              if (!_isPageChangingProgrammatically) {
+                final currentIndex = ref.read(bottomNavIndexProvider);
+                if (index != currentIndex) {
+                  if (currentIndex == 3) {
+                    ref.read(profileSectionProvider.notifier).setSection(0);
+                  }
+                  _previousIndex = currentIndex;
+                  ref.read(bottomNavIndexProvider.notifier).setIndex(index);
+                }
+              }
             },
             children: _pages,
           ),
