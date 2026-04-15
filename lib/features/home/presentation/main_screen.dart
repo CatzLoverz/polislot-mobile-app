@@ -91,11 +91,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
     // ✅ Listen Perubahan
     ref.listen<int>(bottomNavIndexProvider, (previous, next) {
-      _pageController.animateToPage(
-        next, 
-        duration: const Duration(milliseconds: 300), 
-        curve: Curves.easeInOut
-      );
+      if (_pageController.hasClients && _pageController.page?.round() != next) {
+        _pageController.animateToPage(
+          next, 
+          duration: const Duration(milliseconds: 300), 
+          curve: Curves.easeInOut
+        );
+      }
     });
 
     return PopScope(
@@ -126,7 +128,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         body: RepaintBoundary(
           child: PageView(
             controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) {
+              _onTabChanged(index);
+            },
             children: _pages,
           ),
         ),
