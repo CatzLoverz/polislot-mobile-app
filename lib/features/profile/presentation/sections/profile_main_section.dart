@@ -30,7 +30,7 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
     _menuAnimCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 800));
 
-    _fadeAnims = List.generate(4, (i) {
+    _fadeAnims = List.generate(5, (i) {
       final start = i * 0.15;
       final end = start + 0.5;
       return CurvedAnimation(
@@ -39,7 +39,7 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
       );
     });
 
-    _slideAnims = List.generate(4, (i) {
+    _slideAnims = List.generate(5, (i) {
       final start = i * 0.15;
       final end = start + 0.5;
       return Tween<Offset>(
@@ -76,6 +76,7 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
       ("Ubah Profil", Icons.edit, Colors.blue, () => widget.onChangeSection(1)),
       ("Riwayat Penukaran", Icons.card_giftcard, Colors.green, widget.onRewardTap), // 👈 Pastikan ini memanggil widget.onRewardTap
       ("Masukan Pengguna", Icons.feedback_outlined, Colors.orange, () => widget.onChangeSection(2)),
+      ("Pusat Bantuan (FAQ)", Icons.help_outline, Colors.purple, () => widget.onChangeSection(3)),
       ("Keluar Akun", Icons.logout, Colors.redAccent, widget.onLogoutTap),
     ];
 

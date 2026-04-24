@@ -16,6 +16,8 @@ import '../../features/home/presentation/main_screen.dart';
 import '../../features/profile/presentation/sections/profile_edit_section.dart';
 import '../../features/feedback/presentation/feedback_screen.dart';
 import '../../features/profile/presentation/sections/profile_reward_section.dart';
+import '../../features/faq/presentation/faq_screen.dart';
+
 
 class AppRoutes {
   // ===========================================================================
@@ -38,6 +40,7 @@ class AppRoutes {
 
   static const String profileEdit = '/profile/edit';
   static const String feedback = '/feedback';
+  static const String faq = '/faq'; 
   static const String profileReward = '/profile/reward';
 
   // ===========================================================================
@@ -99,6 +102,8 @@ class AppRoutes {
         return _slideRoute(const FeedbackScreen());
       case profileReward:
         return _slideRoute(const ProfileRewardSection());
+      case faq:
+        return _slideRoute(const FaqScreen());
 
       // --- DEFAULT / 404 ---
       default:
