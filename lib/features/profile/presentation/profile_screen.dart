@@ -93,6 +93,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Navigator.pushNamed(context, AppRoutes.profileEdit);
           } else if (index == 2) {
             Navigator.pushNamed(context, AppRoutes.feedback);
+          } else if (index == 3) {
+            // Menambahkan navigasi ke FAQ menggunakan rute yang sudah kita buat
+            Navigator.pushNamed(context, AppRoutes.faq);
           }
         },
         onLogoutTap: _showLogoutDialog,
@@ -102,4 +105,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+
+  
 }
