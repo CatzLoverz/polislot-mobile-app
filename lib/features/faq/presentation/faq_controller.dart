@@ -40,13 +40,55 @@ class FaqController extends _$FaqController {
     },
   ];
 
+  /// FAQ statis tambahan yang selalu tampil saat pengguna online.
+  /// Topik: Informasi umum aplikasi (POLISLOT).
+  static const List<Map<String, String>> _onlineHardcodedFaqs = [
+    {
+      'id': '100',
+      'question': 'Apa itu aplikasi POLISLOT?',
+      'answer': 'POLISLOT adalah platform parkir cerdas yang membantu civitas akademika Polibatam mencari slot parkir yang tersedia secara real-time melalui bantuan Computer Vision dan laporan komunitas.',
+    },
+    {
+      'id': '101',
+      'question': 'Bagaimana cara melaporkan status area parkiran Politeknik Negeri Batam?',
+      'answer': 'Anda dapat memilih area yang ingin dilaporkan melalui menu utama (Home). Setelah itu, Anda akan masuk ke fitur parkiran. Tekan menu Validasi, lalu pilih status ketersediaan parkir: penuh (merah), terbatas (kuning), atau banyak tersedia (hijau).',
+    },
+    {
+      'id': '102',
+      'question': 'Bagaimana cara menukar hadiahnya yang telah kami beli menggunakan koin?',
+      'answer': 'Anda dapat menukarkan hadiah di Pusat Informasi Politeknik Negeri Batam pada hari Senin hingga Jumat, pukul 08.00-16.00.',
+    },
+    {
+      'id': '103',
+      'question': 'Jika ada keluhan terhadap area parkir Politeknik Negeri Batam dimana saya melaporkannya?',
+      'answer': 'Anda dapat melaporkannya melalui fitur komentar. Pertama, pilih area yang ingin dilaporkan di menu Home atau menu utama, kemudian masuk ke bagian komentar. Pastikan Anda menyertakan bukti yang jelas dengan menambahkan foto.',
+    },
+    {
+      'id': '104',
+      'question': 'Bagaimana cara mencari lokasi parkir di aplikasi Polislot?',
+      'answer': 'Jika Anda ingin mencari parkir di aplikasi Polislot, Anda dapat memilih area parkir terlebih dahulu melalui menu utama. Setelah masuk ke tampilan parkir, tekan tombol Rute. Selanjutnya, Anda akan diarahkan ke Google Maps untuk mendapatkan petunjuk arah yang lebih detail menuju lokasi parkir tersebut.',
+    },
+  ];
+
   @override
   Future<List<FaqModel>> build() async {
     final repo = ref.watch(faqRepositoryInstanceProvider);
-    return await repo.getFaqs();
+    
+    // 1. Ambil data dari API
+    final List<FaqModel> apiFaqs = await repo.getFaqs();
+
+    // 2. Map data online hardcoded menjadi model
+    final List<FaqModel> hardcodedOnline = _onlineHardcodedFaqs.map((e) => FaqModel(
+      id: int.parse(e['id']!),
+      question: e['question']!,
+      answer: e['answer']!,
+    )).toList();
+
+    // 3. Gabungkan: Hardcoded di atas, data API di bawah
+    return [...hardcodedOnline, ...apiFaqs];
   }
 
-  /// Mengembalikan daftar FAQ statis untuk kondisi offline.
+  /// Mengembalikan daftar FAQ statis untuk kondisi offline (Topik Jaringan).
   List<FaqModel> getOfflineFaqs() {
     return _offlineFaqs
         .map((e) => FaqModel(
@@ -62,7 +104,15 @@ class FaqController extends _$FaqController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(faqRepositoryInstanceProvider);
-      return await repo.getFaqs();
+      final List<FaqModel> apiFaqs = await repo.getFaqs();
+      
+      final List<FaqModel> hardcodedOnline = _onlineHardcodedFaqs.map((e) => FaqModel(
+        id: int.parse(e['id']!),
+        question: e['question']!,
+        answer: e['answer']!,
+      )).toList();
+
+      return [...hardcodedOnline, ...apiFaqs];
     });
   }
 }
