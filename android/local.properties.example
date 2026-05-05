@@ -1,0 +1,13 @@
+# file: android/local.properties.example
+# Salin file ini menjadi local.properties dan sesuaikan isinya dengan path di komputer Anda.
+# Jangan pernah melakukan commit local.properties ke version control (Git).
+
+# Atur path ke Android SDK dan Flutter SDK
+sdk.dir=C:\\Users\\<YourUsername>\\AppData\\Local\\Android\\sdk
+flutter.sdk=C:\\tools\\flutter
+flutter.buildMode=debug
+flutter.versionName=1.0.0
+flutter.versionCode=1
+
+# Tambahkan API Key Google Maps Anda di bawah ini
+google.maps.api.key=AIzaSy...Your_Google_Maps_API_Key_Here
