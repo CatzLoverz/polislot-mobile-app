@@ -27,13 +27,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
     });
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // ✅ SILENT REFRESH: Trigger fetch saat resume
-      ref.invalidate(rewardHistoryControllerProvider);
-    }
-  }
+
 
   @override
   void dispose() {

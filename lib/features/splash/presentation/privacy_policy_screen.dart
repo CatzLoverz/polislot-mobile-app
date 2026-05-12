@@ -74,7 +74,7 @@ class _PrivacyPolicyScreenState extends ConsumerState<PrivacyPolicyScreen>
     // Check auth status to decide next screen
     final isLoggedIn = await ref
         .read(authControllerProvider.notifier)
-        .checkStartupSession();
+        .checkStartupSession(isStartup: true);
 
     if (!mounted) return;
 

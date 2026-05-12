@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/utils/navigator_key.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -96,11 +97,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // Panggil logika startup yang baru
     final isLoggedIn = await ref
         .read(authControllerProvider.notifier)
-        .checkStartupSession();
+        .checkStartupSession(isStartup: true);
     final prefs = await SharedPreferences.getInstance();
     final hasSeenPrivacy = prefs.getBool('has_seen_privacy_policy') ?? false;
 
     if (!mounted) return;
+
+    isAppInitialized = true;
 
     if (isLoggedIn) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);

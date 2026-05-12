@@ -33,12 +33,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
     });
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      ref.invalidate(missionControllerProvider);
-    }
-  }
+
 
   @override
   void dispose() {

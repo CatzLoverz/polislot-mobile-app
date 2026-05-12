@@ -16,7 +16,7 @@ class AuthController extends _$AuthController {
   }
 
   // ✅ LOGIC STARTUP (Dipanggil Splash Screen)
-  Future<bool> checkStartupSession() async {
+  Future<bool> checkStartupSession({bool isStartup = false}) async {
     try {
       final repo = ref.read(authRepositoryInstanceProvider);
       final connectionNotifier = ref.read(connectionStatusProvider.notifier);
@@ -32,17 +32,22 @@ class AuthController extends _$AuthController {
 
       // 2. Cek Koneksi Server (Ping)
       try {
-        await repo.checkConnectivity();
+        await repo.checkConnectivity(ignore401Dialog: isStartup);
         
         // 3. Jika Server OK -> Validasi Token & Update Data (Termasuk Trigger Misi)
-        final freshUser = await repo.fetchUserProfile();
+        final freshUser = await repo.fetchUserProfile(ignore401Dialog: isStartup);
         state = AsyncData(freshUser);
         connectionNotifier.setOnline(); 
         
       } catch (e) {
-        if (e is DioException && e.response?.statusCode != 401) {
-           debugPrint("⚠️ Server unreachable. Masuk Mode Offline.");
-           connectionNotifier.setOffline();
+        if (e is DioException) {
+          if (e.response?.statusCode == 401) {
+            // Token tidak valid (dibatalkan server)
+            return false;
+          } else {
+            debugPrint("⚠️ Server unreachable. Masuk Mode Offline.");
+            connectionNotifier.setOffline();
+          }
         }
       }
 

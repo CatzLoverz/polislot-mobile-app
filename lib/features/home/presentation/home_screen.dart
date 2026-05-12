@@ -61,14 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      ref.invalidate(infoBoardControllerProvider);
-      ref.invalidate(missionControllerProvider);
-      ref.read(parkAreaListControllerProvider.notifier).refreshData();
-    }
-  }
+
 
   @override
   void dispose() {

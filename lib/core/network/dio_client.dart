@@ -10,6 +10,8 @@ import '../utils/navigator_key.dart';
 
 part 'dio_client.g.dart';
 
+bool _isLogoutDialogShowing = false;
+
 @Riverpod(keepAlive: true)
 class DioClientService extends _$DioClientService {
   @override
@@ -68,27 +70,74 @@ class DioClientService extends _$DioClientService {
           int? statusCode = e.response?.statusCode;
           final path = e.requestOptions.path;
           if (statusCode == 401) {
+            bool ignoreDialog = e.requestOptions.headers['Ignore-401-Dialog'] == 'true';
             bool isAuthEndpoint =
                 path.contains('/login') || path.contains('/register');
             if (!isAuthEndpoint) {
               final prefs = await SharedPreferences.getInstance();
               final token = prefs.getString('access_token');
 
-              // ✅ CEK: Hanya force logout jika token MASIH ADA di HP
-              // Jika token null, berarti user memang sudah logout manual, jadi jangan redirect lagi.
+              // ✅ CEK: Hanya tampilkan dialog jika token MASIH ADA di HP
+              // Jika token null, berarti user memang sudah logout manual, jadi biarkan saja.
               if (token != null && token.isNotEmpty) {
+                if (ignoreDialog) {
+                  // Cukup hapus token tanpa dialog dan tanpa redirect 
+                  // (karena Splash screen akan redirect sendiri berdasarkan kembalian checkStartupSession)
+                  await prefs.remove('access_token');
+                  await prefs.remove('user_data');
+                  await prefs.remove('isLoggedIn');
+                  return handler.reject(e);
+                }
+
                 debugPrint(
-                  "🚨 401 Session Expired di ($path). Melakukan Force Logout...",
+                  "🚨 401 Session Expired di ($path). Menampilkan Dialog Logout...",
                 );
 
-                await prefs.clear(); // Hapus semua data sesi
-
-                if (navigatorKey.currentState != null) {
-                  // Gunakan pushNamedAndRemoveUntil agar tidak bisa back
-                  navigatorKey.currentState!.pushNamedAndRemoveUntil(
-                    '/loginRegis',
-                    (route) => false,
-                  );
+                if (!_isLogoutDialogShowing && navigatorKey.currentContext != null) {
+                  _isLogoutDialogShowing = true;
+                  
+                  // Gunakan Future.microtask agar aman dipanggil dari dalam interceptor
+                  Future.microtask(() {
+                    showDialog(
+                      context: navigatorKey.currentContext!,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text(
+                            "Sesi Berakhir",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          content: const Text(
+                            "Sesi Anda telah berakhir. Silakan login kembali untuk melanjutkan.",
+                          ),
+                          actions: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                              ),
+                              child: const Text(
+                                "OK",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              onPressed: () async {
+                                _isLogoutDialogShowing = false;
+                                await prefs.remove('access_token');
+                                await prefs.remove('user_data');
+                                await prefs.remove('isLoggedIn');
+                                if (navigatorKey.currentState != null) {
+                                  // Gunakan pushNamedAndRemoveUntil agar tidak bisa back
+                                  navigatorKey.currentState!.pushNamedAndRemoveUntil(
+                                    '/loginRegis',
+                                    (route) => false,
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  });
                 }
               } else {
                 debugPrint("Output 401 ignored: Token already cleared.");

@@ -49,13 +49,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
     }
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      ref.invalidate(rewardControllerProvider);
-      ref.invalidate(historyControllerProvider);
-    }
-  }
+
 
   @override
   void dispose() {

@@ -22,7 +22,7 @@ class AuthRepository {
   AuthRepository(this._dio);
 
   // ✅ CEK KONEKSI SERVER NYATA
-  Future<bool> checkConnectivity() async {
+  Future<bool> checkConnectivity({bool ignore401Dialog = false}) async {
     try {
       // Tembak endpoint ringan dengan timeout CEPAT (3 detik)
       await _dio.get(
@@ -30,6 +30,7 @@ class AuthRepository {
         options: Options(
           sendTimeout: const Duration(seconds: 5),
           receiveTimeout: const Duration(seconds: 5),
+          headers: ignore401Dialog ? {'Ignore-401-Dialog': 'true'} : null,
         ),
       );
       return true; // Sukses
@@ -58,9 +59,14 @@ class AuthRepository {
   }
 
   // ✅ 3. VALIDASI TOKEN KE SERVER
-  Future<User> fetchUserProfile() async {
+  Future<User> fetchUserProfile({bool ignore401Dialog = false}) async {
     try {
-      final response = await _dio.get('/user');
+      final response = await _dio.get(
+        '/user',
+        options: Options(
+          headers: ignore401Dialog ? {'Ignore-401-Dialog': 'true'} : null,
+        ),
+      );
 
       final dynamic data = response.data;
       Map<String, dynamic> userJson;

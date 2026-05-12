@@ -10,6 +10,13 @@ import 'core/theme/app_theme.dart';
 import 'core/security/key_manager.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/utils/navigator_key.dart';
+import 'features/auth/presentation/auth_controller.dart';
+import 'features/info_board/presentation/info_board_controller.dart';
+import 'features/mission/presentation/mission_controller.dart';
+import 'features/park/presentation/park_controller.dart';
+import 'features/reward/presentation/reward_controller.dart';
+import 'features/history/presentation/history_controller.dart';
+
 
 void main() async {
   // 1. Wajib: Binding Widget
@@ -83,8 +90,47 @@ void main() async {
   }
 }
 
-class PoliSlotApp extends StatelessWidget {
+
+class PoliSlotApp extends ConsumerStatefulWidget {
   const PoliSlotApp({super.key});
+
+  @override
+  ConsumerState<PoliSlotApp> createState() => _PoliSlotAppState();
+}
+
+class _PoliSlotAppState extends ConsumerState<PoliSlotApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.resumed) {
+      if (isAppInitialized) {
+        // Tunggu validasi token selesai terlebih dahulu
+        final isValid = await ref.read(authControllerProvider.notifier).checkStartupSession();
+        
+        // Jika token masih valid, barulah lakukan refresh pada data UI
+        // Ini mencegah UI menembak request bersamaan yang berujung pada error 401 tumpang tindih
+        if (isValid) {
+          ref.invalidate(infoBoardControllerProvider);
+          ref.invalidate(missionControllerProvider);
+          ref.read(parkAreaListControllerProvider.notifier).refreshData();
+          ref.invalidate(rewardControllerProvider);
+          ref.invalidate(historyControllerProvider);
+          ref.invalidate(rewardHistoryControllerProvider);
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
