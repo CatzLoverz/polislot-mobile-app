@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -31,7 +32,7 @@ class DioClientService extends _$DioClientService {
     dio.interceptors.addAll([
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final isOffline = ref.read(connectionStatusProvider);
+          final connectionState = ref.read(connectionStatusProvider);
           final path = options.path;
 
           // WHITELIST AUTH: Kecualikan endpoint Auth dari blokir Offline
@@ -43,14 +44,18 @@ class DioClientService extends _$DioClientService {
               path.contains('/reset-pass');
 
           // Blokir request HANYA JIKA Offline DAN BUKAN endpoint Auth
-          if (isOffline && !isAuthEndpoint) {
+          if (connectionState != ConnectionStateType.online && !isAuthEndpoint) {
+            String errorType = connectionState == ConnectionStateType.noInternet ? "No Internet" : "Server Unreachable";
+            String errorMessage = connectionState == ConnectionStateType.noInternet 
+                ? "Koneksi internet terputus. Periksa WiFi atau data seluler Anda."
+                : "Server sedang mengalami gangguan. Silakan coba beberapa saat lagi.";
+
             return handler.reject(
               DioException(
                 requestOptions: options,
                 type: DioExceptionType.connectionError,
-                error: "Offline Mode Active",
-                message:
-                    "Aplikasi sedang dalam mode offline. Refresh untuk mencoba lagi.",
+                error: errorType,
+                message: errorMessage,
               ),
             );
           }
@@ -149,9 +154,20 @@ class DioClientService extends _$DioClientService {
 
           if (e.type == DioExceptionType.connectionTimeout ||
               e.type == DioExceptionType.receiveTimeout ||
-              e.type == DioExceptionType.connectionError) {
-            debugPrint("⚠️ Network Error ($path). Set Offline Mode.");
-            ref.read(connectionStatusProvider.notifier).setOffline();
+              e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.unknown) {
+            
+            final connectivityResult = await Connectivity().checkConnectivity();
+            if (connectivityResult.contains(ConnectivityResult.none)) {
+              debugPrint("⚠️ No Internet ($path). Set NoInternet Mode.");
+              ref.read(connectionStatusProvider.notifier).setNoInternet();
+            } else {
+              debugPrint("⚠️ Network Error ($path). Set ServerUnreachable Mode.");
+              ref.read(connectionStatusProvider.notifier).setServerUnreachable();
+            }
+          } else if (statusCode != null && statusCode >= 500) {
+            debugPrint("⚠️ Server Error $statusCode ($path). Set ServerUnreachable Mode.");
+            ref.read(connectionStatusProvider.notifier).setServerUnreachable();
           }
 
           return handler.next(e);
@@ -189,8 +205,10 @@ class DioErrorHandler {
             }
           }
         }
-      } else if (e.error == "Offline Mode Active") {
-        errorMsg = "Anda sedang offline. Tarik layar untuk menyegarkan.";
+      } else if (e.error == "No Internet") {
+        errorMsg = "Koneksi internet terputus. Periksa WiFi atau data seluler Anda.";
+      } else if (e.error == "Server Unreachable") {
+        errorMsg = "Server sedang mengalami gangguan. Silakan coba beberapa saat lagi.";
       } else if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {

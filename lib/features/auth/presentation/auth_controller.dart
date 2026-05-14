@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:dio/dio.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../../core/providers/connection_status_provider.dart';
 import '../data/auth_repository.dart';
 import '../data/user_model.dart';
@@ -30,11 +31,19 @@ class AuthController extends _$AuthController {
 
       state = AsyncData(localUser);
 
-      // 2. Cek Koneksi Server (Ping)
+      // 2. Cek Koneksi Internet (Device)
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult.contains(ConnectivityResult.none)) {
+        debugPrint("⚠️ No Internet di perangkat. Masuk Mode NoInternet.");
+        connectionNotifier.setNoInternet();
+        return false; // Tetap kembalikan false agar bisa redirect atau stay di splash
+      }
+
+      // 3. Cek Koneksi Server (Ping)
       try {
         await repo.checkConnectivity(ignore401Dialog: isStartup);
         
-        // 3. Jika Server OK -> Validasi Token & Update Data (Termasuk Trigger Misi)
+        // 4. Jika Server OK -> Validasi Token & Update Data (Termasuk Trigger Misi)
         final freshUser = await repo.fetchUserProfile(ignore401Dialog: isStartup);
         state = AsyncData(freshUser);
         connectionNotifier.setOnline(); 
@@ -45,8 +54,8 @@ class AuthController extends _$AuthController {
             // Token tidak valid (dibatalkan server)
             return false;
           } else {
-            debugPrint("⚠️ Server unreachable. Masuk Mode Offline.");
-            connectionNotifier.setOffline();
+            debugPrint("⚠️ Server unreachable. Masuk Mode ServerUnreachable.");
+            connectionNotifier.setServerUnreachable();
           }
         }
       }

@@ -10,15 +10,15 @@ class AppConnectivityWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Pantau status koneksi global dari provider
-    final isOffline = ref.watch(connectionStatusProvider);
+    final connectionState = ref.watch(connectionStatusProvider);
 
     return Stack(
       children: [
         // Halaman Utama
         child,
 
-        // Indikator Offline
-        if (isOffline)
+        // Indikator Offline/Server Error
+        if (connectionState != ConnectionStateType.online)
           Positioned(
             bottom: 100,
             right: 20,
@@ -29,9 +29,13 @@ class AppConnectivityWrapper extends ConsumerWidget {
               child: InkWell(
                 onTap: () {
                   // ✅ Tap hanya memunculkan SnackBar
+                  String message = connectionState == ConnectionStateType.noInternet
+                      ? "Koneksi internet terputus.\nPeriksa WiFi atau data seluler Anda."
+                      : "Server sedang mengalami gangguan.\nSilakan coba beberapa saat lagi.";
+                      
                   AppSnackBars.show(
                     context, 
-                    "Tidak dapat terhubung ke server.\nPeriksa internet Anda dan lakukan refresh.", 
+                    message, 
                     isError: true
                   );
                 },
@@ -40,15 +44,15 @@ class AppConnectivityWrapper extends ConsumerWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.redAccent,
+                    color: connectionState == ConnectionStateType.noInternet ? Colors.redAccent : Colors.orange,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                     boxShadow: [
                       BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))
                     ],
                   ),
-                  child: const Icon(
-                    Icons.wifi_off_rounded,
+                  child: Icon(
+                    connectionState == ConnectionStateType.noInternet ? Icons.wifi_off_rounded : Icons.dns_rounded,
                     color: Colors.white,
                     size: 20,
                   ),

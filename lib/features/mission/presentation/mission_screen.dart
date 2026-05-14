@@ -87,7 +87,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
   @override
   Widget build(BuildContext context) {
     final missionDataAsync = ref.watch(missionControllerProvider);
-    final isOffline = ref.watch(connectionStatusProvider);
+    final connectionState = ref.watch(connectionStatusProvider);
 
     // ✅ WATCH PROVIDER BARU
     final isMissionTab = ref.watch(missionTabStateProvider);
@@ -133,15 +133,15 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
 
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: isOffline
-                        ? _buildOfflinePlaceholder()
+                    child: connectionState != ConnectionStateType.online
+                        ? _buildOfflinePlaceholder(connectionState)
                         : missionDataAsync.when(
                             skipLoadingOnReload: true,
                             skipLoadingOnRefresh: true,
                             data: (data) => isMissionTab
                                 ? _buildMissionsList(data.missions)
                                 : _buildLeaderboard(data.leaderboard),
-                            error: (err, stack) => _buildOfflinePlaceholder(),
+                            error: (err, stack) => _buildOfflinePlaceholder(connectionState),
                             loading: () => _buildMissionLoading(),
                           ),
                   ),
@@ -164,7 +164,9 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
     );
   }
 
-  Widget _buildOfflinePlaceholder() {
+  Widget _buildOfflinePlaceholder(ConnectionStateType connectionState) {
+    final bool isError = connectionState != ConnectionStateType.online;
+    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -185,27 +187,27 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.grey.shade100),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.wifi_off_rounded,
+              isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.error_outline_rounded),
               size: 40,
-              color: Colors.red.shade400,
+              color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade500),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            "Anda Sedang Offline",
+            isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Colors.grey.shade800,
+              color: isServerErr ? Colors.orange.shade800 : (isError ? Colors.grey.shade800 : Colors.grey.shade800),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+            isServerErr ? "Sistem sedang dalam perbaikan." : (isError ? "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif." : "Gagal memuat data misi."),
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
           ),

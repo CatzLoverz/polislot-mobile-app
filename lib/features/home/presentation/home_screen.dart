@@ -172,7 +172,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final infoBoardAsync = ref.watch(infoBoardControllerProvider);
     final missionAsync = ref.watch(missionControllerProvider);
     final parkListAsync = ref.watch(parkAreaListControllerProvider);
-    final isOffline = ref.watch(connectionStatusProvider);
+    final connectionState = ref.watch(connectionStatusProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
@@ -220,8 +220,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   _buildGreetingCard(user?.name ?? "Mahasiswa"),
                   const SizedBox(height: 16),
 
-                  if (isOffline)
-                    _buildInfoBoardPlaceholder(isError: true)
+                  if (connectionState != ConnectionStateType.online)
+                    _buildInfoBoardPlaceholder(connectionState: connectionState)
                   else
                     infoBoardAsync.when(
                       skipLoadingOnReload: true,
@@ -239,7 +239,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       },
                       loading: () => _buildInfoBoardLoading(),
                       error: (err, stack) =>
-                          _buildInfoBoardPlaceholder(isError: true),
+                          _buildInfoBoardPlaceholder(connectionState: connectionState),
                     ),
 
                   const SizedBox(height: 24),
@@ -250,8 +250,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   const SizedBox(height: 16),
 
                   // ✅ LIST PARKIR DINAMIS DARI API
-                  if (isOffline)
-                    _buildParkingOffline()
+                  if (connectionState != ConnectionStateType.online)
+                    _buildParkingOffline(connectionState)
                   else
                     parkListAsync.when(
                       skipLoadingOnReload: true,
@@ -272,20 +272,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         );
                       },
                       loading: () => _buildParkingListLoading(),
-                      error: (err, stack) => _buildParkingOffline(),
+                      error: (err, stack) => _buildParkingOffline(connectionState),
                     ),
 
                   const SizedBox(height: 16),
 
-                  if (isOffline)
-                    _buildLeaderboardOffline()
+                  if (connectionState != ConnectionStateType.online)
+                    _buildLeaderboardOffline(connectionState)
                   else
                     missionAsync.when(
                       skipLoadingOnReload: true,
                       skipLoadingOnRefresh: true,
                       data: (data) => _buildLeaderboardCard(data.leaderboard),
                       loading: () => _buildLeaderboardLoading(),
-                      error: (err, stack) => _buildLeaderboardOffline(),
+                      error: (err, stack) => _buildLeaderboardOffline(connectionState),
                     ),
 
                   const SizedBox(height: 80),
@@ -361,7 +361,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildInfoBoardPlaceholder({bool isError = false}) {
+  Widget _buildInfoBoardPlaceholder({ConnectionStateType connectionState = ConnectionStateType.online}) {
+    final bool isError = connectionState != ConnectionStateType.online;
+    final bool isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -380,14 +383,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isError ? Colors.red.shade50 : Colors.grey.shade100,
+              color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.grey.shade100),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              isError
-                  ? Icons.wifi_off_rounded
-                  : Icons.notifications_none_rounded,
-              color: isError ? Colors.red.shade400 : Colors.grey.shade400,
+              isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.notifications_none_rounded),
+              color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade400),
               size: 24,
             ),
           ),
@@ -397,20 +398,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isError ? "Anda Sedang Offline" : "Belum ada informasi",
+                  isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Belum ada informasi"),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: isError
-                        ? Colors.red.shade700
-                        : const Color(0xFF1A253A),
+                    color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : const Color(0xFF1A253A)),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isError
-                      ? "Periksa koneksi internet Anda."
-                      : "Tidak ada informasi terbaru saat ini.",
+                  isServerErr ? "Sistem sedang dalam perbaikan." : (isError ? "Periksa koneksi internet Anda." : "Tidak ada informasi terbaru saat ini."),
                   maxLines: 2,
                   style: const TextStyle(
                     fontWeight: FontWeight.w400,
@@ -810,7 +807,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildLeaderboardOffline() {
+  Widget _buildLeaderboardOffline(ConnectionStateType connectionState) {
+    final bool isError = connectionState != ConnectionStateType.online;
+    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
     return _customCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -837,26 +836,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.grey.shade100),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.wifi_off_rounded,
-                    color: Colors.red.shade400,
+                    isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.error_outline_rounded),
+                    color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade500),
                     size: 28,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Anda Sedang Offline",
+                  isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red.shade700,
+                    color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : Colors.grey.shade700),
                     fontSize: 14,
                   ),
                 ),
                 Text(
-                  "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+                  isServerErr ? "Silakan coba beberapa saat lagi." : (isError ? "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif." : "Gagal memuat data."),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
@@ -869,7 +868,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildParkingOffline() {
+  Widget _buildParkingOffline(ConnectionStateType connectionState) {
+    final bool isError = connectionState != ConnectionStateType.online;
+    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -894,17 +895,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      "Anda Sedang Offline",
+                    Text(
+                      isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.red,
+                        color: isServerErr ? Colors.orange : (isError ? Colors.red : Colors.grey.shade700),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+                      isServerErr ? "Sistem sedang dalam perbaikan." : (isError ? "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif." : "Gagal memuat area parkir."),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -924,10 +925,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   bottomRight: Radius.circular(12),
                 ),
               ),
-              child: const Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.wifi_off_rounded, color: Colors.grey, size: 32),
+                  Icon(isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.error_outline_rounded), color: Colors.grey, size: 32),
                 ],
               ),
             ),

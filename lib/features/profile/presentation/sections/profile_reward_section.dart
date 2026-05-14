@@ -70,7 +70,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
             final _ = await ref.refresh(rewardHistoryControllerProvider.future);
           } catch (_) {}
         },
-        child: isOffline
+        child: isOffline != ConnectionStateType.online
             ? _buildOfflinePlaceholder()
             : historyAsync.when(
                 // ✅ SILENT REFRESH: Skip loading jika data sudah ada

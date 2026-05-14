@@ -253,7 +253,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                     )
                     .refresh();
               },
-              child: isOffline
+              child: isOffline != ConnectionStateType.online
                   ? _buildScrollablePlaceholder(_buildOfflineCard())
                   : commentListAsync.when(
                       skipLoadingOnReload: true,

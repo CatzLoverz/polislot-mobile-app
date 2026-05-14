@@ -89,7 +89,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
     final isRewardTab = ref.watch(rewardTabStateProvider);
     final rewardDataAsync = ref.watch(rewardControllerProvider);
     final historyDataAsync = ref.watch(historyControllerProvider);
-    final isOffline = ref.watch(connectionStatusProvider);
+    final connectionState = ref.watch(connectionStatusProvider);
 
     final currentPoints = rewardDataAsync.asData?.value.currentPoints ?? 0;
 
@@ -133,8 +133,8 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                 // ✅ ANIMASI: AnimatedSwitcher agar seragam dengan Mission Screen
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: isOffline
-                      ? _buildOfflinePlaceholder()
+                  child: connectionState != ConnectionStateType.online
+                      ? _buildOfflinePlaceholder(connectionState)
                       : isRewardTab
                       // --- TAB REWARD ---
                       ? rewardDataAsync.when(
@@ -143,7 +143,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                           data: (data) =>
                               _buildRewardList(data.rewards, currentPoints),
                           loading: () => _buildRewardLoading(),
-                          error: (err, stack) => _buildOfflinePlaceholder(),
+                          error: (err, stack) => _buildOfflinePlaceholder(connectionState),
                         )
                       // --- TAB RIWAYAT KOIN ---
                       : historyDataAsync.when(
@@ -151,7 +151,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                           skipLoadingOnRefresh: true,
                           data: (history) => _buildHistoryList(history),
                           loading: () => _buildHistoryLoading(),
-                          error: (err, stack) => _buildOfflinePlaceholder(),
+                          error: (err, stack) => _buildOfflinePlaceholder(connectionState),
                         ),
                 ),
               ],
@@ -595,7 +595,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
   }
 
   // Offline Placeholder
-  Widget _buildOfflinePlaceholder() {
+  Widget _buildOfflinePlaceholder(ConnectionStateType connectionState) {
+    final bool isError = connectionState != ConnectionStateType.online;
+    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -617,27 +619,27 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.grey.shade100),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.wifi_off_rounded,
+              isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.error_outline_rounded),
               size: 40,
-              color: Colors.red.shade400,
+              color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade500),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            "Anda Sedang Offline",
+            isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Colors.grey.shade800,
+              color: isServerErr ? Colors.orange.shade800 : (isError ? Colors.grey.shade800 : Colors.grey.shade800),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+            isServerErr ? "Sistem sedang dalam perbaikan." : (isError ? "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif." : "Gagal memuat data hadiah."),
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
           ),
