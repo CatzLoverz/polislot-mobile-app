@@ -71,7 +71,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
           } catch (_) {}
         },
         child: isOffline != ConnectionStateType.online
-            ? _buildOfflinePlaceholder()
+            ? _buildOfflinePlaceholder(isOffline)
             : historyAsync.when(
                 // ✅ SILENT REFRESH: Skip loading jika data sudah ada
                 skipLoadingOnReload: true,
@@ -102,14 +102,17 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
                   );
                 },
                 loading: () => _buildHistoryLoading(),
-                error: (err, stack) => _buildOfflinePlaceholder(),
+                error: (err, stack) => _buildOfflinePlaceholder(isOffline),
               ),
       ),
     );
   }
 
   // ✅ Widget Offline / Error (Konsisten dengan Screen Lain)
-  Widget _buildOfflinePlaceholder() {
+  Widget _buildOfflinePlaceholder(ConnectionStateType connectionState) {
+    final bool isError = connectionState == ConnectionStateType.online;
+    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -140,27 +143,27 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
+                            color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.red.shade50),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.wifi_off_rounded,
+                            isServerErr ? Icons.dns_rounded : (isError ? Icons.error_outline_rounded : Icons.wifi_off_rounded),
                             size: 40,
-                            color: Colors.red.shade400,
+                            color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.red.shade400),
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          "Anda Sedang Offline",
+                          isServerErr ? "Server Bermasalah" : (isError ? "Terjadi Kesalahan" : "Anda Sedang Offline"),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: Colors.grey.shade800,
+                            color: isServerErr ? Colors.orange.shade800 : (isError ? Colors.red.shade800 : Colors.grey.shade800),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif.",
+                          isServerErr ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." : (isError ? "Gagal memuat riwayat penukaran.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.grey.shade600,

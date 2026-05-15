@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 913 nodes · 1028 edges · 99 communities (92 shown, 7 thin omitted)
+- 917 nodes · 1264 edges · 98 communities (91 shown, 7 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 8 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `24eb8465`
+- Built from commit: `2fe596ae`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -83,7 +83,6 @@
 - [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
-- [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
 - [[_COMMUNITY_Community 70|Community 70]]
 - [[_COMMUNITY_Community 71|Community 71]]
@@ -95,41 +94,41 @@
 - [[_COMMUNITY_Community 98|Community 98]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `package:flutter/material.dart` - 32 edges
-2. `package:riverpod_annotation/riverpod_annotation.dart` - 23 edges
-3. `package:flutter_riverpod/flutter_riverpod.dart` - 22 edges
-4. `package:dio/dio.dart` - 14 edges
-5. `../../../core/routes/app_routes.dart` - 10 edges
-6. `../../../core/network/dio_client.dart` - 10 edges
-7. `package:json_annotation/json_annotation.dart` - 9 edges
-8. `../../../../core/utils/snackbar_utils.dart` - 8 edges
-9. `../../auth/presentation/auth_controller.dart` - 8 edges
-10. `_` - 8 edges
+1. `package:flutter/material.dart` - 40 edges
+2. `package:flutter_riverpod/flutter_riverpod.dart` - 29 edges
+3. `package:riverpod_annotation/riverpod_annotation.dart` - 26 edges
+4. `../../../core/providers/connection_status_provider.dart` - 20 edges
+5. `package:dio/dio.dart` - 16 edges
+6. `../../../../core/utils/snackbar_utils.dart` - 10 edges
+7. `../../auth/presentation/auth_controller.dart` - 10 edges
+8. `../../../core/routes/app_routes.dart` - 10 edges
+9. `package:json_annotation/json_annotation.dart` - 9 edges
+10. `package:flutter_dotenv/flutter_dotenv.dart` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `my_application_activate()` --calls--> `fl_register_plugins()`  [INFERRED]
-  linux/runner/my_application.cc → linux/flutter/generated_plugin_registrant.cc
-- `main()` --calls--> `my_application_new()`  [INFERRED]
-  linux/runner/main.cc → linux/runner/my_application.cc
-- `OnCreate()` --calls--> `RegisterPlugins()`  [INFERRED]
-  windows/runner/flutter_window.cpp → windows/flutter/generated_plugin_registrant.cc
-- `OnCreate()` --calls--> `GetClientArea()`  [INFERRED]
-  windows/runner/flutter_window.cpp → windows/runner/win32_window.cpp
-- `OnCreate()` --calls--> `SetChildContent()`  [INFERRED]
-  windows/runner/flutter_window.cpp → windows/runner/win32_window.cpp
+- `../../../core/providers/connection_status_provider.dart` --defines--> `ConnectionStatus`  [EXTRACTED]
+  features/reward/presentation/reward_screen.dart → core/providers/connection_status_provider.dart
+- `../../../core/providers/connection_status_provider.dart` --defines--> `build`  [EXTRACTED]
+  features/reward/presentation/reward_screen.dart → core/providers/connection_status_provider.dart
+- `../../../core/providers/connection_status_provider.dart` --defines--> `setNoInternet`  [EXTRACTED]
+  features/reward/presentation/reward_screen.dart → core/providers/connection_status_provider.dart
+- `../../../core/providers/connection_status_provider.dart` --defines--> `setServerUnreachable`  [EXTRACTED]
+  features/reward/presentation/reward_screen.dart → core/providers/connection_status_provider.dart
+- `../../../core/providers/connection_status_provider.dart` --defines--> `setOnline`  [EXTRACTED]
+  features/reward/presentation/reward_screen.dart → core/providers/connection_status_provider.dart
 
-## Communities (99 total, 7 thin omitted)
+## Communities (98 total, 7 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.04
+Cohesion: 0.08
 Nodes (45): AlertDialog, Align, build, _buildGreetingCard, _buildInfoBoardCard, _buildInfoBoardLoading, _buildInfoBoardPlaceholder, _buildLeaderboardCard (+37 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.05
+Cohesion: 0.08
 Nodes (43): build, RewardController, RewardHistoryController, RewardTabState, setHistoryTab, setRewardTab, AlertDialog, build (+35 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.05
+Cohesion: 0.08
 Nodes (41): build, MissionController, MissionTabState, setLeaderboard, setMission, Align, _animatedTabs, build (+33 more)
 
 ### Community 3 - "Community 3"
@@ -138,35 +137,35 @@ Nodes (38): ParkAreaListController, ParkVisualizationController, SelectedSubarea
 
 ### Community 4 - "Community 4"
 Cohesion: 0.06
-Nodes (25): User, FaqModel, FeedbackCategory, HistoryItem, HistoryResponse, PaginationMeta, InfoBoard, LeaderboardItem (+17 more)
+Nodes (24): User, FaqModel, FeedbackCategory, HistoryItem, HistoryResponse, PaginationMeta, InfoBoard, LeaderboardItem (+16 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.09
-Nodes (22): build, didChangeAppLifecycleState, dispose, Icon, initializeDateFormatting, initState, main, MaterialApp (+14 more)
+Nodes (21): build, didChangeAppLifecycleState, dispose, Icon, initializeDateFormatting, initState, main, MaterialApp (+13 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.09
-Nodes (22): AppConnectivityWrapper, AppRoutes, MaterialPageRoute, _materialRoute, PageRouteBuilder, _slideRoute, SlideTransition, ../../core/wrapper/connectivity_wrapper.dart (+14 more)
+Cohesion: 0.08
+Nodes (31): AppConnectivityWrapper, AppRoutes, MaterialPageRoute, _materialRoute, PageRouteBuilder, _slideRoute, SlideTransition, build (+23 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.07
-Nodes (26): auth_interceptor.dart, AlertDialog, build, DioClientService, DioErrorHandler, parse, AuthController, updateUser (+18 more)
+Cohesion: 0.28
+Nodes (11): auth_interceptor.dart, AlertDialog, build, DioClientService, DioErrorHandler, parse, package:flutter_dotenv/flutter_dotenv.dart, package:shared_preferences/shared_preferences.dart (+3 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.11
 Nodes (19): RegisterPlugins(), FlutterWindow(), OnCreate(), Create(), Destroy(), EnableFullDpiSupportIfAvailable(), GetClientArea(), GetThisFromHandle() (+11 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.06
-Nodes (32): build, _buildHistoryCard, _buildHistoryLoading, _buildOfflinePlaceholder, Center, Container, dispose, initState (+24 more)
+Cohesion: 0.18
+Nodes (19): build, _buildHistoryCard, _buildHistoryLoading, _buildOfflinePlaceholder, Center, Container, dispose, initState (+11 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.07
-Nodes (25): Exception, KeyManager, BottomNavIndexNotifier, build, dispose, HomeScreen, initState, MainScreen (+17 more)
+Cohesion: 0.06
+Nodes (33): _decryptResponse, EncryptionInterceptor, _generateRandomString, onError, onRequest, onResponse, Exception, KeyManager (+25 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.09
-Nodes (22): build, _buildCommentCard, _buildCommentLoading, _buildInputSection, _buildOfflineCard, _buildScrollablePlaceholder, CommentScreen, _CommentScreenState (+14 more)
+Cohesion: 0.06
+Nodes (46): ../../auth/presentation/auth_controller.dart, CommentActionController, CommentListController, build, _buildCommentCard, _buildCommentLoading, _buildInputSection, _buildOfflineCard (+38 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.1
@@ -177,8 +176,8 @@ Cohesion: 0.11
 Nodes (16): FeedbackCategoriesController, FeedbackFormController, build, Container, dispose, FeedbackScreen, _FeedbackScreenState, _inputField (+8 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.12
-Nodes (16): build, Container, dispose, initState, _inputField, Padding, ProfileEditSection, _ProfileEditSectionState (+8 more)
+Cohesion: 0.13
+Nodes (14): build, Color, Container, _createShimmerShader, dispose, _GradientText, initState, LayoutBuilder (+6 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.13
@@ -189,16 +188,16 @@ Cohesion: 0.14
 Nodes (4): fl_register_plugins(), main(), my_application_activate(), my_application_new()
 
 ### Community 17 - "Community 17"
-Cohesion: 0.25
-Nodes (5): AppTheme, ThemeData, AppSnackBars, show, package:flutter/material.dart
+Cohesion: 0.19
+Nodes (9): AppTheme, ThemeData, AppSnackBars, show, AppConnectivityWrapper, build, Stack, ../../../../core/utils/snackbar_utils.dart (+1 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.15
-Nodes (10): FaqController, HistoryController, InfoBoardController, ../data/faq_model.dart, ../data/faq_repository.dart, ../data/history_model.dart, ../data/history_repository.dart, ../data/info_board_model.dart (+2 more)
+Cohesion: 0.12
+Nodes (13): FaqController, HistoryController, InfoBoardController, build, ProfileSection, setSection, ../data/faq_model.dart, ../data/faq_repository.dart (+5 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.18
-Nodes (10): build, _buildSection, dispose, initState, Padding, PrivacyPolicyScreen, _PrivacyPolicyScreenState, Scaffold (+2 more)
+Cohesion: 0.17
+Nodes (11): build, _buildSection, dispose, initState, Padding, PrivacyPolicyScreen, _PrivacyPolicyScreenState, Scaffold (+3 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.18
@@ -209,36 +208,36 @@ Cohesion: 0.18
 Nodes (10): build, ClampingScrollPhysics, dispose, initState, LoginScreen, _LoginScreenState, Scaffold, SingleChildScrollView (+2 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.18
-Nodes (10): auth_controller.dart, build, dispose, initState, ResetPasswordScreen, _ResetPasswordScreenState, Scaffold, SizedBox (+2 more)
+Cohesion: 0.2
+Nodes (9): build, dispose, initState, ResetPasswordScreen, _ResetPasswordScreenState, Scaffold, SizedBox, Text (+1 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.2
-Nodes (9): AuthInterceptor, onRequest, build, CommentRepository, CommentRepositoryInstance, Exception, comment_model.dart, package:dio/dio.dart (+1 more)
+Cohesion: 0.33
+Nodes (5): build, CommentRepository, CommentRepositoryInstance, Exception, comment_model.dart
 
 ### Community 24 - "Community 24"
 Cohesion: 0.18
 Nodes (10): build, dispose, initState, RegisterScreen, _RegisterScreenState, Scaffold, SizedBox, Text (+2 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.18
-Nodes (10): build, dispose, initState, Scaffold, SizedBox, Text, VerifyOtpScreen, _VerifyOtpScreenState (+2 more)
+Cohesion: 0.2
+Nodes (9): build, dispose, initState, Scaffold, SizedBox, Text, VerifyOtpScreen, _VerifyOtpScreenState (+1 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.18
-Nodes (10): build, ProfileScreen, _ProfileScreenState, Scaffold, _showLogoutDialog, ../../../core/routes/app_routes.dart, ../../home/presentation/main_screen.dart, ../../mission/presentation/mission_controller.dart (+2 more)
+Cohesion: 0.2
+Nodes (9): build, ProfileScreen, _ProfileScreenState, Scaffold, _showLogoutDialog, ../../../core/routes/app_routes.dart, ../../home/presentation/main_screen.dart, ../../mission/presentation/mission_controller.dart (+1 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.25
-Nodes (7): build, ForgotPasswordScreen, _ForgotPasswordScreenState, Scaffold, SizedBox, Text, ../../../core/theme/app_theme.dart
+Cohesion: 0.22
+Nodes (8): auth_controller.dart, build, ForgotPasswordScreen, _ForgotPasswordScreenState, Scaffold, SizedBox, Text, ../../../core/enums/otp_type.dart
 
 ### Community 28 - "Community 28"
 Cohesion: 0.25
 Nodes (7): AuthRepository, AuthRepositoryInstance, build, Exception, _handleAuthResponse, UnimplementedError, user_model.dart
 
 ### Community 29 - "Community 29"
-Cohesion: 0.07
-Nodes (21): AnimatedLogo, _AnimatedLogoState, build, dispose, FadeTransition, initState, AnimatedBuilder, AnimatedParkingLogo (+13 more)
+Cohesion: 0.25
+Nodes (7): AnimatedBuilder, AnimatedParkingLogo, _AnimatedParkingLogoState, build, dispose, initState, Opacity
 
 ### Community 30 - "Community 30"
 Cohesion: 0.29
@@ -253,8 +252,8 @@ Cohesion: 0.33
 Nodes (7): call, create, debugGetCreateSourceHash, overrideWithValue, runBuild, toString, _
 
 ### Community 34 - "Community 34"
-Cohesion: 0.33
-Nodes (5): AppConnectivityWrapper, build, Stack, ../../../../core/utils/snackbar_utils.dart, ../providers/connection_status_provider.dart
+Cohesion: 0.29
+Nodes (6): AnimatedLogo, _AnimatedLogoState, build, dispose, FadeTransition, initState
 
 ### Community 35 - "Community 35"
 Cohesion: 0.4
@@ -289,8 +288,8 @@ Cohesion: 0.33
 Nodes (5): build, Exception, HistoryRepository, HistoryRepositoryInstance, history_model.dart
 
 ### Community 43 - "Community 43"
-Cohesion: 0.33
-Nodes (5): build, FaqRepository, FaqRepositoryInstance, ../../../core/network/dio_client.dart, faq_model.dart
+Cohesion: 0.22
+Nodes (7): AuthInterceptor, onRequest, build, FaqRepository, FaqRepositoryInstance, faq_model.dart, package:dio/dio.dart
 
 ### Community 44 - "Community 44"
 Cohesion: 0.33
@@ -353,20 +352,20 @@ Cohesion: 0.47
 Nodes (4): wWinMain(), CreateAndAttachConsole(), GetCommandLineArguments(), Utf8FromUtf16()
 
 ### Community 59 - "Community 59"
-Cohesion: 0.2
-Nodes (9): _decryptResponse, EncryptionInterceptor, _generateRandomString, onError, onRequest, onResponse, dart:math, key_manager.dart (+1 more)
+Cohesion: 0.43
+Nodes (6): AuthController, updateUser, ../data/auth_repository.dart, ../data/user_model.dart, package:connectivity_plus/connectivity_plus.dart, package:flutter/foundation.dart
 
 ### Community 61 - "Community 61"
-Cohesion: 0.29
-Nodes (6): build, ConnectionStatus, setNoInternet, setOffline, setOnline, setServerUnreachable
+Cohesion: 0.39
+Nodes (7): build, ConnectionStatus, setNoInternet, setOffline, setOnline, setServerUnreachable, ../../../core/providers/connection_status_provider.dart
 
 ### Community 62 - "Community 62"
 Cohesion: 0.4
-Nodes (4): CommentActionController, CommentListController, ../data/comment_model.dart, ../data/comment_repository.dart
+Nodes (4): build, CustomButton, SizedBox, ../theme/app_theme.dart
 
 ### Community 63 - "Community 63"
 Cohesion: 0.4
-Nodes (4): ../../auth/presentation/auth_controller.dart, ProfileController, dart:io, ../data/profile_repository.dart
+Nodes (4): build, CustomTextField, Function, TextFormField
 
 ### Community 64 - "Community 64"
 Cohesion: 0.5
@@ -379,10 +378,6 @@ Nodes (4): create, debugGetCreateSourceHash, runBuild, _
 ### Community 67 - "Community 67"
 Cohesion: 0.67
 Nodes (4): create, debugGetCreateSourceHash, runBuild, _
-
-### Community 68 - "Community 68"
-Cohesion: 0.5
-Nodes (3): build, ProfileSection, setSection
 
 ### Community 69 - "Community 69"
 Cohesion: 0.67
@@ -405,24 +400,24 @@ Cohesion: 0.33
 Nodes (5): main, ProviderScope, package:flutter_riverpod/flutter_riverpod.dart, package:flutter_test/flutter_test.dart, package:polislot_mobile_catz/main.dart
 
 ## Knowledge Gaps
-- **675 isolated node(s):** `MainActivity`, `Intercept NOTIFY_DEBUGGER_ABOUT_RX_PAGES and touch the pages.`, `-registerWithRegistry`, `PoliSlotApp`, `_PoliSlotAppState` (+670 more)
+- **489 isolated node(s):** `MainActivity`, `Intercept NOTIFY_DEBUGGER_ABOUT_RX_PAGES and touch the pages.`, `-registerWithRegistry`, `PoliSlotApp`, `_PoliSlotAppState` (+484 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `package:flutter/material.dart` connect `Community 17` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 5`, `Community 6`, `Community 7`, `Community 9`, `Community 10`, `Community 11`, `Community 13`, `Community 14`, `Community 15`, `Community 19`, `Community 20`, `Community 21`, `Community 22`, `Community 24`, `Community 25`, `Community 26`, `Community 27`, `Community 29`, `Community 34`, `Community 98`?**
+- **Why does `package:flutter/material.dart` connect `Community 17` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 5`, `Community 6`, `Community 7`, `Community 9`, `Community 10`, `Community 11`, `Community 13`, `Community 14`, `Community 15`, `Community 19`, `Community 20`, `Community 21`, `Community 22`, `Community 24`, `Community 25`, `Community 26`, `Community 27`, `Community 29`, `Community 34`, `Community 62`, `Community 63`, `Community 98`?**
   _High betweenness centrality (0.251) - this node is a cross-community bridge._
-- **Why does `package:flutter_riverpod/flutter_riverpod.dart` connect `Community 98` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 5`, `Community 7`, `Community 9`, `Community 10`, `Community 11`, `Community 13`, `Community 14`, `Community 15`, `Community 19`, `Community 21`, `Community 22`, `Community 24`, `Community 25`, `Community 26`, `Community 27`, `Community 34`?**
-  _High betweenness centrality (0.099) - this node is a cross-community bridge._
-- **Why does `package:riverpod_annotation/riverpod_annotation.dart` connect `Community 18` to `Community 1`, `Community 2`, `Community 3`, `Community 7`, `Community 13`, `Community 23`, `Community 28`, `Community 30`, `Community 42`, `Community 43`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 48`, `Community 61`, `Community 62`, `Community 63`, `Community 68`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+- **Why does `package:flutter_riverpod/flutter_riverpod.dart` connect `Community 98` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 5`, `Community 6`, `Community 9`, `Community 10`, `Community 11`, `Community 13`, `Community 14`, `Community 15`, `Community 17`, `Community 19`, `Community 21`, `Community 22`, `Community 24`, `Community 25`, `Community 26`, `Community 27`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Why does `package:riverpod_annotation/riverpod_annotation.dart` connect `Community 18` to `Community 1`, `Community 2`, `Community 3`, `Community 7`, `Community 42`, `Community 43`, `Community 44`, `Community 13`, `Community 45`, `Community 46`, `Community 47`, `Community 11`, `Community 48`, `Community 23`, `Community 59`, `Community 28`, `Community 61`, `Community 30`?**
+  _High betweenness centrality (0.079) - this node is a cross-community bridge._
 - **What connects `MainActivity`, `Intercept NOTIFY_DEBUGGER_ABOUT_RX_PAGES and touch the pages.`, `-registerWithRegistry` to the rest of the system?**
-  _675 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _489 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.04 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._

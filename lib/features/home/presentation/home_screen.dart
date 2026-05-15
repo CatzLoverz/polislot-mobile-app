@@ -239,7 +239,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       },
                       loading: () => _buildInfoBoardLoading(),
                       error: (err, stack) =>
-                          _buildInfoBoardPlaceholder(connectionState: connectionState),
+                          _buildInfoBoardPlaceholder(connectionState: connectionState, isApiError: true),
                     ),
 
                   const SizedBox(height: 24),
@@ -361,9 +361,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildInfoBoardPlaceholder({ConnectionStateType connectionState = ConnectionStateType.online}) {
-    final bool isError = connectionState != ConnectionStateType.online;
+  Widget _buildInfoBoardPlaceholder({ConnectionStateType connectionState = ConnectionStateType.online, bool isApiError = false}) {
     final bool isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+    final bool isOfflineError = connectionState == ConnectionStateType.noInternet;
+    final bool isError = isServerErr || isOfflineError || isApiError;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -387,7 +388,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.notifications_none_rounded),
+              isServerErr ? Icons.dns_rounded : (isError ? (isApiError ? Icons.error_outline_rounded : Icons.wifi_off_rounded) : Icons.notifications_none_rounded),
               color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade400),
               size: 24,
             ),
@@ -398,7 +399,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Belum ada informasi"),
+                  isServerErr ? "Server Bermasalah" : (isError ? (isApiError ? "Terjadi Kesalahan" : "Anda Sedang Offline") : "Belum ada informasi"),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -407,8 +408,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isServerErr ? "Sistem sedang dalam perbaikan." : (isError ? "Periksa koneksi internet Anda." : "Tidak ada informasi terbaru saat ini."),
-                  maxLines: 2,
+                  isServerErr 
+                      ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." 
+                      : (isError 
+                          ? (isApiError ? "Gagal memuat data.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang.") 
+                          : "Tidak ada informasi terbaru saat ini."),
+                  maxLines: 3,
                   style: const TextStyle(
                     fontWeight: FontWeight.w400,
                     fontSize: 12,
@@ -855,7 +860,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                 ),
                 Text(
-                  isServerErr ? "Silakan coba beberapa saat lagi." : (isError ? "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif." : "Gagal memuat data."),
+                  isServerErr 
+                      ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." 
+                      : (isError 
+                          ? "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang." 
+                          : "Gagal memuat data.\nTarik layar ke bawah untuk memuat ulang."),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
@@ -905,7 +914,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      isServerErr ? "Sistem sedang dalam perbaikan." : (isError ? "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif." : "Gagal memuat area parkir."),
+                      isServerErr 
+                          ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." 
+                          : (isError 
+                              ? "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang." 
+                              : "Gagal memuat area parkir.\nTarik layar ke bawah untuk memuat ulang."),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,

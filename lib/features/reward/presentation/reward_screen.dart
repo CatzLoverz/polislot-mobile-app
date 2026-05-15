@@ -639,7 +639,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            isServerErr ? "Sistem sedang dalam perbaikan." : (isError ? "Tarik ke bawah untuk memuat ulang.\nPastikan internet Anda aktif." : "Gagal memuat data hadiah."),
+            isServerErr ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." : (isError ? "Gagal memuat data hadiah.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."),
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
           ),

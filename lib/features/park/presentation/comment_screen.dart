@@ -254,7 +254,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                     .refresh();
               },
               child: isOffline != ConnectionStateType.online
-                  ? _buildScrollablePlaceholder(_buildOfflineCard())
+                  ? _buildScrollablePlaceholder(_buildOfflineCard(isOffline))
                   : commentListAsync.when(
                       skipLoadingOnReload: true,
                       skipLoadingOnRefresh: true,
@@ -279,7 +279,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                       },
                       loading: () => _buildCommentLoading(),
                       error: (err, stack) =>
-                          _buildScrollablePlaceholder(_buildOfflineCard()),
+                          _buildScrollablePlaceholder(_buildOfflineCard(isOffline)),
                     ),
             ),
           ),
@@ -303,7 +303,10 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     );
   }
 
-  Widget _buildOfflineCard() {
+  Widget _buildOfflineCard(ConnectionStateType connectionState) {
+    final bool isError = connectionState == ConnectionStateType.online;
+    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+
     return Container(
       margin: const EdgeInsets.all(24),
       padding: const EdgeInsets.all(24),
@@ -324,29 +327,29 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.red.shade50),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.wifi_off_rounded,
+              isServerErr ? Icons.dns_rounded : (isError ? Icons.error_outline_rounded : Icons.wifi_off_rounded),
               size: 32,
-              color: Colors.red.shade400,
+              color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.red.shade400),
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "Anda Sedang Offline",
+          Text(
+            isServerErr ? "Server Bermasalah" : (isError ? "Terjadi Kesalahan" : "Anda Sedang Offline"),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1A253A),
+              color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : const Color(0xFF1A253A)),
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "Tarik layar ke bawah untuk memuat ulang halaman.",
+          Text(
+            isServerErr ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." : (isError ? "Gagal memuat komentar.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."),
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF454F63), height: 1.4),
+            style: const TextStyle(color: Color(0xFF454F63), height: 1.4),
           ),
         ],
       ),

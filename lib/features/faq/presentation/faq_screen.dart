@@ -34,18 +34,31 @@ class FaqScreen extends ConsumerWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 4,
       ),
-      body: isOffline != ConnectionStateType.online
-          ? _buildOfflineFaqList(offlineFaqs, primaryColor)
-          : faqState.when(
-              loading: () => _buildLoadingPlaceholder(),
-              error: (err, stack) => Center(child: Text("Gagal memuat: $err")),
-              data: (faqs) {
-                if (faqs.isEmpty) {
-                  return const Center(child: Text("Belum ada pertanyaan saat ini."));
-                }
-                return _buildFaqList(faqs, primaryColor);
-              },
-            ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.read(connectionStatusProvider.notifier).setOnline();
+          try {
+            final _ = await ref.refresh(faqControllerProvider.future);
+          } catch (_) {}
+        },
+        child: isOffline != ConnectionStateType.online
+            ? _buildOfflineFaqList(offlineFaqs, primaryColor, isOffline)
+            : faqState.when(
+                loading: () => _buildLoadingPlaceholder(),
+                error: (err, stack) => _buildOfflineFaqList(offlineFaqs, primaryColor, isOffline),
+                data: (faqs) {
+                  if (faqs.isEmpty) {
+                    return ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        Center(child: Text("Belum ada pertanyaan saat ini.")),
+                      ],
+                    );
+                  }
+                  return _buildFaqList(faqs, primaryColor);
+                },
+              ),
+      ),
     );
   }
 
@@ -67,24 +80,33 @@ class FaqScreen extends ConsumerWidget {
   }
 
   /// Daftar FAQ saat offline (hardcoded, topik jaringan)
-  Widget _buildOfflineFaqList(List<dynamic> faqs, Color primaryColor) {
+  Widget _buildOfflineFaqList(List<dynamic> faqs, Color primaryColor, ConnectionStateType connectionState) {
+    final bool isError = connectionState == ConnectionStateType.online;
+    final bool isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+
     return Column(
       children: [
         // Banner offline
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          color: Colors.orange.shade50,
+          color: isServerErr ? Colors.orange.shade50 : Colors.red.shade50,
           child: Row(
             children: [
-              Icon(Icons.wifi_off_rounded, size: 18, color: Colors.red.shade700),
+              Icon(
+                isServerErr ? Icons.dns_rounded : (isError ? Icons.error_outline_rounded : Icons.wifi_off_rounded),
+                size: 18,
+                color: isServerErr ? Colors.orange.shade700 : Colors.red.shade700,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "Anda sedang offline. Menampilkan FAQ seputar masalah jaringan.",
+                  isServerErr
+                      ? "Server bermasalah.\nTarik layar ke bawah untuk memuat ulang."
+                      : (isError ? "Terjadi kesalahan.\nTarik layar ke bawah untuk memuat ulang." : "Anda sedang offline.\nTarik layar ke bawah untuk memuat ulang."),
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.red.shade800,
+                    color: isServerErr ? Colors.orange.shade800 : Colors.red.shade800,
                   ),
                 ),
               ),
