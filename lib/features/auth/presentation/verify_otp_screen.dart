@@ -22,7 +22,7 @@ class VerifyOtpScreen extends ConsumerStatefulWidget {
 }
 
 class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
-  final _otpController = TextEditingController();
+  final _otpController = PinInputController();
   late String _email;
 
   // State lokal untuk loading resend
@@ -227,45 +227,24 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                   onSurface: const Color(0xFF1352C8), // Fallback text color
                 ),
               ),
-              child: PinCodeTextField(
-                appContext: context,
+              child: MaterialPinField(
                 length: 6,
-                controller: _otpController,
-                autoDisposeControllers: false,
-                textStyle: const TextStyle(
-                  color: Color(0xFF1352C8),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-                pinTheme: PinTheme(
-                  shape: PinCodeFieldShape.box,
-                  borderRadius: BorderRadius.circular(10),
-                  fieldHeight: 50,
-                  fieldWidth: 45,
-                  activeColor: const Color(0xFF1352C8),
-                  inactiveColor: Colors.grey.shade300,
-                  selectedColor: const Color(0xFF1352C8),
-                  activeFillColor: Colors.white,
-                  selectedFillColor: Colors.white,
-                ),
-                enableActiveFill: false,
+                pinController: _otpController,
                 keyboardType: TextInputType.number,
-
-                // ✅ Custom Dialog Config (Indonesian)
-                dialogConfig: DialogConfig(
-                  dialogTitle: "Tempel Kode?",
-                  dialogContent: "Apakah Anda ingin menempelkan kode ini ",
-                  affirmativeText: "Tempel",
-                  negativeText: "Batal",
+                theme: MaterialPinTheme(
+                  shape: MaterialPinShape.outlined,
+                  borderRadius: BorderRadius.circular(10),
+                  cellSize: const Size(45, 50),
+                  borderColor: Colors.grey.shade300,
+                  focusedBorderColor: const Color(0xFF1352C8),
+                  filledBorderColor: const Color(0xFF1352C8),
+                  fillColor: Colors.white,
+                  textStyle: const TextStyle(
+                    color: Color(0xFF1352C8),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
-
-                // ✅ Fix: Style for the pasted code shown in dialog
-                pastedTextStyle: const TextStyle(
-                  color: Color(0xFF1352C8),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-
                 onCompleted: (_) => _verify(),
                 onChanged: (_) {},
               ),

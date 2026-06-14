@@ -101,7 +101,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               
               itemAsString: (FeedbackCategory u) => u.name,
               compareFn: (i1, i2) => i1.id == i2.id, // Penting untuk membandingkan objek
-              onChanged: (FeedbackCategory? data) => setState(() => _selectedCategory = data),
+              onSelected: (FeedbackCategory? data) => setState(() => _selectedCategory = data),
               selectedItem: _selectedCategory,
               
               // 2. Gunakan 'decoratorProps' (pengganti dropdownDecoratorProps)

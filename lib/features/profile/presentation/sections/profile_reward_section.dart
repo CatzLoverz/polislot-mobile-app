@@ -183,12 +183,12 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
   }
 
   Widget _buildHistoryCard(UserRewardHistoryItem item) {
-    final IconData icon = item.type == 'Voucher'
+    final icon = item.type == 'Voucher'
         ? FontAwesomeIcons.ticket
         : FontAwesomeIcons.gift;
 
     // Status Logic
-    IconData statusIcon;
+    dynamic statusIcon;
     Color statusColor;
     String statusText;
     String dateLabel = "Dibuat: ${item.createdAt}";
@@ -231,7 +231,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
               color: const Color(0xFF1565C0).withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: const Color(0xFF1565C0), size: 30),
+            child: FaIcon(icon, color: const Color(0xFF1565C0), size: 30),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -264,7 +264,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
           ),
           Column(
             children: [
-              Icon(statusIcon, color: statusColor, size: 26),
+              FaIcon(statusIcon, color: statusColor, size: 28),
               const SizedBox(height: 4),
               Text(
                 statusText,

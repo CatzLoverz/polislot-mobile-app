@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/park_repository.dart';
 import '../data/park_model.dart';
+import '../../../../core/services/mqtt_service.dart';
 
 part 'park_controller.g.dart';
 
@@ -27,7 +28,55 @@ class ParkVisualizationController extends _$ParkVisualizationController {
   @override
   Future<ParkVisualData> build(String areaId) async {
     final repo = ref.read(parkRepositoryInstanceProvider);
-    return await repo.getParkVisualization(areaId);
+    final data = await repo.getParkVisualization(areaId);
+
+    // Listen to MQTT Realtime Updates
+    final subscription = ref.read(mqttServiceProvider.notifier).messages.listen((payload) {
+      final topic = payload['_topic'] as String?;
+      if (topic != null && topic.endsWith('/$areaId') && state.hasValue) {
+        final subareaId = payload['parkSubareaId'] as int?;
+        final newStatus = payload['status'] as String?;
+        
+        if (subareaId != null && newStatus != null) {
+          final currentData = state.value!;
+          
+          final newSubareas = currentData.subareas.map((sub) {
+            if (sub.id == subareaId) {
+              return ParkSubareaVisual(
+                id: sub.id,
+                name: sub.name,
+                polygonPoints: sub.polygonPoints,
+                status: newStatus,
+                amenities: sub.amenities,
+                commentCount: sub.commentCount,
+              );
+            }
+            return sub;
+          }).toList();
+
+          state = AsyncData(ParkVisualData(
+            areaId: currentData.areaId,
+            areaName: currentData.areaName,
+            areaCode: currentData.areaCode,
+            cooldown: currentData.cooldown,
+            subareas: newSubareas,
+          ));
+
+          // Jika subarea yang diperbarui sedang dipilih, perbarui juga state selectedSubarea
+          final selected = ref.read(selectedSubareaProvider);
+          if (selected != null && selected.id == subareaId) {
+            final updatedSelected = newSubareas.firstWhere((s) => s.id == subareaId);
+            ref.read(selectedSubareaProvider.notifier).set(updatedSelected);
+          }
+        }
+      }
+    });
+
+    ref.onDispose(() {
+      subscription.cancel();
+    });
+
+    return data;
   }
 }
 

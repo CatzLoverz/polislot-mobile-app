@@ -42,7 +42,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
     super.dispose();
   }
 
-  IconData _getMissionIcon(String metricCode) {
+  dynamic _getMissionIcon(String metricCode) {
     switch (metricCode.toUpperCase()) {
       case 'VALIDATION_ACTION':
         return FontAwesomeIcons.squareCheck;

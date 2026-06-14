@@ -371,7 +371,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
 
   Widget _rewardCard(RewardItem item, int currentPoints) {
     final bool canExchange = currentPoints >= item.pointsRequired;
-    final IconData icon = item.type == 'Voucher'
+    final icon = item.type == 'Voucher'
         ? FontAwesomeIcons.ticket
         : FontAwesomeIcons.gift;
     final Color color = item.type == 'Voucher'
@@ -401,7 +401,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(child: Icon(icon, color: color, size: 28)),
+            child: Center(child: FaIcon(icon, color: color, size: 28)),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -451,7 +451,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
 
   // WIDGET: Card History
   Widget _historyCard(HistoryItem item) {
-    IconData icon;
+    dynamic icon;
     Color color;
     String titleText;
     String descText;
@@ -526,7 +526,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(child: Icon(icon, color: color, size: 24)),
+                child: Center(child: FaIcon(icon, color: color, size: 24)),
               ),
               const SizedBox(width: 14),
 

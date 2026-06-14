@@ -3,7 +3,6 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -12,6 +11,19 @@ val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
+}
+
+val envProperties = Properties()
+val envFile = rootProject.file("../.env")
+if (envFile.exists()) {
+    envFile.readLines().forEach { line ->
+        val parts = line.split("=", limit = 2)
+        if (parts.size == 2) {
+            val key = parts[0].trim()
+            val value = parts[1].trim().removeSurrounding("\"").removeSurrounding("'")
+            envProperties[key] = value
+        }
+    }
 }
 
 val keystoreProperties = Properties()
@@ -42,7 +54,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["mapsApiKey"] = (localProperties["google.maps.api.key"] as String?) ?: ""
+        manifestPlaceholders["mapsApiKey"] = (envProperties["GOOGLE_MAPS_API_KEY"] as String?) ?: ""
     }
     signingConfigs {
         create("release") {
@@ -65,7 +77,7 @@ flutter {
     source = "../.."
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
