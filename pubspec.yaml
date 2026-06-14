@@ -37,7 +37,7 @@ dependencies:
   dio: ^5.9.0
   shared_preferences: ^2.5.3
   riverpod_annotation: ^4.0.0
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
   flutter_riverpod: ^3.0.3
   google_nav_bar: ^5.0.7
   smooth_page_indicator: ^2.0.1

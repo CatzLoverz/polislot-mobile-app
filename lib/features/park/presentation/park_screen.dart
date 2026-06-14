@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/services/mqtt_service.dart';
 import 'park_controller.dart';
 import '../data/park_model.dart';
 import 'comment_screen.dart';
@@ -25,7 +26,6 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
   GoogleMapController? _controller;
   bool _isMyLocationEnabled = false;
   Future<Set<Marker>>? _markersFuture;
-  List<ParkSubareaVisual>? _lastSubareas;
   bool _isManualRefresh = false; // Internal flag tracking manual refresh
 
   @override
@@ -307,11 +307,8 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     final data = parkDataAsync.value!;
     final isRefreshing = parkDataAsync.isLoading && _isManualRefresh;
 
-    // Cache Future for markers (existing logic)
-    if (_markersFuture == null || _lastSubareas != data.subareas) {
-      _lastSubareas = data.subareas;
-      _markersFuture = _generateMarkers(data.subareas);
-    }
+    // Only generate markers once since names and centers are static
+    _markersFuture ??= _generateMarkers(data.subareas);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -337,6 +334,8 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // Indikator status koneksi MQTT Realtime
+          _MqttStatusIndicator(),
           IconButton(
             onPressed: () {
               // Manual Refresh triggers the spinner
@@ -644,6 +643,13 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     final statusColor = _getStatusColor(subarea.status);
     final statusValue = _getStatusValue(subarea.status);
 
+    String? countdownText;
+    if (subarea.validationRemainingSeconds > 0) {
+      final m = subarea.validationRemainingSeconds ~/ 60;
+      final s = subarea.validationRemainingSeconds % 60;
+      countdownText = "(Sisa: ${m}m ${s}s)";
+    }
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -709,16 +715,61 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                             "Ketersediaan:",
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
-                          Text(
-                            subarea.status.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: statusColor,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                subarea.status.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                              if (subarea.isValidated) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text('Tervalidasi', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                ),
+                              ] else if (subarea.hasUserReport) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text('Laporan Berbeda', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      if (countdownText != null || subarea.maxSlots > 0)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (countdownText != null)
+                              Text(
+                                countdownText,
+                                style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold),
+                              ),
+                            if (countdownText != null && subarea.maxSlots > 0)
+                              const SizedBox(width: 8),
+                            if (subarea.maxSlots > 0)
+                              Text(
+                                'Terisi: ${subarea.currentCount}/${subarea.maxSlots} slot',
+                                style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                              ),
+                          ],
+                        ),
                       const SizedBox(height: 6),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
@@ -1008,6 +1059,108 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Widget indikator status koneksi MQTT Realtime di AppBar.
+/// Menampilkan titik animasi: hijau (terhubung), kuning (menghubungkan), abu-abu (terputus).
+class _MqttStatusIndicator extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_MqttStatusIndicator> createState() =>
+      _MqttStatusIndicatorState();
+}
+
+class _MqttStatusIndicatorState extends ConsumerState<_MqttStatusIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // ref.watch(mqttServiceProvider) mengembalikan MqttConnectionStatus secara reaktif
+    // karena state provider sekarang adalah MqttConnectionStatus (bukan void)
+    final mqttStatus = ref.watch(mqttServiceProvider);
+
+    Color dotColor;
+    String tooltip;
+    bool animate;
+
+    switch (mqttStatus) {
+      case MqttConnectionStatus.connected:
+        dotColor = const Color(0xFF4CAF50); // Hijau
+        tooltip = 'Realtime: Terhubung';
+        animate = true;
+        break;
+      case MqttConnectionStatus.connecting:
+        dotColor = const Color(0xFFFFC107); // Kuning
+        tooltip = 'Realtime: Menghubungkan...';
+        animate = true;
+        break;
+      case MqttConnectionStatus.error:
+        dotColor = const Color(0xFFFF5252); // Merah
+        tooltip = 'Realtime: Error koneksi';
+        animate = false;
+        break;
+      default:
+        dotColor = Colors.grey.shade400;
+        tooltip = 'Realtime: Terputus';
+        animate = false;
+    }
+
+    return Tooltip(
+      message: tooltip,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 16.0),
+        child: animate
+            ? AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) => Opacity(
+                  opacity: _pulseAnimation.value,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: dotColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: dotColor.withValues(alpha: 0.5),
+                          blurRadius: 6,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+      ),
     );
   }
 }

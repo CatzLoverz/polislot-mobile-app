@@ -16,6 +16,7 @@ import 'features/mission/presentation/mission_controller.dart';
 import 'features/park/presentation/park_controller.dart';
 import 'features/reward/presentation/reward_controller.dart';
 import 'features/history/presentation/history_controller.dart';
+import 'core/services/mqtt_service.dart';
 
 
 void main() async {
@@ -103,6 +104,8 @@ class _PoliSlotAppState extends ConsumerState<PoliSlotApp> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Inisialisasi MQTT service sejak awal agar koneksi terbentuk sebelum buka peta
+    Future.microtask(() => ref.read(mqttServiceProvider));
   }
 
   @override
@@ -114,6 +117,13 @@ class _PoliSlotAppState extends ConsumerState<PoliSlotApp> with WidgetsBindingOb
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
+      // Reconnect MQTT jika koneksi terputus saat di background
+      final mqttStatus = ref.read(mqttServiceProvider);
+      if (mqttStatus != MqttConnectionStatus.connected &&
+          mqttStatus != MqttConnectionStatus.connecting) {
+        ref.read(mqttServiceProvider.notifier).reconnect();
+      }
+
       if (isAppInitialized) {
         // Tunggu validasi token selesai terlebih dahulu
         final isValid = await ref.read(authControllerProvider.notifier).checkStartupSession();
