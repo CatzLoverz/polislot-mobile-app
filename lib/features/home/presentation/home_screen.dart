@@ -223,24 +223,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   if (connectionState != ConnectionStateType.online)
                     _buildInfoBoardPlaceholder(connectionState: connectionState)
                   else
-                    infoBoardAsync.when(
-                      skipLoadingOnReload: true,
-                      skipLoadingOnRefresh: true,
-                      data: (infoList) {
-                        if (infoList.isEmpty) {
-                          return _buildInfoBoardPlaceholder();
-                        }
-                        final latestInfo = infoList.first;
-                        return InkWell(
-                          onTap: () => _showAllInfoDialog(context, infoList),
+                    switch (infoBoardAsync) {
+                      AsyncData(:final value) when value.isEmpty =>
+                        _buildInfoBoardPlaceholder(),
+                      AsyncData(:final value) => InkWell(
+                          onTap: () => _showAllInfoDialog(context, value),
                           borderRadius: BorderRadius.circular(16),
-                          child: _buildInfoBoardCard(latestInfo),
-                        );
-                      },
-                      loading: () => _buildInfoBoardLoading(),
-                      error: (err, stack) =>
-                          _buildInfoBoardPlaceholder(connectionState: connectionState, isApiError: true),
-                    ),
+                          child: _buildInfoBoardCard(value.first),
+                        ),
+                      AsyncError() =>
+                        _buildInfoBoardPlaceholder(connectionState: connectionState, isApiError: true),
+                      _ => _buildInfoBoardLoading(),
+                    },
 
                   const SizedBox(height: 24),
 
@@ -253,40 +247,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   if (connectionState != ConnectionStateType.online)
                     _buildParkingOffline(connectionState)
                   else
-                    parkListAsync.when(
-                      skipLoadingOnReload: true,
-                      skipLoadingOnRefresh: true,
-                      data: (areas) {
-                        if (areas.isEmpty) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Text("Belum ada data area parkir."),
-                            ),
-                          );
-                        }
-                        return Column(
-                          children: areas
+                    switch (parkListAsync) {
+                      AsyncData(:final value) when value.isEmpty =>
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text("Belum ada data area parkir."),
+                          ),
+                        ),
+                      AsyncData(:final value) => Column(
+                          children: value
                               .map((area) => _buildParkingAreaItem(area))
                               .toList(),
-                        );
-                      },
-                      loading: () => _buildParkingListLoading(),
-                      error: (err, stack) => _buildParkingOffline(connectionState),
-                    ),
+                        ),
+                      AsyncError() => _buildParkingOffline(connectionState),
+                      _ => _buildParkingListLoading(),
+                    },
 
                   const SizedBox(height: 16),
 
                   if (connectionState != ConnectionStateType.online)
                     _buildLeaderboardOffline(connectionState)
                   else
-                    missionAsync.when(
-                      skipLoadingOnReload: true,
-                      skipLoadingOnRefresh: true,
-                      data: (data) => _buildLeaderboardCard(data.leaderboard),
-                      loading: () => _buildLeaderboardLoading(),
-                      error: (err, stack) => _buildLeaderboardOffline(connectionState),
-                    ),
+                    switch (missionAsync) {
+                      AsyncData(:final value) =>
+                        _buildLeaderboardCard(value.leaderboard),
+                      AsyncError() => _buildLeaderboardOffline(connectionState),
+                      _ => _buildLeaderboardLoading(),
+                    },
 
                   const SizedBox(height: 80),
                 ],

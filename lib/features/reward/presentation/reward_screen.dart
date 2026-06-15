@@ -131,28 +131,24 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                 const SizedBox(height: 18),
 
                 // ✅ ANIMASI: AnimatedSwitcher agar seragam dengan Mission Screen
-                AnimatedSwitcher(
+                  AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   child: connectionState != ConnectionStateType.online
                       ? _buildOfflinePlaceholder(connectionState)
                       : isRewardTab
                       // --- TAB REWARD ---
-                      ? rewardDataAsync.when(
-                          skipLoadingOnReload: true,
-                          skipLoadingOnRefresh: true,
-                          data: (data) =>
-                              _buildRewardList(data.rewards, currentPoints),
-                          loading: () => _buildRewardLoading(),
-                          error: (err, stack) => _buildOfflinePlaceholder(connectionState),
-                        )
+                      ? switch (rewardDataAsync) {
+                          AsyncData(:final value) =>
+                              _buildRewardList(value.rewards, currentPoints),
+                          AsyncError() => _buildOfflinePlaceholder(connectionState),
+                          _ => _buildRewardLoading(),
+                        }
                       // --- TAB RIWAYAT KOIN ---
-                      : historyDataAsync.when(
-                          skipLoadingOnReload: true,
-                          skipLoadingOnRefresh: true,
-                          data: (history) => _buildHistoryList(history),
-                          loading: () => _buildHistoryLoading(),
-                          error: (err, stack) => _buildOfflinePlaceholder(connectionState),
-                        ),
+                      : switch (historyDataAsync) {
+                          AsyncData(:final value) => _buildHistoryList(value),
+                          AsyncError() => _buildOfflinePlaceholder(connectionState),
+                          _ => _buildHistoryLoading(),
+                        },
                 ),
               ],
             ),

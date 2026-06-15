@@ -72,38 +72,33 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
         },
         child: isOffline != ConnectionStateType.online
             ? _buildOfflinePlaceholder(isOffline)
-            : historyAsync.when(
-                // ✅ SILENT REFRESH: Skip loading jika data sudah ada
-                skipLoadingOnReload: true,
-                skipLoadingOnRefresh: true,
-                data: (history) {
-                  if (history.isEmpty) {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.3,
-                        ),
-                        const Center(
-                          child: Text("Belum ada riwayat penukaran."),
-                        ),
-                      ],
-                    );
-                  }
-                  return ListView.builder(
+            : switch (historyAsync) {
+                // Skip loading saat reload: jika data sudah ada, tampilkan data lama
+                AsyncData(:final value) when value.isEmpty =>
+                  ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.3,
+                      ),
+                      const Center(
+                        child: Text("Belum ada riwayat penukaran."),
+                      ),
+                    ],
+                  ),
+                AsyncData(:final value) => ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(
                       parent: BouncingScrollPhysics(),
                     ),
                     padding: const EdgeInsets.all(20),
-                    itemCount: history.length,
+                    itemCount: value.length,
                     itemBuilder: (context, index) {
-                      return _buildHistoryCard(history[index]);
+                      return _buildHistoryCard(value[index]);
                     },
-                  );
-                },
-                loading: () => _buildHistoryLoading(),
-                error: (err, stack) => _buildOfflinePlaceholder(isOffline),
-              ),
+                  ),
+                AsyncError() => _buildOfflinePlaceholder(isOffline),
+                _ => _buildHistoryLoading(),
+              },
       ),
     );
   }
@@ -188,23 +183,23 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
         : FontAwesomeIcons.gift;
 
     // Status Logic
-    dynamic statusIcon;
+    IconData statusIcon;  // Material Icons — gunakan Icon(), bukan FaIcon()
     Color statusColor;
     String statusText;
     String dateLabel = "Dibuat: ${item.createdAt}";
 
     if (item.status == 'accepted') {
-      statusIcon = Icons.check_circle;
+      statusIcon = Icons.check_circle_rounded;
       statusColor = Colors.green;
       statusText = "DITERIMA";
       dateLabel = "Diterima: ${item.updatedAt}";
     } else if (item.status == 'rejected') {
-      statusIcon = Icons.cancel;
+      statusIcon = Icons.cancel_rounded;
       statusColor = Colors.red;
       statusText = "DITOLAK";
       dateLabel = "Ditolak: ${item.updatedAt}";
     } else {
-      statusIcon = Icons.access_time_filled;
+      statusIcon = Icons.access_time_filled_rounded;
       statusColor = Colors.orange;
       statusText = "MENUNGGU";
     }
@@ -264,7 +259,7 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
           ),
           Column(
             children: [
-              FaIcon(statusIcon, color: statusColor, size: 28),
+              Icon(statusIcon, color: statusColor, size: 28),
               const SizedBox(height: 4),
               Text(
                 statusText,

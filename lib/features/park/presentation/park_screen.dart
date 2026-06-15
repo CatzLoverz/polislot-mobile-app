@@ -811,7 +811,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                                     child: ListView.separated(
                                       scrollDirection: Axis.horizontal,
                                       itemCount: subarea.amenities.length,
-                                      separatorBuilder: (_, _) =>
+                                      separatorBuilder: (context, index) =>
                                           const SizedBox(width: 6),
                                       itemBuilder: (ctx, i) => Container(
                                         padding: const EdgeInsets.symmetric(

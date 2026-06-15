@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'mission_controller.dart';
 import '../data/mission_model.dart';
 import '../../../core/providers/connection_status_provider.dart';
@@ -42,16 +41,16 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
     super.dispose();
   }
 
-  dynamic _getMissionIcon(String metricCode) {
+  IconData _getMissionIcon(String metricCode) {
     switch (metricCode.toUpperCase()) {
       case 'VALIDATION_ACTION':
-        return FontAwesomeIcons.squareCheck;
+        return Icons.check_box_rounded;
       case 'PROFILE_UPDATE':
-        return FontAwesomeIcons.userPen;
+        return Icons.manage_accounts_rounded;
       case 'LOGIN_ACTION':
-        return FontAwesomeIcons.rightToBracket;
+        return Icons.login_rounded;
       default:
-        return FontAwesomeIcons.star;
+        return Icons.star_rounded;
     }
   }
 
@@ -135,15 +134,16 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
                     duration: const Duration(milliseconds: 300),
                     child: connectionState != ConnectionStateType.online
                         ? _buildOfflinePlaceholder(connectionState)
-                        : missionDataAsync.when(
-                            skipLoadingOnReload: true,
-                            skipLoadingOnRefresh: true,
-                            data: (data) => isMissionTab
-                                ? _buildMissionsList(data.missions)
-                                : _buildLeaderboard(data.leaderboard),
-                            error: (err, stack) => _buildOfflinePlaceholder(connectionState),
-                            loading: () => _buildMissionLoading(),
-                          ),
+                        : switch (missionDataAsync) {
+                            // Jika sudah ada data (termasuk saat loading ulang), tampilkan data lama
+                            AsyncData(:final value) => isMissionTab
+                                ? _buildMissionsList(value.missions)
+                                : _buildLeaderboard(value.leaderboard),
+                            // Error tanpa data sebelumnya
+                            AsyncError() => _buildOfflinePlaceholder(connectionState),
+                            // Loading pertama kali (belum ada data)
+                            _ => _buildMissionLoading(),
+                          },
                   ),
                 ],
               ),
