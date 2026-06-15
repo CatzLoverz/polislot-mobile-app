@@ -61,8 +61,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
-
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -104,7 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             dateStr = DateFormat(
                               'd MMM y, HH:mm',
                               'id_ID',
-                            ).format(info.createdAt!);
+                            ).format(info.createdAt!.toLocal());
                           } catch (e) {
                             dateStr = info.createdAt.toString();
                           }
@@ -227,12 +225,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       AsyncData(:final value) when value.isEmpty =>
                         _buildInfoBoardPlaceholder(),
                       AsyncData(:final value) => InkWell(
-                          onTap: () => _showAllInfoDialog(context, value),
-                          borderRadius: BorderRadius.circular(16),
-                          child: _buildInfoBoardCard(value.first),
-                        ),
-                      AsyncError() =>
-                        _buildInfoBoardPlaceholder(connectionState: connectionState, isApiError: true),
+                        onTap: () => _showAllInfoDialog(context, value),
+                        borderRadius: BorderRadius.circular(16),
+                        child: _buildInfoBoardCard(value.first),
+                      ),
+                      AsyncError() => _buildInfoBoardPlaceholder(
+                        connectionState: connectionState,
+                        isApiError: true,
+                      ),
                       _ => _buildInfoBoardLoading(),
                     },
 
@@ -256,10 +256,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ),
                         ),
                       AsyncData(:final value) => Column(
-                          children: value
-                              .map((area) => _buildParkingAreaItem(area))
-                              .toList(),
-                        ),
+                        children: value
+                            .map((area) => _buildParkingAreaItem(area))
+                            .toList(),
+                      ),
                       AsyncError() => _buildParkingOffline(connectionState),
                       _ => _buildParkingListLoading(),
                     },
@@ -270,8 +270,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     _buildLeaderboardOffline(connectionState)
                   else
                     switch (missionAsync) {
-                      AsyncData(:final value) =>
-                        _buildLeaderboardCard(value.leaderboard),
+                      AsyncData(:final value) => _buildLeaderboardCard(
+                        value.leaderboard,
+                      ),
                       AsyncError() => _buildLeaderboardOffline(connectionState),
                       _ => _buildLeaderboardLoading(),
                     },
@@ -349,9 +350,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildInfoBoardPlaceholder({ConnectionStateType connectionState = ConnectionStateType.online, bool isApiError = false}) {
-    final bool isServerErr = connectionState == ConnectionStateType.serverUnreachable;
-    final bool isOfflineError = connectionState == ConnectionStateType.noInternet;
+  Widget _buildInfoBoardPlaceholder({
+    ConnectionStateType connectionState = ConnectionStateType.online,
+    bool isApiError = false,
+  }) {
+    final bool isServerErr =
+        connectionState == ConnectionStateType.serverUnreachable;
+    final bool isOfflineError =
+        connectionState == ConnectionStateType.noInternet;
     final bool isError = isServerErr || isOfflineError || isApiError;
 
     return Container(
@@ -372,12 +378,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.grey.shade100),
+              color: isServerErr
+                  ? Colors.orange.shade50
+                  : (isError ? Colors.red.shade50 : Colors.grey.shade100),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              isServerErr ? Icons.dns_rounded : (isError ? (isApiError ? Icons.error_outline_rounded : Icons.wifi_off_rounded) : Icons.notifications_none_rounded),
-              color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade400),
+              isServerErr
+                  ? Icons.dns_rounded
+                  : (isError
+                        ? (isApiError
+                              ? Icons.error_outline_rounded
+                              : Icons.wifi_off_rounded)
+                        : Icons.notifications_none_rounded),
+              color: isServerErr
+                  ? Colors.orange.shade400
+                  : (isError ? Colors.red.shade400 : Colors.grey.shade400),
               size: 24,
             ),
           ),
@@ -387,20 +403,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isServerErr ? "Server Bermasalah" : (isError ? (isApiError ? "Terjadi Kesalahan" : "Anda Sedang Offline") : "Belum ada informasi"),
+                  isServerErr
+                      ? "Server Bermasalah"
+                      : (isError
+                            ? (isApiError
+                                  ? "Terjadi Kesalahan"
+                                  : "Anda Sedang Offline")
+                            : "Belum ada informasi"),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : const Color(0xFF1A253A)),
+                    color: isServerErr
+                        ? Colors.orange.shade700
+                        : (isError
+                              ? Colors.red.shade700
+                              : const Color(0xFF1A253A)),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isServerErr 
-                      ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." 
-                      : (isError 
-                          ? (isApiError ? "Gagal memuat data.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang.") 
-                          : "Tidak ada informasi terbaru saat ini."),
+                  isServerErr
+                      ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang."
+                      : (isError
+                            ? (isApiError
+                                  ? "Gagal memuat data.\nTarik layar ke bawah untuk memuat ulang."
+                                  : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang.")
+                            : "Tidak ada informasi terbaru saat ini."),
                   maxLines: 3,
                   style: const TextStyle(
                     fontWeight: FontWeight.w400,
@@ -802,7 +830,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Widget _buildLeaderboardOffline(ConnectionStateType connectionState) {
     final bool isError = connectionState != ConnectionStateType.online;
-    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+    final isServerErr =
+        connectionState == ConnectionStateType.serverUnreachable;
     return _customCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -829,30 +858,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.grey.shade100),
+                    color: isServerErr
+                        ? Colors.orange.shade50
+                        : (isError ? Colors.red.shade50 : Colors.grey.shade100),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.error_outline_rounded),
-                    color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade500),
+                    isServerErr
+                        ? Icons.dns_rounded
+                        : (isError
+                              ? Icons.wifi_off_rounded
+                              : Icons.error_outline_rounded),
+                    color: isServerErr
+                        ? Colors.orange.shade400
+                        : (isError
+                              ? Colors.red.shade400
+                              : Colors.grey.shade500),
                     size: 28,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
+                  isServerErr
+                      ? "Server Bermasalah"
+                      : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : Colors.grey.shade700),
+                    color: isServerErr
+                        ? Colors.orange.shade700
+                        : (isError
+                              ? Colors.red.shade700
+                              : Colors.grey.shade700),
                     fontSize: 14,
                   ),
                 ),
                 Text(
-                  isServerErr 
-                      ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." 
-                      : (isError 
-                          ? "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang." 
-                          : "Gagal memuat data.\nTarik layar ke bawah untuk memuat ulang."),
+                  isServerErr
+                      ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang."
+                      : (isError
+                            ? "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."
+                            : "Gagal memuat data.\nTarik layar ke bawah untuk memuat ulang."),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
@@ -867,7 +912,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Widget _buildParkingOffline(ConnectionStateType connectionState) {
     final bool isError = connectionState != ConnectionStateType.online;
-    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+    final isServerErr =
+        connectionState == ConnectionStateType.serverUnreachable;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -893,20 +939,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
+                      isServerErr
+                          ? "Server Bermasalah"
+                          : (isError
+                                ? "Anda Sedang Offline"
+                                : "Terjadi Kesalahan"),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: isServerErr ? Colors.orange : (isError ? Colors.red : Colors.grey.shade700),
+                        color: isServerErr
+                            ? Colors.orange
+                            : (isError ? Colors.red : Colors.grey.shade700),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      isServerErr 
-                          ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." 
-                          : (isError 
-                              ? "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang." 
-                              : "Gagal memuat area parkir.\nTarik layar ke bawah untuk memuat ulang."),
+                      isServerErr
+                          ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang."
+                          : (isError
+                                ? "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."
+                                : "Gagal memuat area parkir.\nTarik layar ke bawah untuk memuat ulang."),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -929,7 +981,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.error_outline_rounded), color: Colors.grey, size: 32),
+                  Icon(
+                    isServerErr
+                        ? Icons.dns_rounded
+                        : (isError
+                              ? Icons.wifi_off_rounded
+                              : Icons.error_outline_rounded),
+                    color: Colors.grey,
+                    size: 32,
+                  ),
                 ],
               ),
             ),

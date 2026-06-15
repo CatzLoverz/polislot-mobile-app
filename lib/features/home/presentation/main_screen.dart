@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,7 +18,9 @@ class BottomNavIndexNotifier extends Notifier<int> {
 }
 
 // Provider Global
-final bottomNavIndexProvider = NotifierProvider<BottomNavIndexNotifier, int>(BottomNavIndexNotifier.new);
+final bottomNavIndexProvider = NotifierProvider<BottomNavIndexNotifier, int>(
+  BottomNavIndexNotifier.new,
+);
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -28,13 +30,13 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _previousIndex = 0; 
+  int _previousIndex = 0;
   late final PageController _pageController;
   bool _isPageChangingProgrammatically = false;
-  
+
   final List<Widget> _pages = [
     const HomeScreen(),
-    const MissionScreen(), 
+    const MissionScreen(),
     const RewardScreen(),
     const ProfileScreen(),
   ];
@@ -53,7 +55,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   void _onTabChanged(int index) {
     final currentIndex = ref.read(bottomNavIndexProvider);
-    
+
     if (index == currentIndex) return;
 
     if (currentIndex == 3) {
@@ -61,7 +63,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
 
     _previousIndex = currentIndex;
-    _isPageChangingProgrammatically = true;
     
     // ✅ Update state via method Notifier
     ref.read(bottomNavIndexProvider.notifier).setIndex(index);
@@ -69,21 +70,36 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   Future<bool> _showExitConfirmDialog() async {
     return await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Keluar Aplikasi", style: TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
-        content: const Text("Apakah Anda yakin ingin menutup aplikasi?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal")),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Keluar"),
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              "Keluar Aplikasi",
+              style: TextStyle(
+                color: Color(0xFF1565C0),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: const Text("Apakah Anda yakin ingin menutup aplikasi?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("Batal"),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("Keluar"),
+              ),
+            ],
           ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
 
   @override
@@ -93,20 +109,21 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
     // ✅ Listen Perubahan
     ref.listen<int>(bottomNavIndexProvider, (previous, next) async {
-      if (_isPageChangingProgrammatically && _pageController.hasClients) {
+      if (_pageController.hasClients) {
         if (_pageController.page?.round() != next) {
+          _isPageChangingProgrammatically = true;
           if ((next - (previous ?? 0)).abs() > 1) {
             _pageController.jumpToPage(next);
             await Future.delayed(const Duration(milliseconds: 50));
           } else {
             await _pageController.animateToPage(
-              next, 
-              duration: const Duration(milliseconds: 300), 
-              curve: Curves.easeInOut
+              next,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
             );
           }
+          _isPageChangingProgrammatically = false;
         }
-        _isPageChangingProgrammatically = false;
       }
     });
 
@@ -114,7 +131,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
-        
+
         if (selectedIndex == 3) {
           final currentSection = ref.read(profileSectionProvider);
           if (currentSection != 0) {
@@ -122,15 +139,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             return;
           }
         }
-        
+
         if (selectedIndex != 0) {
           final target = (_previousIndex != 0) ? _previousIndex : 0;
           _previousIndex = 0;
-          _isPageChangingProgrammatically = true;
           ref.read(bottomNavIndexProvider.notifier).setIndex(target);
           return;
         }
-        
+
         final shouldExit = await _showExitConfirmDialog();
         if (shouldExit) SystemNavigator.pop();
       },
@@ -157,7 +173,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            boxShadow: [BoxShadow(blurRadius: 10, color: Color.fromARGB(40, 0, 0, 0), offset: Offset(0, -3))],
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 10,
+                color: Color.fromARGB(40, 0, 0, 0),
+                offset: Offset(0, -3),
+              ),
+            ],
           ),
           child: SafeArea(
             top: false,
@@ -167,9 +189,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 gap: 8,
                 color: const Color(0xFF5A6BB5),
                 activeColor: Colors.white,
-                textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5),
+                textStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                ),
                 iconSize: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 9,
+                ),
                 duration: const Duration(milliseconds: 300),
                 tabBackgroundGradient: const LinearGradient(
                   colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
@@ -182,7 +211,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   GButton(icon: Icons.card_giftcard_rounded, text: 'Reward'),
                   GButton(icon: Icons.person_outline_rounded, text: 'Profil'),
                 ],
-                selectedIndex: selectedIndex, 
+                selectedIndex: selectedIndex,
                 onTabChange: _onTabChanged,
               ),
             ),
