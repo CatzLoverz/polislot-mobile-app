@@ -26,6 +26,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
   GoogleMapController? _controller;
   bool _isMyLocationEnabled = false;
   Future<Set<Marker>>? _markersFuture;
+  List<ParkSubareaVisual>? _lastSubareas;
   bool _isManualRefresh = false; // Internal flag tracking manual refresh
 
   @override
@@ -251,6 +252,29 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     return markers;
   }
 
+  bool _areSubareasEqual(List<ParkSubareaVisual> list1, List<ParkSubareaVisual> list2) {
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+      if (list1[i].id != list2[i].id ||
+          list1[i].name != list2[i].name ||
+          !_areLatLngsEqual(list1[i].polygonPoints, list2[i].polygonPoints)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _areLatLngsEqual(List<LatLng> points1, List<LatLng> points2) {
+    if (points1.length != points2.length) return false;
+    for (int i = 0; i < points1.length; i++) {
+      if (points1[i].latitude != points2[i].latitude ||
+          points1[i].longitude != points2[i].longitude) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch provider
@@ -307,8 +331,11 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     final data = parkDataAsync.value!;
     final isRefreshing = parkDataAsync.isLoading && _isManualRefresh;
 
-    // Only generate markers once since names and centers are static
-    _markersFuture ??= _generateMarkers(data.subareas);
+    // Regenerate markers only if the subarea data has changed (e.g. name, count, or list changed)
+    if (_lastSubareas == null || !_areSubareasEqual(_lastSubareas!, data.subareas)) {
+      _lastSubareas = data.subareas;
+      _markersFuture = _generateMarkers(data.subareas);
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
