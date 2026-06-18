@@ -935,7 +935,15 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                 child: Builder(
                   builder: (context) {
                     final canValidate = cooldown?.canValidate ?? true;
-                    final waitTime = cooldown?.waitMinutes ?? 0;
+                    final remainingSeconds = cooldown?.remainingSeconds ?? 0;
+                    
+                    String buttonLabel = "Validasi Kondisi Area Ini";
+                    if (!canValidate) {
+                      final m = remainingSeconds ~/ 60;
+                      final s = remainingSeconds % 60;
+                      buttonLabel = "Tunggu ${m}m ${s}s lagi";
+                    }
+                    
                     return ElevatedButton.icon(
                       onPressed: canValidate
                           ? () => _showValidationSheet(
@@ -948,11 +956,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                         Icons.add_location_alt_outlined,
                         size: 18,
                       ),
-                      label: Text(
-                        canValidate
-                            ? "Validasi Kondisi Area Ini"
-                            : "Tunggu $waitTime menit lagi",
-                      ),
+                      label: Text(buttonLabel),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: canValidate
                             ? const Color(0xFF1565C0)

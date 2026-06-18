@@ -211,7 +211,26 @@ class ValidationCooldown {
   @JsonKey(name: 'wait_minutes')
   final int waitMinutes;
 
-  ValidationCooldown({required this.canValidate, required this.waitMinutes});
+  @JsonKey(name: 'remaining_seconds', defaultValue: 0)
+  final int remainingSeconds;
+
+  ValidationCooldown({
+    required this.canValidate,
+    required this.waitMinutes,
+    this.remainingSeconds = 0,
+  });
+
+  ValidationCooldown copyWith({
+    bool? canValidate,
+    int? waitMinutes,
+    int? remainingSeconds,
+  }) {
+    return ValidationCooldown(
+      canValidate: canValidate ?? this.canValidate,
+      waitMinutes: waitMinutes ?? this.waitMinutes,
+      remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+    );
+  }
 
   factory ValidationCooldown.fromJson(Map<String, dynamic> json) =>
       _$ValidationCooldownFromJson(json);

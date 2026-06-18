@@ -115,6 +115,7 @@ class ParkVisualizationController extends _$ParkVisualizationController {
       final currentData = state.value!;
       bool changed = false;
 
+      // 1. Decrement cooldown subareas (validasi dari user lain/aktif)
       final newSubareas = currentData.subareas.map((sub) {
         if (sub.validationRemainingSeconds > 0) {
           changed = true;
@@ -137,8 +138,30 @@ class ParkVisualizationController extends _$ParkVisualizationController {
         return sub;
       }).toList();
 
+      // 2. Decrement cooldown user saat ini (untuk tombol validasi)
+      ValidationCooldown? updatedCooldown = currentData.cooldown;
+      if (updatedCooldown != null && updatedCooldown.remainingSeconds > 0) {
+        changed = true;
+        final newRemaining = updatedCooldown.remainingSeconds - 1;
+        if (newRemaining <= 0) {
+          updatedCooldown = updatedCooldown.copyWith(
+            canValidate: true,
+            remainingSeconds: 0,
+            waitMinutes: 0,
+          );
+        } else {
+          updatedCooldown = updatedCooldown.copyWith(
+            remainingSeconds: newRemaining,
+            waitMinutes: (newRemaining / 60).ceil(),
+          );
+        }
+      }
+
       if (changed) {
-        state = AsyncData(currentData.copyWith(subareas: newSubareas));
+        state = AsyncData(currentData.copyWith(
+          subareas: newSubareas,
+          cooldown: updatedCooldown,
+        ));
 
         // Sinkronkan selectedSubarea saat countdown berubah
         final selected = ref.read(selectedSubareaProvider);

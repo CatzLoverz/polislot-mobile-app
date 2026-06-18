@@ -1,16 +1,16 @@
-# Graph Report - polislot_mobile_catz  (2026-06-16)
+# Graph Report - polislot_mobile_catz  (2026-06-18)
 
 ## Corpus Check
-- 108 files · ~70,254 words
+- 108 files · ~70,384 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1292 nodes · 1661 edges · 147 communities (103 shown, 44 thin omitted)
+- 1293 nodes · 1662 edges · 144 communities (101 shown, 43 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 8 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `cf4f3f57`
+- Built from commit: `ff450f51`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -40,7 +40,6 @@
 - [[_COMMUNITY_Community 22|Community 22]]
 - [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 24|Community 24]]
-- [[_COMMUNITY_Community 25|Community 25]]
 - [[_COMMUNITY_Community 26|Community 26]]
 - [[_COMMUNITY_Community 27|Community 27]]
 - [[_COMMUNITY_Community 28|Community 28]]
@@ -92,7 +91,6 @@
 - [[_COMMUNITY_Community 74|Community 74]]
 - [[_COMMUNITY_Community 75|Community 75]]
 - [[_COMMUNITY_Community 76|Community 76]]
-- [[_COMMUNITY_Community 83|Community 83]]
 - [[_COMMUNITY_Community 84|Community 84]]
 - [[_COMMUNITY_Community 85|Community 85]]
 - [[_COMMUNITY_Community 86|Community 86]]
@@ -100,7 +98,6 @@
 - [[_COMMUNITY_Community 88|Community 88]]
 - [[_COMMUNITY_Community 89|Community 89]]
 - [[_COMMUNITY_Community 90|Community 90]]
-- [[_COMMUNITY_Community 91|Community 91]]
 - [[_COMMUNITY_Community 98|Community 98]]
 - [[_COMMUNITY_Community 99|Community 99]]
 - [[_COMMUNITY_Community 101|Community 101]]
@@ -166,7 +163,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (147 total, 44 thin omitted)
+## Communities (144 total, 43 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
@@ -190,7 +187,7 @@ Nodes (29): User, FaqModel, FeedbackCategory, HistoryItem, HistoryResponse, Pagi
 
 ### Community 5 - "Community 5"
 Cohesion: 0.07
-Nodes (31): build, didChangeAppLifecycleState, dispose, Icon, initializeDateFormatting, initState, main, MaterialApp (+23 more)
+Nodes (32): build, didChangeAppLifecycleState, dispose, Icon, initializeDateFormatting, initState, main, MaterialApp (+24 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.10
@@ -213,8 +210,8 @@ Cohesion: 0.12
 Nodes (16): BottomNavIndexNotifier, build, dispose, HomeScreen, initState, MainScreen, _MainScreenState, MissionScreen (+8 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.07
-Nodes (41): build, dispose, initState, RegisterScreen, _RegisterScreenState, Scaffold, SizedBox, Text (+33 more)
+Cohesion: 0.13
+Nodes (22): build, Container, dispose, initState, _inputField, Padding, ProfileEditSection, _ProfileEditSectionState (+14 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.10
@@ -245,20 +242,20 @@ Cohesion: 0.47
 Nodes (4): FaqController, ../data/faq_model.dart, ../data/faq_repository.dart, package:riverpod_annotation/riverpod_annotation.dart
 
 ### Community 19 - "Community 19"
-Cohesion: 0.15
-Nodes (18): build, _buildSection, dispose, initState, Padding, PrivacyPolicyScreen, _PrivacyPolicyScreenState, Scaffold (+10 more)
+Cohesion: 0.09
+Nodes (31): build, dispose, initState, LoginRegisScreen, _LoginRegisScreenState, Scaffold, SizedBox, Stack (+23 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.19
-Nodes (14): build, dispose, initState, LoginRegisScreen, _LoginRegisScreenState, Scaffold, SizedBox, Stack (+6 more)
+Cohesion: 0.11
+Nodes (21): build, dispose, initState, RegisterScreen, _RegisterScreenState, Scaffold, SizedBox, Text (+13 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.13
-Nodes (20): build, ClampingScrollPhysics, dispose, initState, LoginScreen, _LoginScreenState, Scaffold, SingleChildScrollView (+12 more)
+Cohesion: 0.14
+Nodes (19): build, ClampingScrollPhysics, dispose, initState, LoginScreen, _LoginScreenState, Scaffold, SingleChildScrollView (+11 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.06
-Nodes (37): @JsonSerializable, amenities, areaCode, areaId, areaName, canValidate, code, commentCount (+29 more)
+Cohesion: 0.05
+Nodes (39): @JsonSerializable, amenities, areaCode, areaId, areaName, canValidate, code, commentCount (+31 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.23
@@ -267,10 +264,6 @@ Nodes (10): build, CommentRepository, CommentRepositoryInstance, Exception, comm
 ### Community 24 - "Community 24"
 Cohesion: 0.07
 Nodes (27): Alignment, alignment, _animController, _buildLeaderboard, _buildMissionLoading, _buildMissionsList, _buildOfflinePlaceholder, _buildPodium (+19 more)
-
-### Community 25 - "Community 25"
-Cohesion: 0.17
-Nodes (11): auth_controller.dart, build, dispose, initState, Scaffold, SizedBox, Text, VerifyOtpScreen (+3 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.31
@@ -297,8 +290,8 @@ Cohesion: 0.09
 Nodes (22): AnimationController, Offset, _animController, _buildHeaderCard, _buildHistoryList, _buildHistoryLoading, _buildOfflinePlaceholder, _buildRewardList (+14 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.13
-Nodes (21): build, Color, Container, _createShimmerShader, dispose, _GradientText, initState, LayoutBuilder (+13 more)
+Cohesion: 0.14
+Nodes (20): build, Color, Container, _createShimmerShader, dispose, _GradientText, initState, LayoutBuilder (+12 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.24
@@ -317,8 +310,8 @@ Cohesion: 0.10
 Nodes (19): 1. Persiapan Awal, 2. Kloning Repository, 3. Mengunduh Dependencies, 4. Konfigurasi Environment & Asset, 5. Code Generation (Riverpod & JSON Serializable), 6. Jalankan Aplikasi, code:text (lib/), code:bash (git clone <url-repository>) (+11 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.12
-Nodes (15): package:pin_code_fields/pin_code_fields.dart, build, createState, dispose, email, initState, _isResending, _otpController (+7 more)
+Cohesion: 0.09
+Nodes (25): auth_controller.dart, build, dispose, initState, Scaffold, SizedBox, Text, VerifyOtpScreen (+17 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.15
@@ -334,7 +327,7 @@ Nodes (13): build, ProfileScreen, _ProfileScreenState, Scaffold, _showLogoutDial
 
 ### Community 41 - "Community 41"
 Cohesion: 0.18
-Nodes (15): ConsumerState, ConsumerStatefulWidget, PoliSlotApp, _PoliSlotAppState, CommentScreen, HomeScreen, MainScreen, MissionScreen (+7 more)
+Nodes (14): ConsumerState, ConsumerStatefulWidget, PoliSlotApp, _PoliSlotAppState, MainScreen, MissionScreen, _MqttStatusIndicator, _MqttStatusIndicatorState (+6 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.29
@@ -417,8 +410,8 @@ Cohesion: 0.33
 Nodes (7): build, ConnectionStatus, setNoInternet, setOffline, setOnline, setServerUnreachable, package:riverpod_annotation/riverpod_annotation.dart
 
 ### Community 62 - "Community 62"
-Cohesion: 0.32
-Nodes (8): infoBoardControllerProvider, missionControllerProvider, missionTabStateProvider, build, _buildLeaderboardCard, _HomeScreenState, _animatedTabs, build
+Cohesion: 0.19
+Nodes (16): commentActionControllerProvider, commentListControllerProvider, connectionStatusProvider, infoBoardControllerProvider, missionControllerProvider, missionTabStateProvider, build, CommentScreen (+8 more)
 
 ### Community 63 - "Community 63"
 Cohesion: 0.43
@@ -460,10 +453,6 @@ Nodes (3): AppTheme, ThemeData, package:flutter/material.dart
 Cohesion: 0.50
 Nodes (3): AppSnackBars, show, package:flutter/material.dart
 
-### Community 83 - "Community 83"
-Cohesion: 0.60
-Nodes (5): commentActionControllerProvider, commentListControllerProvider, connectionStatusProvider, build, _CommentScreenState
-
 ### Community 84 - "Community 84"
 Cohesion: 0.40
 Nodes (4): images, info, author, version
@@ -485,21 +474,21 @@ Cohesion: 0.31
 Nodes (7): main, ProviderScope, package:flutter_test/flutter_test.dart, package:polislot_mobile_catz/main.dart, package:flutter_dotenv/flutter_dotenv.dart, package:flutter/material.dart, package:flutter_riverpod/flutter_riverpod.dart
 
 ## Knowledge Gaps
-- **511 isolated node(s):** `flutter_export_environment.sh script`, `images`, `version`, `author`, `images` (+506 more)
+- **512 isolated node(s):** `flutter_export_environment.sh script`, `images`, `version`, `author`, `images` (+507 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **44 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `_timer` connect `Community 49` to `Community 0`, `Community 35`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
-- **Why does `dart:convert` connect `Community 30` to `Community 35`, `Community 28`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
-- **Why does `../../../core/routes/app_routes.dart` connect `Community 20` to `Community 32`, `Community 5`, `Community 37`, `Community 40`, `Community 11`, `Community 19`, `Community 21`, `Community 25`?**
+  _High betweenness centrality (0.063) - this node is a cross-community bridge._
+- **Why does `../../../core/routes/app_routes.dart` connect `Community 20` to `Community 32`, `Community 37`, `Community 5`, `Community 40`, `Community 19`, `Community 21`?**
   _High betweenness centrality (0.052) - this node is a cross-community bridge._
+- **Why does `dart:convert` connect `Community 30` to `Community 35`, `Community 28`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
 - **What connects `Intercept NOTIFY_DEBUGGER_ABOUT_RX_PAGES and touch the pages.`, `flutter_export_environment.sh script`, `images` to the rest of the system?**
-  _512 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _513 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.05758582502768549 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
