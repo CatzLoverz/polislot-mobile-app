@@ -772,13 +772,35 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                             ),
                           ],
                         ),
+                        if (subarea.lastValidationTime != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                const Icon(Icons.history, size: 10, color: Colors.grey),
+                                const SizedBox(width: 2),
+                                Text(
+                                  "Validasi Terakhir: ${() {
+                                    try {
+                                      final dt = DateTime.parse(subarea.lastValidationTime!).toLocal();
+                                      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                                    } catch (_) {
+                                      return subarea.lastValidationTime!;
+                                    }
+                                  }()}",
+                                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
                         const SizedBox(height: 4),
                         if (hasCountdown || subarea.maxSlots > 0)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               if (hasCountdown)
-                                _SubareaCountdownText(validationRemainingSeconds: subarea.validationRemainingSeconds),
+                                const SizedBox.shrink(),
                               if (hasCountdown && subarea.maxSlots > 0)
                                 const SizedBox(width: 8),
                               if (subarea.maxSlots > 0)
