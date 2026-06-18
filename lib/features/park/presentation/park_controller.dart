@@ -109,69 +109,73 @@ class ParkVisualizationController extends _$ParkVisualizationController {
       },
     );
 
-    // Timer untuk countdown validasi (setiap 1 detik)
+    // Timer untuk memeriksa kadaluarsa validasi subarea (revert status)
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!state.hasValue) return;
       final currentData = state.value!;
       bool changed = false;
 
-      // 1. Decrement cooldown subareas (validasi dari user lain/aktif)
+      // Decrement countdown subareas HANYA secara internal untuk revert status.
+      // Kita tidak decrement nilai validationRemainingSeconds di state agar UI
+      // tidak direbuild setiap detik. Countdown UI dihandle oleh widget lokal.
       final newSubareas = currentData.subareas.map((sub) {
         if (sub.validationRemainingSeconds > 0) {
-          changed = true;
-          final newRemaining = sub.validationRemainingSeconds - 1;
-
-          if (newRemaining <= 0) {
-            // Validasi habis, kembalikan ke fallback status
-            return sub.copyWith(
-              status: sub.fallbackStatus,
-              isValidated: false,
-              hasUserReport: false,
-              validationExpiresAt: null,
-              lastValidationTime: null,
-              validationRemainingSeconds: 0,
-            );
+          // Asumsikan validationExpiresAt ada atau bisa dikurangi dari local counter
+          // Namun, karena kita tidak update state setiap detik, kita bisa menyimpan target 
+          // time di memory, atau cukup hitung berdasarkan fallback/kadaluarsa.
+          // Untuk kesederhanaan dan ketahanan dari app suspend, kita cek kadaluarsa.
+          if (sub.validationExpiresAt != null) {
+            final expires = DateTime.tryParse(sub.validationExpiresAt!);
+            if (expires != null && DateTime.now().isAfter(expires)) {
+              changed = true;
+              return sub.copyWith(
+                status: sub.fallbackStatus,
+                isValidated: false,
+                hasUserReport: false,
+                validationExpiresAt: null,
+                lastValidationTime: null,
+                validationRemainingSeconds: 0,
+              );
+            }
           } else {
-            return sub.copyWith(validationRemainingSeconds: newRemaining);
+            // Jika tidak ada validationExpiresAt, fallback ke hitung manual per tick 
+            // (Note: ini masih rentan suspend, tapi backend umumnya mengirim validationExpiresAt)
+            final newRemaining = sub.validationRemainingSeconds - 1;
+            if (newRemaining <= 0) {
+              changed = true;
+              return sub.copyWith(
+                status: sub.fallbackStatus,
+                isValidated: false,
+                hasUserReport: false,
+                validationExpiresAt: null,
+                lastValidationTime: null,
+                validationRemainingSeconds: 0,
+              );
+            } else {
+              // Simpan decrement di memori dengan cara override instance tanpa memicu state update keseluruhan
+              // Karena state provider adalah immutable, kita ubah diam-diam untuk tick selanjutnya.
+              // Tapi yang terbaik adalah update state JIKA expire saja, agar map tidak rebuild.
+              // Maka dari itu kita hanya update subarea ketika expired!
+              // Untuk local decrement yang dibutuhkan `_timer` selanjutnya, lebih baik gunakan time comparison.
+              return sub;
+            }
           }
         }
         return sub;
       }).toList();
 
-      // 2. Decrement cooldown user saat ini (untuk tombol validasi)
-      ValidationCooldown? updatedCooldown = currentData.cooldown;
-      if (updatedCooldown != null && updatedCooldown.remainingSeconds > 0) {
-        changed = true;
-        final newRemaining = updatedCooldown.remainingSeconds - 1;
-        if (newRemaining <= 0) {
-          updatedCooldown = updatedCooldown.copyWith(
-            canValidate: true,
-            remainingSeconds: 0,
-            waitMinutes: 0,
-          );
-        } else {
-          updatedCooldown = updatedCooldown.copyWith(
-            remainingSeconds: newRemaining,
-            waitMinutes: (newRemaining / 60).ceil(),
-          );
-        }
-      }
-
       if (changed) {
         state = AsyncData(currentData.copyWith(
           subareas: newSubareas,
-          cooldown: updatedCooldown,
         ));
 
-        // Sinkronkan selectedSubarea saat countdown berubah
+        // Sinkronkan selectedSubarea saat status berubah
         final selected = ref.read(selectedSubareaProvider);
         if (selected != null) {
           try {
             final updatedSelected =
                 newSubareas.firstWhere((s) => s.id == selected.id);
-            if (updatedSelected.validationRemainingSeconds !=
-                    selected.validationRemainingSeconds ||
-                updatedSelected.status != selected.status) {
+            if (updatedSelected.status != selected.status) {
               ref.read(selectedSubareaProvider.notifier).set(updatedSelected);
             }
           } catch (_) {}

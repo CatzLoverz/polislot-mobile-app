@@ -669,13 +669,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
 
     final statusColor = _getStatusColor(subarea.status);
     final statusValue = _getStatusValue(subarea.status);
-
-    String? countdownText;
-    if (subarea.validationRemainingSeconds > 0) {
-      final m = subarea.validationRemainingSeconds ~/ 60;
-      final s = subarea.validationRemainingSeconds % 60;
-      countdownText = "(Sisa: ${m}m ${s}s)";
-    }
+    final hasCountdown = subarea.validationRemainingSeconds > 0;
 
     return Container(
       width: double.infinity,
@@ -735,68 +729,65 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Ketersediaan:",
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                subarea.status.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: statusColor,
-                                ),
-                              ),
-                              if (subarea.isValidated) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text('Tervalidasi', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                                ),
-                              ] else if (subarea.hasUserReport) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text('Laporan Berbeda', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      if (countdownText != null || subarea.maxSlots > 0)
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            if (countdownText != null)
-                              Text(
-                                countdownText,
-                                style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold),
-                              ),
-                            if (countdownText != null && subarea.maxSlots > 0)
-                              const SizedBox(width: 8),
-                            if (subarea.maxSlots > 0)
-                              Text(
-                                'Terisi: ${subarea.currentCount}/${subarea.maxSlots} slot',
-                                style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
-                              ),
+                            const Text(
+                              "Ketersediaan:",
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  subarea.status.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: statusColor,
+                                  ),
+                                ),
+                                if (subarea.isValidated) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text('Tervalidasi', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                  ),
+                                ] else if (subarea.hasUserReport) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text('Laporan Berbeda', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ],
                         ),
+                        const SizedBox(height: 4),
+                        if (hasCountdown || subarea.maxSlots > 0)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (hasCountdown)
+                                _SubareaCountdownText(validationRemainingSeconds: subarea.validationRemainingSeconds),
+                              if (hasCountdown && subarea.maxSlots > 0)
+                                const SizedBox(width: 8),
+                              if (subarea.maxSlots > 0)
+                                Text(
+                                  'Terisi: ${subarea.currentCount}/${subarea.maxSlots} slot',
+                                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                                ),
+                            ],
+                          ),
                       const SizedBox(height: 6),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
@@ -932,43 +923,13 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
               padding: const EdgeInsets.all(16),
               child: SizedBox(
                 width: double.infinity,
-                child: Builder(
-                  builder: (context) {
-                    final canValidate = cooldown?.canValidate ?? true;
-                    final remainingSeconds = cooldown?.remainingSeconds ?? 0;
-                    
-                    String buttonLabel = "Validasi Kondisi Area Ini";
-                    if (!canValidate) {
-                      final m = remainingSeconds ~/ 60;
-                      final s = remainingSeconds % 60;
-                      buttonLabel = "Tunggu ${m}m ${s}s lagi";
-                    }
-                    
-                    return ElevatedButton.icon(
-                      onPressed: canValidate
-                          ? () => _showValidationSheet(
-                              context,
-                              subarea.id,
-                              subarea.name,
-                            )
-                          : null,
-                      icon: const Icon(
-                        Icons.add_location_alt_outlined,
-                        size: 18,
-                      ),
-                      label: Text(buttonLabel),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: canValidate
-                            ? const Color(0xFF1565C0)
-                            : Colors.grey,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    );
-                  },
+                child: _ValidationCountdownButton(
+                  cooldown: cooldown,
+                  onPressed: () => _showValidationSheet(
+                    context,
+                    subarea.id,
+                    subarea.name,
+                  ),
                 ),
               ),
             ),
@@ -1357,5 +1318,166 @@ class _ValidationSheetState extends ConsumerState<_ValidationSheet> {
         AppSnackBars.show(context, message, isError: true);
       }
     }
+  }
+}
+
+class _ValidationCountdownButton extends StatefulWidget {
+  final ValidationCooldown? cooldown;
+  final VoidCallback onPressed;
+
+  const _ValidationCountdownButton({
+    required this.cooldown,
+    required this.onPressed,
+  });
+
+  @override
+  State<_ValidationCountdownButton> createState() => _ValidationCountdownButtonState();
+}
+
+class _ValidationCountdownButtonState extends State<_ValidationCountdownButton> {
+  Timer? _timer;
+  late DateTime _endTime;
+  int _remainingSeconds = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ValidationCountdownButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.cooldown != oldWidget.cooldown) {
+      _timer?.cancel();
+      _initTimer();
+    }
+  }
+
+  void _initTimer() {
+    _remainingSeconds = widget.cooldown?.remainingSeconds ?? 0;
+    final canValidate = widget.cooldown?.canValidate ?? true;
+    
+    if (!canValidate && _remainingSeconds > 0) {
+      _endTime = DateTime.now().add(Duration(seconds: _remainingSeconds));
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        final now = DateTime.now();
+        if (now.isAfter(_endTime)) {
+          setState(() {
+            _remainingSeconds = 0;
+          });
+          _timer?.cancel();
+        } else {
+          setState(() {
+            _remainingSeconds = _endTime.difference(now).inSeconds;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canValidate = (widget.cooldown?.canValidate ?? true) || _remainingSeconds <= 0;
+    
+    String buttonLabel = "Validasi Kondisi Area Ini";
+    if (!canValidate) {
+      final m = _remainingSeconds ~/ 60;
+      final s = _remainingSeconds % 60;
+      buttonLabel = "Tunggu ${m}m ${s}s lagi";
+    }
+
+    return ElevatedButton.icon(
+      onPressed: canValidate ? widget.onPressed : null,
+      icon: const Icon(
+        Icons.add_location_alt_outlined,
+        size: 18,
+      ),
+      label: Text(buttonLabel),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: canValidate ? const Color(0xFF1565C0) : Colors.grey,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+}
+
+class _SubareaCountdownText extends StatefulWidget {
+  final int validationRemainingSeconds;
+
+  const _SubareaCountdownText({
+    required this.validationRemainingSeconds,
+  });
+
+  @override
+  State<_SubareaCountdownText> createState() => _SubareaCountdownTextState();
+}
+
+class _SubareaCountdownTextState extends State<_SubareaCountdownText> {
+  Timer? _timer;
+  late DateTime _endTime;
+  int _remainingSeconds = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SubareaCountdownText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.validationRemainingSeconds != oldWidget.validationRemainingSeconds) {
+      _timer?.cancel();
+      _initTimer();
+    }
+  }
+
+  void _initTimer() {
+    _remainingSeconds = widget.validationRemainingSeconds;
+    if (_remainingSeconds > 0) {
+      _endTime = DateTime.now().add(Duration(seconds: _remainingSeconds));
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        final now = DateTime.now();
+        if (now.isAfter(_endTime)) {
+          setState(() {
+            _remainingSeconds = 0;
+          });
+          _timer?.cancel();
+        } else {
+          setState(() {
+            _remainingSeconds = _endTime.difference(now).inSeconds;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_remainingSeconds <= 0) return const SizedBox.shrink();
+
+    final m = _remainingSeconds ~/ 60;
+    final s = _remainingSeconds % 60;
+    return Text(
+      "(Sisa: ${m}m ${s}s)",
+      style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold),
+    );
   }
 }
