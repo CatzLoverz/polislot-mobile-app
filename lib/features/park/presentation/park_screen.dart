@@ -26,7 +26,9 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
   GoogleMapController? _controller;
   bool _isMyLocationEnabled = false;
   Future<Set<Marker>>? _markersFuture;
-  List<ParkSubareaVisual>? _lastSubareas;
+  List<ParkSubareaVisual>? _lastSubareasForMarkers;
+  Set<Polygon>? _cachedPolygons;
+  List<ParkSubareaVisual>? _lastSubareasForPolygons;
   bool _isManualRefresh = false; // Internal flag tracking manual refresh
 
   @override
@@ -111,33 +113,6 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     zoom: 17.5,
   );
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'penuh':
-        return Colors.red;
-      case 'terbatas':
-        return Colors.amber;
-      case 'banyak':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  double _getStatusValue(String status) {
-    switch (status.toLowerCase()) {
-      case 'penuh':
-        return 1.0;
-      case 'terbatas':
-        return 0.85;
-      case 'banyak':
-        return 0.3;
-      default:
-        return 0.0;
-    }
-  }
-
-  // Unified Handler: Select Subarea + Refresh + Center Camera
   void _onSubareaTap(ParkSubareaVisual sub) {
     // 1. Set State
     ref.read(selectedSubareaProvider.notifier).set(sub);
@@ -252,16 +227,34 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     return markers;
   }
 
-  bool _areSubareasEqual(List<ParkSubareaVisual> list1, List<ParkSubareaVisual> list2) {
-    if (list1.length != list2.length) return false;
+  bool _shouldRebuildMarkers(
+    List<ParkSubareaVisual> list1,
+    List<ParkSubareaVisual> list2,
+  ) {
+    if (list1.length != list2.length) return true;
     for (int i = 0; i < list1.length; i++) {
       if (list1[i].id != list2[i].id ||
           list1[i].name != list2[i].name ||
           !_areLatLngsEqual(list1[i].polygonPoints, list2[i].polygonPoints)) {
-        return false;
+        return true;
       }
     }
-    return true;
+    return false;
+  }
+
+  bool _shouldRebuildPolygons(
+    List<ParkSubareaVisual> list1,
+    List<ParkSubareaVisual> list2,
+  ) {
+    if (list1.length != list2.length) return true;
+    for (int i = 0; i < list1.length; i++) {
+      if (list1[i].id != list2[i].id ||
+          list1[i].status != list2[i].status ||
+          !_areLatLngsEqual(list1[i].polygonPoints, list2[i].polygonPoints)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool _areLatLngsEqual(List<LatLng> points1, List<LatLng> points2) {
@@ -281,7 +274,6 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     final parkDataAsync = ref.watch(
       parkVisualizationControllerProvider(widget.areaId),
     );
-    final selectedSubarea = ref.watch(selectedSubareaProvider);
 
     // Listener: Sync Selected Subarea with Fresh Data
     ref.listen<
@@ -305,13 +297,14 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     });
 
     // Listener: Reset _isManualRefresh when loading finishes
-    ref.listen<
-      AsyncValue<ParkVisualData>
-    >(parkVisualizationControllerProvider(widget.areaId), (_, next) {
-      if (!next.isLoading && _isManualRefresh) {
-        _isManualRefresh = false;
-      }
-    });
+    ref.listen<AsyncValue<ParkVisualData>>(
+      parkVisualizationControllerProvider(widget.areaId),
+      (_, next) {
+        if (!next.isLoading && _isManualRefresh) {
+          _isManualRefresh = false;
+        }
+      },
+    );
 
     // Logic: Initial Loading (No Data yet)
     if (parkDataAsync.isLoading && !parkDataAsync.hasValue) {
@@ -332,9 +325,18 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     final isRefreshing = parkDataAsync.isLoading && _isManualRefresh;
 
     // Regenerate markers only if the subarea data has changed (e.g. name, count, or list changed)
-    if (_lastSubareas == null || !_areSubareasEqual(_lastSubareas!, data.subareas)) {
-      _lastSubareas = data.subareas;
+    if (_lastSubareasForMarkers == null ||
+        _shouldRebuildMarkers(_lastSubareasForMarkers!, data.subareas)) {
+      _lastSubareasForMarkers = data.subareas;
       _markersFuture = _generateMarkers(data.subareas);
+    }
+
+    // Regenerate polygons only if status or list changed
+    if (_lastSubareasForPolygons == null ||
+        _cachedPolygons == null ||
+        _shouldRebuildPolygons(_lastSubareasForPolygons!, data.subareas)) {
+      _lastSubareasForPolygons = data.subareas;
+      _cachedPolygons = _buildPolygons(data.subareas);
     }
 
     return Scaffold(
@@ -387,7 +389,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                     return GoogleMap(
                       mapType: _currentMapType,
                       initialCameraPosition: _kPolibatam,
-                      polygons: _buildPolygons(data.subareas),
+                      polygons: _cachedPolygons ?? {},
                       markers: snapshot.data ?? {},
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
@@ -597,7 +599,13 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
           ),
 
           // Detail Section
-          _buildDetailSection(selectedSubarea, data.cooldown),
+          _SubareaDetailPanel(
+            areaId: widget.areaId,
+            cooldown: data.cooldown,
+            parentContext: context,
+            launchMaps: _launchMaps,
+            showValidationSheet: _showValidationSheet,
+          ),
         ],
       ),
     );
@@ -630,335 +638,6 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
         onTap: () => _onSubareaTap(sub),
       );
     }).toSet();
-  }
-
-  Widget _buildDetailSection(
-    ParkSubareaVisual? subarea,
-    ValidationCooldown? cooldown,
-  ) {
-    if (subarea == null) {
-      // ✅ Gunakan Container dengan tinggi minimal agar tidak fullscreen
-      return Container(
-        width: double.infinity,
-        color: Colors.white, // Background putih agar nav bar menyatu
-        child: SafeArea(
-          // ✅ SafeArea di dalam bottomNavigationBar
-          top: false,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize:
-                  MainAxisSize.min, // ✅ Penting: Hanya ambil tinggi konten
-              children: [
-                Icon(Icons.touch_app, size: 40, color: Colors.grey.shade300),
-                const SizedBox(height: 8),
-                const Text(
-                  "Pilih area pada peta untuk melihat detail",
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    final statusColor = _getStatusColor(subarea.status);
-    final statusValue = _getStatusValue(subarea.status);
-    final hasCountdown = subarea.validationRemainingSeconds > 0;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        // ✅ Tambahkan SafeArea agar tidak tertutup nav bar
-        top: false,
-        child: Column(
-          // ✅ Column mengambil height min secara default di dalam bottomNavBar (biasanya)
-          mainAxisSize: MainAxisSize.min, // ✅ Paksa Minimum Height
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          subarea.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A253A),
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () => _launchMaps(subarea.center),
-                        icon: const Icon(Icons.directions, size: 16),
-                        label: const Text("Rute"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade50,
-                          foregroundColor: const Color(0xFF1565C0),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Ketersediaan:",
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  subarea.status.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: statusColor,
-                                  ),
-                                ),
-                                if (subarea.isValidated) ...[
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text('Tervalidasi', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                                  ),
-                                ] else if (subarea.hasUserReport) ...[
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text('Laporan Berbeda', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
-                        ),
-                        if (subarea.lastValidationTime != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                const Icon(Icons.history, size: 10, color: Colors.grey),
-                                const SizedBox(width: 2),
-                                Text(
-                                  "Validasi Terakhir: ${() {
-                                    try {
-                                      final dt = DateTime.parse(subarea.lastValidationTime!).toLocal();
-                                      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                                    } catch (_) {
-                                      return subarea.lastValidationTime!;
-                                    }
-                                  }()}",
-                                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        const SizedBox(height: 4),
-                        if (hasCountdown || subarea.maxSlots > 0)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              if (hasCountdown)
-                                const SizedBox.shrink(),
-                              if (hasCountdown && subarea.maxSlots > 0)
-                                const SizedBox(width: 8),
-                              if (subarea.maxSlots > 0)
-                                Text(
-                                  'Terisi: ${subarea.currentCount}/${subarea.maxSlots} slot',
-                                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
-                                ),
-                            ],
-                          ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: statusValue,
-                          backgroundColor: Colors.grey.shade200,
-                          color: statusColor,
-                          minHeight: 8,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "Fasilitas:",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            subarea.amenities.isEmpty
-                                ? const Text(
-                                    "-",
-                                    style: TextStyle(color: Colors.grey),
-                                  )
-                                : SizedBox(
-                                    height: 32,
-                                    child: ListView.separated(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: subarea.amenities.length,
-                                      separatorBuilder: (context, index) =>
-                                          const SizedBox(width: 6),
-                                      itemBuilder: (ctx, i) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.grey.shade300,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            subarea.amenities[i],
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      InkWell(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CommentScreen(
-                                subareaId: subarea.id,
-                                subareaName: subarea.name,
-                              ),
-                            ),
-                          ).then((_) {
-                            // Silent Refresh saat kembali dari komentar
-                            ref.invalidate(
-                              parkVisualizationControllerProvider(
-                                widget.areaId,
-                              ),
-                            );
-                          });
-                        },
-                        child: Column(
-                          children: [
-                            Badge(
-                              label: Text(subarea.commentCount.toString()),
-                              backgroundColor: const Color(0xFF1565C0),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.chat_bubble_outline_rounded,
-                                  color: Color(0xFF1565C0),
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              "Komentar",
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(height: 1),
-
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: _ValidationCountdownButton(
-                  cooldown: cooldown,
-                  onPressed: () => _showValidationSheet(
-                    context,
-                    subarea.id,
-                    subarea.name,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _showValidationSheet(
@@ -1353,10 +1032,12 @@ class _ValidationCountdownButton extends StatefulWidget {
   });
 
   @override
-  State<_ValidationCountdownButton> createState() => _ValidationCountdownButtonState();
+  State<_ValidationCountdownButton> createState() =>
+      _ValidationCountdownButtonState();
 }
 
-class _ValidationCountdownButtonState extends State<_ValidationCountdownButton> {
+class _ValidationCountdownButtonState
+    extends State<_ValidationCountdownButton> {
   Timer? _timer;
   late DateTime _endTime;
   int _remainingSeconds = 0;
@@ -1379,7 +1060,7 @@ class _ValidationCountdownButtonState extends State<_ValidationCountdownButton> 
   void _initTimer() {
     _remainingSeconds = widget.cooldown?.remainingSeconds ?? 0;
     final canValidate = widget.cooldown?.canValidate ?? true;
-    
+
     if (!canValidate && _remainingSeconds > 0) {
       _endTime = DateTime.now().add(Duration(seconds: _remainingSeconds));
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -1406,8 +1087,9 @@ class _ValidationCountdownButtonState extends State<_ValidationCountdownButton> 
 
   @override
   Widget build(BuildContext context) {
-    final canValidate = (widget.cooldown?.canValidate ?? true) || _remainingSeconds <= 0;
-    
+    final canValidate =
+        (widget.cooldown?.canValidate ?? true) || _remainingSeconds <= 0;
+
     String buttonLabel = "Validasi Kondisi Area Ini";
     if (!canValidate) {
       final m = _remainingSeconds ~/ 60;
@@ -1417,18 +1099,13 @@ class _ValidationCountdownButtonState extends State<_ValidationCountdownButton> 
 
     return ElevatedButton.icon(
       onPressed: canValidate ? widget.onPressed : null,
-      icon: const Icon(
-        Icons.add_location_alt_outlined,
-        size: 18,
-      ),
+      icon: const Icon(Icons.add_location_alt_outlined, size: 18),
       label: Text(buttonLabel),
       style: ElevatedButton.styleFrom(
         backgroundColor: canValidate ? const Color(0xFF1565C0) : Colors.grey,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -1437,9 +1114,7 @@ class _ValidationCountdownButtonState extends State<_ValidationCountdownButton> 
 class _SubareaCountdownText extends StatefulWidget {
   final int validationRemainingSeconds;
 
-  const _SubareaCountdownText({
-    required this.validationRemainingSeconds,
-  });
+  const _SubareaCountdownText({required this.validationRemainingSeconds});
 
   @override
   State<_SubareaCountdownText> createState() => _SubareaCountdownTextState();
@@ -1459,7 +1134,8 @@ class _SubareaCountdownTextState extends State<_SubareaCountdownText> {
   @override
   void didUpdateWidget(covariant _SubareaCountdownText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.validationRemainingSeconds != oldWidget.validationRemainingSeconds) {
+    if (widget.validationRemainingSeconds !=
+        oldWidget.validationRemainingSeconds) {
       _timer?.cancel();
       _initTimer();
     }
@@ -1499,7 +1175,411 @@ class _SubareaCountdownTextState extends State<_SubareaCountdownText> {
     final s = _remainingSeconds % 60;
     return Text(
       "(Sisa: ${m}m ${s}s)",
-      style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        fontSize: 10,
+        color: Colors.blue,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+class _SubareaDetailPanel extends ConsumerWidget {
+  final ValidationCooldown? cooldown;
+  final String areaId;
+  final BuildContext parentContext;
+  final Future<void> Function(LatLng destination) launchMaps;
+  final void Function(BuildContext context, int subareaId, String subareaName)
+  showValidationSheet;
+
+  const _SubareaDetailPanel({
+    required this.cooldown,
+    required this.areaId,
+    required this.parentContext,
+    required this.launchMaps,
+    required this.showValidationSheet,
+  });
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'penuh':
+        return Colors.red;
+      case 'terbatas':
+        return Colors.amber;
+      case 'banyak':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  double _getStatusValue(String status) {
+    switch (status.toLowerCase()) {
+      case 'penuh':
+        return 1.0;
+      case 'terbatas':
+        return 0.85;
+      case 'banyak':
+        return 0.3;
+      default:
+        return 0.0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subarea = ref.watch(selectedSubareaProvider);
+    if (subarea == null) {
+      // ✅ Gunakan Container dengan tinggi minimal agar tidak fullscreen
+      return Container(
+        width: double.infinity,
+        color: Colors.white, // Background putih agar nav bar menyatu
+        child: SafeArea(
+          // ✅ SafeArea di dalam bottomNavigationBar
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize:
+                  MainAxisSize.min, // ✅ Penting: Hanya ambil tinggi konten
+              children: [
+                Icon(Icons.touch_app, size: 40, color: Colors.grey.shade300),
+                const SizedBox(height: 8),
+                const Text(
+                  "Pilih area pada peta untuk melihat detail",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final statusColor = _getStatusColor(subarea.status);
+    final statusValue = _getStatusValue(subarea.status);
+    final hasCountdown = subarea.validationRemainingSeconds > 0;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        // ✅ Tambahkan SafeArea agar tidak tertutup nav bar
+        top: false,
+        child: Column(
+          // ✅ Column mengambil height min secara default di dalam bottomNavBar (biasanya)
+          mainAxisSize: MainAxisSize.min, // ✅ Paksa Minimum Height
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          subarea.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A253A),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => launchMaps(subarea.center),
+                        icon: const Icon(Icons.directions, size: 16),
+                        label: const Text("Rute"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade50,
+                          foregroundColor: const Color(0xFF1565C0),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Ketersediaan:",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                subarea.status.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                              if (subarea.isValidated) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'Tervalidasi',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ] else if (subarea.hasUserReport) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'Laporan Berbeda',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (subarea.lastValidationTime != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              const Icon(
+                                Icons.history,
+                                size: 10,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                "Validasi Terakhir: ${() {
+                                  try {
+                                    final dt = DateTime.parse(subarea.lastValidationTime!).toLocal();
+                                    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                                  } catch (_) {
+                                    return subarea.lastValidationTime!;
+                                  }
+                                }()}",
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      if (hasCountdown || subarea.maxSlots > 0)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (hasCountdown) const SizedBox.shrink(),
+                            if (hasCountdown && subarea.maxSlots > 0)
+                              const SizedBox(width: 8),
+                            if (subarea.maxSlots > 0)
+                              Text(
+                                'Terisi: ${subarea.currentCount}/${subarea.maxSlots} slot',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: statusValue,
+                          backgroundColor: Colors.grey.shade200,
+                          color: statusColor,
+                          minHeight: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Fasilitas:",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            subarea.amenities.isEmpty
+                                ? const Text(
+                                    "-",
+                                    style: TextStyle(color: Colors.grey),
+                                  )
+                                : SizedBox(
+                                    height: 32,
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: subarea.amenities.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(width: 6),
+                                      itemBuilder: (ctx, i) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            subarea.amenities[i],
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: () async {
+                          await Navigator.push(
+                            parentContext,
+                            MaterialPageRoute(
+                              builder: (context) => CommentScreen(
+                                subareaId: subarea.id,
+                                subareaName: subarea.name,
+                              ),
+                            ),
+                          ).then((_) {
+                            // Silent Refresh saat kembali dari komentar
+                            ref.invalidate(
+                              parkVisualizationControllerProvider(areaId),
+                            );
+                          });
+                        },
+                        child: Column(
+                          children: [
+                            Badge(
+                              label: Text(subarea.commentCount.toString()),
+                              backgroundColor: const Color(0xFF1565C0),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  color: Color(0xFF1565C0),
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              "Komentar",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: _ValidationCountdownButton(
+                  cooldown: cooldown,
+                  onPressed: () => showValidationSheet(
+                    parentContext,
+                    subarea.id,
+                    subarea.name,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

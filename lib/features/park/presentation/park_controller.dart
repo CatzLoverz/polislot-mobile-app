@@ -27,11 +27,20 @@ class ParkAreaListController extends _$ParkAreaListController {
 @riverpod
 class ParkVisualizationController extends _$ParkVisualizationController {
   Timer? _timer;
+  final Map<int, DateTime> _localExpirationMap = {};
 
   @override
   Future<ParkVisualData> build(String areaId) async {
     final repo = ref.read(parkRepositoryInstanceProvider);
     final data = await repo.getParkVisualization(areaId);
+
+    // Hitung waktu kadaluarsa lokal untuk menghindari isu perbedaan zona waktu/jam antara server dan HP (Time Skew)
+    _localExpirationMap.clear();
+    for (var sub in data.subareas) {
+      if (sub.validationRemainingSeconds > 0) {
+        _localExpirationMap[sub.id] = DateTime.now().add(Duration(seconds: sub.validationRemainingSeconds));
+      }
+    }
 
     // Pastikan MQTT service sudah diinisialisasi
     ref.read(mqttServiceProvider);
@@ -68,6 +77,15 @@ class ParkVisualizationController extends _$ParkVisualizationController {
 
         final newSubareas = currentData.subareas.map((sub) {
           if (sub.id == subareaId) {
+            final parsedRemaining = _parseInt(payload['validationRemainingSeconds'], 0);
+            
+            // Set/Update local target time
+            if (parsedRemaining > 0) {
+               _localExpirationMap[sub.id] = DateTime.now().add(Duration(seconds: parsedRemaining));
+            } else {
+               _localExpirationMap.remove(sub.id);
+            }
+
             return sub.copyWith(
               status: newStatus,
               isValidated: _parseBool(payload['isValidated'], sub.isValidated),
@@ -78,10 +96,7 @@ class ParkVisualizationController extends _$ParkVisualizationController {
               maxSlots: _parseInt(payload['maxSlots'], sub.maxSlots),
               validationExpiresAt: payload['validationExpiresAt']?.toString(),
               lastValidationTime: payload['lastValidationTime']?.toString(),
-              validationRemainingSeconds: _parseInt(
-                payload['validationRemainingSeconds'],
-                0,
-              ),
+              validationRemainingSeconds: parsedRemaining,
               fallbackStatus:
                   payload['fallbackStatus']?.toString() ?? sub.fallbackStatus,
               fallbackStatusColor: payload['fallbackStatusColor']?.toString() ??
@@ -115,50 +130,22 @@ class ParkVisualizationController extends _$ParkVisualizationController {
       final currentData = state.value!;
       bool changed = false;
 
-      // Decrement countdown subareas HANYA secara internal untuk revert status.
-      // Kita tidak decrement nilai validationRemainingSeconds di state agar UI
-      // tidak direbuild setiap detik. Countdown UI dihandle oleh widget lokal.
+      // Gunakan _localExpirationMap untuk menghindari timezone/time skew error 
+      // yang menyebabkan expires langsung return true
       final newSubareas = currentData.subareas.map((sub) {
-        if (sub.validationRemainingSeconds > 0) {
-          // Asumsikan validationExpiresAt ada atau bisa dikurangi dari local counter
-          // Namun, karena kita tidak update state setiap detik, kita bisa menyimpan target 
-          // time di memory, atau cukup hitung berdasarkan fallback/kadaluarsa.
-          // Untuk kesederhanaan dan ketahanan dari app suspend, kita cek kadaluarsa.
-          if (sub.validationExpiresAt != null) {
-            final expires = DateTime.tryParse(sub.validationExpiresAt!);
-            if (expires != null && DateTime.now().isAfter(expires)) {
-              changed = true;
-              return sub.copyWith(
-                status: sub.fallbackStatus,
-                isValidated: false,
-                hasUserReport: false,
-                validationExpiresAt: null,
-                lastValidationTime: null,
-                validationRemainingSeconds: 0,
-              );
-            }
-          } else {
-            // Jika tidak ada validationExpiresAt, fallback ke hitung manual per tick 
-            // (Note: ini masih rentan suspend, tapi backend umumnya mengirim validationExpiresAt)
-            final newRemaining = sub.validationRemainingSeconds - 1;
-            if (newRemaining <= 0) {
-              changed = true;
-              return sub.copyWith(
-                status: sub.fallbackStatus,
-                isValidated: false,
-                hasUserReport: false,
-                validationExpiresAt: null,
-                lastValidationTime: null,
-                validationRemainingSeconds: 0,
-              );
-            } else {
-              // Simpan decrement di memori dengan cara override instance tanpa memicu state update keseluruhan
-              // Karena state provider adalah immutable, kita ubah diam-diam untuk tick selanjutnya.
-              // Tapi yang terbaik adalah update state JIKA expire saja, agar map tidak rebuild.
-              // Maka dari itu kita hanya update subarea ketika expired!
-              // Untuk local decrement yang dibutuhkan `_timer` selanjutnya, lebih baik gunakan time comparison.
-              return sub;
-            }
+        if (_localExpirationMap.containsKey(sub.id)) {
+          final localExp = _localExpirationMap[sub.id]!;
+          if (DateTime.now().isAfter(localExp)) {
+            changed = true;
+            _localExpirationMap.remove(sub.id);
+            return sub.copyWith(
+              status: sub.fallbackStatus,
+              isValidated: false,
+              hasUserReport: false,
+              validationExpiresAt: null,
+              lastValidationTime: null,
+              validationRemainingSeconds: 0,
+            );
           }
         }
         return sub;

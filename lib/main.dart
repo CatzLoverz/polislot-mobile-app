@@ -23,11 +23,12 @@ void main() async {
   // 1. Wajib: Binding Widget
   WidgetsFlutterBinding.ensureInitialized();
 
-  // FIX: Force Hybrid Composition for Android Maps to prevent "Blank Map" issues on some devices
+  // Google Maps renderer
   final GoogleMapsFlutterPlatform mapsImplementation =
       GoogleMapsFlutterPlatform.instance;
   if (mapsImplementation is GoogleMapsFlutterAndroid) {
-    mapsImplementation.useAndroidViewSurface = true;
+    mapsImplementation.useAndroidViewSurface = false;
+    mapsImplementation.initializeWithRenderer(AndroidMapRenderer.latest);
   }
 
   try {
