@@ -25,7 +25,7 @@ Aplikasi ini dikembangkan dengan pendekatan modular (*feature-first*) menggunaka
 ## External Prerequisite Service
 Agar aplikasi ini dapat berfungsi secara penuh, pastikan beberapa layanan eksternal berikut telah tersedia dan terkonfigurasi:
 1. **Backend Server (PoliSlot Admin Dashboard)**: Server API dan website admin dibangun dengan Laravel yang menangani database pengguna, riwayat IoT, manajemen misi, dan memegang kunci enkripsi *private* (RSA).
-2. **Google Maps API Key**: Diperlukan dari Google Cloud Console untuk merender peta pada halaman Parkir. Kunci ini disimpan secara lokal di `android/local.properties`.
+2. **Google Maps API Key**: Diperlukan dari Google Cloud Console untuk merender peta pada halaman Parkir. Kunci ini disimpan secara lokal di `.env`.
 3. **Kunci Enkripsi (Public Key)**: Sebuah *file* `public_key.pem` yang harus diletakkan dalam direktori *assets* aplikasi.
 
 ## Struktur Direktori
@@ -87,12 +87,12 @@ flutter pub get
   API_URL=http://<ip-backend-anda>/api
   ```
 - **Kunci Publik (RSA)**: Masukkan file `public_key.pem` ke dalam *folder* `assets/keys/` agar keamanan enkripsi data dapat berjalan lancar.
-- **Google Maps API Key (Android)**: Salin *file* `android/local.properties.example` menjadi `android/local.properties`, lalu masukkan API Key Anda pada variabel `google.maps.api.key`.
+- **Google Maps API Key (Android)**: masukkan API Key Anda ke file env pada variabel `GOOGLE_MAPS_API_KEY`.
 
 ### 5. Code Generation (Riverpod & JSON Serializable)
 Aplikasi ini menggunakan *code generator*. Jalankan *build runner* untuk mengenerate seluruh *file* `.g.dart`:
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 ```
 
 ### 6. Jalankan Aplikasi

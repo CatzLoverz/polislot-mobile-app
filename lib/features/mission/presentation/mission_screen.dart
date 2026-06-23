@@ -54,6 +54,30 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
     }
   }
 
+  /// Warna badge sesuai tipe misi
+  Color _getMissionTypeColor(String missionType) {
+    switch (missionType) {
+      case 'SEQUENCE_STREAK':
+        return Colors.deepOrange;
+      case 'SEQUENCE':
+        return Colors.indigo;
+      default:
+        return const Color(0xFF1352C8);
+    }
+  }
+
+  /// Ikon badge sesuai tipe misi
+  IconData _getMissionTypeIcon(String missionType) {
+    switch (missionType) {
+      case 'SEQUENCE_STREAK':
+        return Icons.local_fire_department_rounded;
+      case 'SEQUENCE':
+        return Icons.calendar_view_week_rounded;
+      default:
+        return Icons.flag_rounded;
+    }
+  }
+
   Color _getProgressColor(double percent) {
     if (percent >= 1.0) return Colors.green;
     if (percent >= 0.5) return Colors.blue;
@@ -440,6 +464,51 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _getMissionTypeColor(m.missionType).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _getMissionTypeColor(m.missionType).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _getMissionTypeIcon(m.missionType),
+                      size: 11,
+                      color: _getMissionTypeColor(m.missionType),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      m.missionTypeLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: _getMissionTypeColor(m.missionType),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (m.isStreakType) ...[
+                const SizedBox(width: 6),
+                Text(
+                  'Harus berturut-turut!',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.deepOrange.shade400,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 10),
