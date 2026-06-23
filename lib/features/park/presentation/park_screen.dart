@@ -672,30 +672,46 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
             color: Color(0xFF1565C0),
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _legendItemDetail(
-              color: Colors.red,
-              title: "Merah (Penuh)",
-              desc:
-                  "SubArea parkir hampir/sudah penuh. Disarankan mencari area lain.",
-            ),
-            const Divider(height: 24),
-            _legendItemDetail(
-              color: Colors.amber,
-              title: "Kuning (Terbatas)",
-              desc:
-                  "SubArea mulai terbatas. Prioritaskan jika dekat dengan tujuan.",
-            ),
-            const Divider(height: 24),
-            _legendItemDetail(
-              color: Colors.green,
-              title: "Hijau (Banyak Tersedia)",
-              desc: "SubArea parkir masih banyak tersedia. Aman untuk parkir.",
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _legendItemDetail(
+                color: Colors.red,
+                title: "Merah (Penuh)",
+                desc:
+                    "SubArea parkir hampir/sudah penuh. Disarankan mencari area lain.",
+              ),
+              const Divider(height: 24),
+              _legendItemDetail(
+                color: Colors.amber,
+                title: "Kuning (Terbatas)",
+                desc:
+                    "SubArea mulai terbatas. Prioritaskan jika dekat dengan tujuan.",
+              ),
+              const Divider(height: 24),
+              _legendItemDetail(
+                color: Colors.green,
+                title: "Hijau (Banyak Tersedia)",
+                desc: "SubArea parkir masih banyak tersedia. Aman untuk parkir.",
+              ),
+              const Divider(height: 24),
+              _legendItemLabel(
+                label: "Tervalidasi",
+                color: Colors.green,
+                title: "Tanda Tervalidasi",
+                desc: "Status ketersediaan SubArea yang terdeteksi otomatis telah divalidasi oleh pengguna lain.",
+              ),
+              const Divider(height: 24),
+              _legendItemLabel(
+                label: "Laporan Berbeda",
+                color: Colors.orange,
+                title: "Tanda Laporan Berbeda",
+                desc: "Terdapat laporan yang berbeda dari status SubArea yang terdeteksi otomatis.",
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -722,9 +738,18 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 4.0),
-          child: CircleAvatar(backgroundColor: color, radius: 6),
+        Container(
+          width: 65,
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.only(top: 6.0),
+          child: Container(
+            width: 28,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -742,6 +767,73 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
               const SizedBox(height: 4),
               Text(
                 desc,
+                textAlign: TextAlign.justify,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget untuk Legend label (seperti Tervalidasi/Laporan Berbeda)
+  Widget _legendItemLabel({
+    required String label,
+    required Color color,
+    required String title,
+    required String desc,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 65,
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.only(top: 2.0),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                desc,
+                textAlign: TextAlign.justify,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.black87,
