@@ -26,7 +26,7 @@ class MissionRepository {
       }
       throw Exception("Gagal memuat data misi");
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 }

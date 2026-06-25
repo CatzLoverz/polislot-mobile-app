@@ -72,14 +72,15 @@ void main() async {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    "Error: $e",
+                  const Text(
+                    "Aplikasi tidak dapat dimulai saat ini. Silakan tutup lalu buka kembali aplikasi.",
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
+                    style: TextStyle(color: Colors.white70),
                   ),
                   const SizedBox(height: 30),
                   const Text(
-                    "Tips: Cek file .env dan assets/keys/public_key.pem",
+                    "Jika masalah berlanjut, periksa koneksi internet Anda atau hubungi dukungan.",
+                    textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.amber),
                   ),
                 ],

@@ -28,7 +28,7 @@ class RewardRepository {
       }
       throw Exception("Gagal memuat data reward.");
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 
@@ -46,10 +46,7 @@ class RewardRepository {
       }
       throw Exception(data['message'] ?? "Gagal menukar reward.");
     } catch (e) {
-      if (e is DioException && e.response?.data != null) {
-        throw Exception(e.response?.data['message'] ?? "Terjadi kesalahan.");
-      }
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 
@@ -66,7 +63,7 @@ class RewardRepository {
       }
       throw Exception("Gagal memuat riwayat.");
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 }

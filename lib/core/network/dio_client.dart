@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -173,52 +174,99 @@ class DioClientService extends _$DioClientService {
           return handler.next(e);
         },
       ),
-
-      LogInterceptor(requestBody: true, responseBody: true),
     ]);
+
+    // Log request/response lengkap HANYA saat mode debug.
+    // Di build rilis, log verbose ini tidak boleh ikut (bukan untuk end user).
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true),
+      );
+    }
 
     return dio;
   }
 }
 
 class DioErrorHandler {
+  /// Pesan fallback yang ramah & aman ditampilkan ke end user.
+  static const String _genericMessage =
+      "Terjadi kesalahan. Silakan coba lagi.";
+
+  /// Mengubah error apa pun (DioException / Exception biasa) menjadi pesan
+  /// singkat yang menjelaskan masalah ke pengguna, TANPA detail debug teknis
+  /// (stack trace, tipe DioException, dump response, dll).
   static String parse(Object e) {
     if (e is DioException) {
-      String errorMsg = "Terjadi kesalahan koneksi";
+      String errorMsg = "Terjadi kesalahan koneksi. Silakan coba lagi.";
 
       if (e.response != null && e.response?.data != null) {
         final data = e.response?.data;
         if (data is Map) {
           if (data['message'] != null) {
-            errorMsg = data['message'];
+            errorMsg = data['message'].toString();
           } else if (data['error'] != null) {
-            errorMsg = data['error'];
+            errorMsg = data['error'].toString();
           }
           if (data['errors'] != null && data['errors'] is Map) {
             final errors = data['errors'] as Map;
             if (errors.isNotEmpty) {
-              final firstKey = errors.keys.first;
-              final firstErrorList = errors[firstKey];
+              final firstErrorList = errors[errors.keys.first];
               if (firstErrorList is List && firstErrorList.isNotEmpty) {
-                errorMsg = firstErrorList.first;
+                errorMsg = firstErrorList.first.toString();
               }
             }
           }
+        } else {
+          // Body bukan Map (mis. HTML error page) -> jangan tampilkan mentah
+          errorMsg = _statusMessage(e.response?.statusCode);
         }
       } else if (e.error == "No Internet") {
-        errorMsg = "Koneksi internet terputus. Periksa WiFi atau data seluler Anda.";
+        errorMsg =
+            "Koneksi internet terputus. Periksa WiFi atau data seluler Anda.";
       } else if (e.error == "Server Unreachable") {
-        errorMsg = "Server sedang mengalami gangguan. Silakan coba beberapa saat lagi.";
+        errorMsg =
+            "Server sedang mengalami gangguan. Silakan coba beberapa saat lagi.";
       } else if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {
         errorMsg = "Koneksi timeout. Periksa internet Anda.";
       } else if (e.type == DioExceptionType.connectionError) {
         errorMsg = "Tidak dapat terhubung ke server.";
+      } else {
+        errorMsg = _statusMessage(e.response?.statusCode);
       }
 
-      return errorMsg;
+      return _sanitize(errorMsg);
     }
-    return e.toString().replaceAll('Exception: ', '');
+
+    // Exception biasa: ambil pesannya saja, buang prefix "Exception: ".
+    return _sanitize(e.toString().replaceAll('Exception: ', ''));
+  }
+
+  static String _statusMessage(int? statusCode) {
+    if (statusCode == null) return "Terjadi kesalahan koneksi. Silakan coba lagi.";
+    if (statusCode >= 500) {
+      return "Server sedang mengalami gangguan. Silakan coba beberapa saat lagi.";
+    }
+    if (statusCode == 404) return "Data tidak ditemukan.";
+    if (statusCode == 403) return "Anda tidak memiliki akses untuk tindakan ini.";
+    if (statusCode == 401) return "Sesi Anda telah berakhir. Silakan login kembali.";
+    return _genericMessage;
+  }
+
+  /// Pastikan pesan tidak kosong, bukan "null", dan tidak mengandung jejak
+  /// teknis (mis. "DioException", stack trace) yang lolos ke UI.
+  static String _sanitize(String message) {
+    final msg = message.trim();
+    if (msg.isEmpty ||
+        msg.toLowerCase() == 'null' ||
+        msg.contains('DioException') ||
+        msg.contains('#0 ') ||
+        msg.startsWith('{') ||
+        msg.startsWith('[')) {
+      return _genericMessage;
+    }
+    return msg;
   }
 }

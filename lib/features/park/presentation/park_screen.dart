@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/network/dio_client.dart';
 import '../../../core/services/mqtt_service.dart';
 import 'park_controller.dart';
 import '../data/park_model.dart';
@@ -314,8 +315,16 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
     // Logic: Error (No Data)
     if (parkDataAsync.hasError && !parkDataAsync.hasValue) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Error")),
-        body: Center(child: Text("Gagal memuat data: ${parkDataAsync.error}")),
+        appBar: AppBar(title: const Text("Gagal Memuat")),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              DioErrorHandler.parse(parkDataAsync.error!),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       );
     }
 

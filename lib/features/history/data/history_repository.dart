@@ -30,7 +30,7 @@ class HistoryRepository {
       }
       throw Exception("Gagal memuat data history.");
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 }
