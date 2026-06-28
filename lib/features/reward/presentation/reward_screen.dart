@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'reward_controller.dart';
 import '../data/reward_model.dart';
 import '../../../core/providers/connection_status_provider.dart';
+import '../../../core/network/dio_client.dart';
 import '../../history/presentation/history_controller.dart';
 import '../../history/data/history_model.dart';
 
@@ -772,7 +773,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(DioErrorHandler.parse(e)),
             backgroundColor: Colors.red,
           ),
         );

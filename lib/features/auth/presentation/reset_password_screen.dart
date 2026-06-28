@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/validator_utils.dart';
+import '../../../core/network/dio_client.dart';
 import 'auth_controller.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
@@ -100,11 +101,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         (route) => false,
       );
     } else {
-      final error = ref
-          .read(authControllerProvider)
-          .error
-          .toString()
-          .replaceAll('Exception: ', '');
+      final error = DioErrorHandler.parse(
+          ref.read(authControllerProvider).error ?? "Gagal mereset password"
+      );
       AppSnackBars.show(context, error, isError: true);
     }
   }

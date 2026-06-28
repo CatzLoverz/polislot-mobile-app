@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/providers/connection_status_provider.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/comment_model.dart';
 import 'comment_controller.dart';
@@ -89,15 +90,10 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     } else {
       if (mounted) {
         // Ambil error message dari Controller
-        final errorMsg =
-            ref
-                .read(commentActionControllerProvider)
-                .error
-                ?.toString()
-                .replaceAll('Exception: ', '') ??
-            (_isEditing
-                ? "Gagal mengupdate komentar."
-                : "Gagal mengirim komentar.");
+        final errorMsg = DioErrorHandler.parse(
+            ref.read(commentActionControllerProvider).error ??
+            (_isEditing ? "Gagal mengupdate komentar." : "Gagal mengirim komentar.")
+        );
 
         AppSnackBars.show(context, errorMsg, isError: true);
       }

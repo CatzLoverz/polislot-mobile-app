@@ -5,6 +5,7 @@ import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/enums/otp_type.dart';
 import '../../../core/utils/snackbar_utils.dart'; // ✅ Import Helper SnackBar
+import '../../../core/network/dio_client.dart';
 import 'auth_controller.dart';
 
 class VerifyOtpScreen extends ConsumerStatefulWidget {
@@ -87,11 +88,9 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
         );
       }
     } else {
-      final error = ref
-          .read(authControllerProvider)
-          .error
-          .toString()
-          .replaceAll('Exception: ', '');
+      final error = DioErrorHandler.parse(
+          ref.read(authControllerProvider).error ?? "Verifikasi gagal."
+      );
       AppSnackBars.show(context, error, isError: true);
     }
   }

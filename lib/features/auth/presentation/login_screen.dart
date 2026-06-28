@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/network/dio_client.dart';
 import '../../../core/widgets/custom_textfield.dart';
 import '../../../core/widgets/custom_button.dart';
 import 'auth_controller.dart';
@@ -104,13 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     ref.listen<AsyncValue<User?>>(authControllerProvider, (previous, next) {
       if (next is AsyncError) {
-        String errorText = next.error.toString();
-        if (errorText.startsWith("Exception: ")) {
-          errorText = errorText.substring(11);
-        }
-        if (errorText.toLowerCase().contains("null") || errorText.isEmpty) {
-          errorText = "Login gagal.";
-        }
+        String errorText = DioErrorHandler.parse(next.error ?? "Login gagal.");
 
         AppSnackBars.show(context, errorText, isError: true);
       } else if (next is AsyncData && next.value != null) {

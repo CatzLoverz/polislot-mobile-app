@@ -4,6 +4,7 @@ import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/enums/otp_type.dart';
+import '../../../core/network/dio_client.dart';
 import 'auth_controller.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -47,7 +48,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       );
     } else {
       // Tampilkan Error
-      final error = ref.read(authControllerProvider).error.toString().replaceAll('Exception: ', '');
+      final error = DioErrorHandler.parse(ref.read(authControllerProvider).error ?? "Gagal mengirim email.");
       AppSnackBars.show(context, error, isError: true);
     }
   }

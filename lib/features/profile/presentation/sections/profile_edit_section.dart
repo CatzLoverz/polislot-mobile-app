@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../core/utils/validator_utils.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../presentation/profile_controller.dart';
 
@@ -151,11 +152,9 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
       AppSnackBars.show(context, "Profil berhasil diperbarui!");
       Navigator.pop(context);
     } else {
-      final error = ref
-          .read(profileControllerProvider)
-          .error
-          .toString()
-          .replaceAll('Exception: ', '');
+      final error = DioErrorHandler.parse(
+          ref.read(profileControllerProvider).error ?? "Gagal memperbarui profil"
+      );
       AppSnackBars.show(context, error, isError: true);
     }
   }
