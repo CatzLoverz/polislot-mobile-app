@@ -10,6 +10,8 @@
 - **Riwayat Aktivitas**: Rekaman lengkap terkait aktivitas parkir dan poin.
 - **Pusat Informasi**: Memuat papan informasi (Info Board), FAQ, serta formulir pengaduan (Feedback) bagi pengguna.
 - **Profil Pengguna**: Manajemen data profil, pengaturan akun, serta keamanan sandi.
+- **Real-time Update (MQTT)**: Sinkronisasi data ketersediaan parkir secara langsung melalui koneksi MQTT (WebSocket Secure).
+- **Penanganan Error Terpusat**: Manajemen error yang aman tanpa mengekspos data sensitif, dengan umpan balik kontekstual untuk pengguna (terutama pada kasus gagal jaringan dan server).
 
 ## Tech Stack
 Aplikasi ini dikembangkan dengan pendekatan modular (*feature-first*) menggunakan berbagai teknologi modern:
@@ -19,6 +21,7 @@ Aplikasi ini dikembangkan dengan pendekatan modular (*feature-first*) menggunaka
 - **Security / Encryption**: `encrypt`, `pointycastle`, RSA Public Key
 - **Serialization**: `json_serializable`, `json_annotation`
 - **Location & Maps**: `google_maps_flutter`, `geolocator`
+- **Real-time Communication**: `mqtt_client` (via WebSocket Secure)
 - **Local Storage**: `shared_preferences`
 - **Environment Management**: `flutter_dotenv`
 
@@ -27,6 +30,7 @@ Agar aplikasi ini dapat berfungsi secara penuh, pastikan beberapa layanan ekster
 1. **Backend Server (PoliSlot Admin Dashboard)**: Server API dan website admin dibangun dengan Laravel yang menangani database pengguna, riwayat IoT, manajemen misi, dan memegang kunci enkripsi *private* (RSA).
 2. **Google Maps API Key**: Diperlukan dari Google Cloud Console untuk merender peta pada halaman Parkir. Kunci ini disimpan secara lokal di `.env`.
 3. **Kunci Enkripsi (Public Key)**: Sebuah *file* `public_key.pem` yang harus diletakkan dalam direktori *assets* aplikasi.
+4. **MQTT Broker**: Broker MQTT dengan dukungan WebSocket Secure (contoh: Mosquitto) untuk mengelola pertukaran pesan secara *real-time*.
 
 ## Struktur Direktori
 Struktur utama pada direktori `lib/` menerapkan arsitektur *feature-first layer*:
@@ -39,6 +43,7 @@ lib/
 │   ├── providers/              # Global Riverpod provider
 │   ├── routes/                 # Konfigurasi routing / navigasi (app_routes.dart)
 │   ├── security/               # Manajer keamanan data dan enkripsi (KeyManager)
+│   ├── services/               # Layanan background atau eksternal (contoh: MQTT Service)
 │   ├── theme/                  # Konfigurasi style dan tema (Colors, Typography)
 │   ├── utils/                  # Fungsi *helper* tambahan
 │   ├── widgets/                # Komponen UI (widget) yang dapat digunakan ulang
@@ -82,12 +87,16 @@ flutter pub get
 ```
 
 ### 4. Konfigurasi Environment & Asset
-- **File `.env`**: Buat *file* bernama `.env` di *root* proyek. Isi dengan variabel lingkungan seperti base URL *backend*:
+- **File `.env`**: Buat *file* bernama `.env` di *root* proyek. Isi dengan variabel lingkungan yang dibutuhkan (bisa merujuk ke `.env.example`):
   ```env
-  API_URL=http://<ip-backend-anda>/api
+  API_BASE_URL=http://<ip-backend-anda>/api
+  MQTT_HOST=<domain-atau-ip-broker>
+  MQTT_WSS_PORT=443
+  MQTT_USERNAME=<username-mqtt>
+  MQTT_PASSWORD=<password-mqtt>
+  GOOGLE_MAPS_API_KEY=<api-key-anda>
   ```
 - **Kunci Publik (RSA)**: Masukkan file `public_key.pem` ke dalam *folder* `assets/keys/` agar keamanan enkripsi data dapat berjalan lancar.
-- **Google Maps API Key (Android)**: masukkan API Key Anda ke file env pada variabel `GOOGLE_MAPS_API_KEY`.
 
 ### 5. Code Generation (Riverpod & JSON Serializable)
 Aplikasi ini menggunakan *code generator*. Jalankan *build runner* untuk mengenerate seluruh *file* `.g.dart`:
