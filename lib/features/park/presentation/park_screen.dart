@@ -706,6 +706,12 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                 desc: "SubArea parkir masih banyak tersedia. Aman untuk parkir.",
               ),
               const Divider(height: 24),
+              _legendItemDetail(
+                color: Colors.grey,
+                title: "Abu-abu (Netral)",
+                desc: "Perangkat IoT sedang offline atau SubArea belum dipasangi perangkat IoT.",
+              ),
+              const Divider(height: 24),
               _legendItemLabel(
                 label: "Tervalidasi",
                 color: Colors.green,
@@ -1517,7 +1523,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                           ),
                         ),
                       const SizedBox(height: 4),
-                      if (hasCountdown || subarea.maxSlots > 0)
+                      if ((hasCountdown || subarea.maxSlots > 0) && subarea.status.toLowerCase() != 'netral')
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
