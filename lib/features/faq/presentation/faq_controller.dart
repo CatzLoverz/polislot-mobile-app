@@ -7,36 +7,41 @@ part 'faq_controller.g.dart';
 @riverpod
 class FaqController extends _$FaqController {
 
-  /// FAQ statis yang tampil saat pengguna offline.
-  /// Topik: masalah jaringan & cara pengecekan koneksi.
+  /// FAQ statis yang tampil saat pengguna tidak ada koneksi internet.
   static const List<Map<String, String>> _offlineFaqs = [
     {
       'id': '-1',
-      'question': 'Mengapa koneksi internet saya tiba-tiba mati?',
-      'answer':
-          'Koneksi internet bisa terputus karena beberapa sebab umum: '
-          'gangguan dari ISP (provider), router/modem yang perlu di-restart, '
-          'tagihan paket data habis, atau sinyal Wi-Fi yang lemah karena jarak '
-          'terlalu jauh dari router. Coba periksa satu per satu mulai dari yang paling mudah.',
+      'question': 'Mengapa aplikasi menyatakan saya sedang offline?',
+      'answer': 'Aplikasi membutuhkan koneksi internet yang stabil untuk mengambil data. Silakan periksa apakah data seluler atau Wi-Fi Anda aktif dan memiliki sinyal yang cukup.',
     },
     {
       'id': '-2',
-      'question': 'Bagaimana cara memeriksa apakah masalah ada di perangkat saya atau di jaringan?',
-      'answer':
-          '1. Coba hubungkan perangkat lain (HP/laptop lain) ke Wi-Fi yang sama.\n'
-          '2. Jika perangkat lain juga tidak bisa, masalah ada di router atau ISP.\n'
-          '3. Jika hanya perangkat Anda yang bermasalah, coba matikan Wi-Fi lalu '
-          'nyalakan kembali, atau restart perangkat Anda.',
+      'question': 'Apa yang harus saya lakukan jika koneksi bermasalah?',
+      'answer': '1. Pastikan mode pesawat tidak aktif.\n2. Coba matikan dan nyalakan kembali Wi-Fi atau data seluler Anda.\n3. Jika menggunakan Wi-Fi, pastikan router Anda terhubung ke internet.\n4. Coba buka aplikasi lain untuk memastikan perangkat Anda terhubung ke internet.',
     },
     {
       'id': '-3',
-      'question': 'Apa langkah pertama yang harus dilakukan saat internet tidak bisa diakses?',
-      'answer':
-          'Ikuti langkah berikut secara berurutan:\n'
-          '1. Matikan dan nyalakan kembali Wi-Fi di perangkat Anda.\n'
-          '2. Restart router/modem (cabut listrik 30 detik, lalu pasang kembali).\n'
-          '3. Periksa apakah lampu indikator internet pada router menyala normal.\n'
-          '4. Jika tetap tidak bisa, hubungi layanan pelanggan ISP Anda.',
+      'question': 'Apakah saya tetap bisa menggunakan aplikasi saat offline?',
+      'answer': 'Beberapa fitur mungkin dibatasi atau tidak dapat diakses sama sekali karena aplikasi memerlukan data langsung (real-time) dari server.',
+    },
+  ];
+
+  /// FAQ statis yang tampil saat server tidak dapat dijangkau.
+  static const List<Map<String, String>> _serverErrorFaqs = [
+    {
+      'id': '-4',
+      'question': 'Mengapa aplikasi tidak dapat terhubung ke server?',
+      'answer': 'Saat ini server sedang mengalami gangguan atau sedang dalam masa pemeliharaan rutin. Tim teknis kami sedang berupaya untuk memperbaikinya secepat mungkin.',
+    },
+    {
+      'id': '-5',
+      'question': 'Apa yang harus saya lakukan saat terjadi masalah server?',
+      'answer': 'Anda tidak perlu melakukan apa-apa. Silakan tunggu beberapa saat dan coba muat ulang aplikasi dengan menarik layar ke bawah (pull to refresh).',
+    },
+    {
+      'id': '-6',
+      'question': 'Apakah data saya aman saat server bermasalah?',
+      'answer': 'Ya, data Anda tersimpan dengan aman di database kami. Masalah server biasanya hanya memengaruhi akses sementara ke sistem.',
     },
   ];
 
@@ -46,9 +51,20 @@ class FaqController extends _$FaqController {
     return await repo.getFaqs();
   }
 
-  /// Mengembalikan daftar FAQ statis untuk kondisi offline.
+  /// Mengembalikan daftar FAQ statis untuk kondisi offline (koneksi).
   List<FaqModel> getOfflineFaqs() {
     return _offlineFaqs
+        .map((e) => FaqModel(
+              id: int.parse(e['id']!),
+              question: e['question']!,
+              answer: e['answer']!,
+            ))
+        .toList();
+  }
+
+  /// Mengembalikan daftar FAQ statis untuk kondisi error server.
+  List<FaqModel> getServerErrorFaqs() {
+    return _serverErrorFaqs
         .map((e) => FaqModel(
               id: int.parse(e['id']!),
               question: e['question']!,
