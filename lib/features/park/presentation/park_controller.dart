@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/park_repository.dart';
 import '../data/park_model.dart';
+import '../../../../core/services/mqtt_service.dart';
 
 part 'park_controller.g.dart';
 
@@ -21,13 +23,176 @@ class ParkAreaListController extends _$ParkAreaListController {
   }
 }
 
-// Controller Data Peta
+// Controller Data Peta dengan MQTT Realtime
 @riverpod
 class ParkVisualizationController extends _$ParkVisualizationController {
+  Timer? _timer;
+  final Map<int, DateTime> _localExpirationMap = {};
+
   @override
   Future<ParkVisualData> build(String areaId) async {
     final repo = ref.read(parkRepositoryInstanceProvider);
-    return await repo.getParkVisualization(areaId);
+    final data = await repo.getParkVisualization(areaId);
+
+    // Hitung waktu kadaluarsa lokal untuk menghindari isu perbedaan zona waktu/jam antara server dan HP (Time Skew)
+    _localExpirationMap.clear();
+    for (var sub in data.subareas) {
+      if (sub.validationRemainingSeconds > 0) {
+        _localExpirationMap[sub.id] = DateTime.now().add(Duration(seconds: sub.validationRemainingSeconds));
+      }
+    }
+
+    // Pastikan MQTT service sudah diinisialisasi
+    ref.read(mqttServiceProvider);
+
+    // Topic yang diterbitkan server: frontend/parking_area/{parkAreaId} (integer)
+    // Topic wildcard yang disubscribe: frontend/parking_area/#
+    // Matching: cek apakah segmen terakhir topic == areaId
+    final expectedTopic = 'frontend/parking_area/$areaId';
+
+    // Dengarkan pesan MQTT dari service
+    final subscription =
+        ref.read(mqttServiceProvider.notifier).messages.listen(
+      (payload) {
+        final topic = payload['_topic'] as String?;
+        if (topic == null) return;
+
+        // Strict matching: topic harus persis sama dengan expected topic
+        if (topic != expectedTopic) return;
+
+        // Validasi state sebelum update
+        if (!state.hasValue) return;
+
+        final subareaIdRaw = payload['parkSubareaId'];
+        final newStatus = payload['status']?.toString();
+
+        if (subareaIdRaw == null || newStatus == null) {
+          return;
+        }
+
+        final subareaId = _parseInt(subareaIdRaw, -1);
+        if (subareaId == -1) return;
+
+        final currentData = state.value!;
+
+        final newSubareas = currentData.subareas.map((sub) {
+          if (sub.id == subareaId) {
+            final parsedRemaining = _parseInt(payload['validationRemainingSeconds'], 0);
+            
+            // Set/Update local target time
+            if (parsedRemaining > 0) {
+               _localExpirationMap[sub.id] = DateTime.now().add(Duration(seconds: parsedRemaining));
+            } else {
+               _localExpirationMap.remove(sub.id);
+            }
+
+            return sub.copyWith(
+              status: newStatus,
+              isValidated: _parseBool(payload['isValidated'], sub.isValidated),
+              hasUserReport:
+                  _parseBool(payload['hasUserReport'], sub.hasUserReport),
+              currentCount:
+                  _parseInt(payload['currentCount'], sub.currentCount),
+              maxSlots: _parseInt(payload['maxSlots'], sub.maxSlots),
+              validationExpiresAt: payload['validationExpiresAt']?.toString(),
+              lastValidationTime: payload['lastValidationTime']?.toString(),
+              validationRemainingSeconds: parsedRemaining,
+              fallbackStatus:
+                  payload['fallbackStatus']?.toString() ?? sub.fallbackStatus,
+              fallbackStatusColor: payload['fallbackStatusColor']?.toString() ??
+                  sub.fallbackStatusColor,
+              commentCount: _parseInt(payload['commentCount'], sub.commentCount),
+            );
+          }
+          return sub;
+        }).toList();
+
+        state = AsyncData(currentData.copyWith(subareas: newSubareas));
+
+        // Sinkronkan selectedSubarea jika subarea yang diupdate sedang dipilih
+        final selected = ref.read(selectedSubareaProvider);
+        if (selected != null && selected.id == subareaId) {
+          try {
+            final updatedSelected =
+                newSubareas.firstWhere((s) => s.id == subareaId);
+            ref.read(selectedSubareaProvider.notifier).set(updatedSelected);
+          } catch (_) {}
+        }
+      },
+      onError: (e) {
+        // Log error tapi jangan crash
+      },
+    );
+
+    // Timer untuk memeriksa kadaluarsa validasi subarea (revert status)
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!state.hasValue) return;
+      final currentData = state.value!;
+      bool changed = false;
+
+      // Gunakan _localExpirationMap untuk menghindari timezone/time skew error 
+      // yang menyebabkan expires langsung return true
+      final newSubareas = currentData.subareas.map((sub) {
+        if (_localExpirationMap.containsKey(sub.id)) {
+          final localExp = _localExpirationMap[sub.id]!;
+          if (DateTime.now().isAfter(localExp)) {
+            changed = true;
+            _localExpirationMap.remove(sub.id);
+            return sub.copyWith(
+              status: sub.fallbackStatus,
+              isValidated: false,
+              hasUserReport: false,
+              validationExpiresAt: null,
+              lastValidationTime: null,
+              validationRemainingSeconds: 0,
+            );
+          }
+        }
+        return sub;
+      }).toList();
+
+      if (changed) {
+        state = AsyncData(currentData.copyWith(
+          subareas: newSubareas,
+        ));
+
+        // Sinkronkan selectedSubarea saat status berubah
+        final selected = ref.read(selectedSubareaProvider);
+        if (selected != null) {
+          try {
+            final updatedSelected =
+                newSubareas.firstWhere((s) => s.id == selected.id);
+            if (updatedSelected.status != selected.status) {
+              ref.read(selectedSubareaProvider.notifier).set(updatedSelected);
+            }
+          } catch (_) {}
+        }
+      }
+    });
+
+    ref.onDispose(() {
+      subscription.cancel();
+      _timer?.cancel();
+    });
+
+    return data;
+  }
+
+  // Helper: parse bool dari berbagai tipe data
+  static bool _parseBool(dynamic val, bool def) {
+    if (val == null) return def;
+    if (val is bool) return val;
+    if (val is num) return val == 1;
+    if (val is String) return val.toLowerCase() == 'true' || val == '1';
+    return def;
+  }
+
+  // Helper: parse int dari berbagai tipe data
+  static int _parseInt(dynamic val, int def) {
+    if (val == null) return def;
+    if (val is num) return val.toInt();
+    if (val is String) return int.tryParse(val) ?? def;
+    return def;
   }
 }
 
@@ -58,22 +223,22 @@ class ValidationActionController extends _$ValidationActionController {
       state = AsyncError(e, st);
       String errorMsg = "Gagal mengirim validasi.";
       if (e.toString().startsWith("Exception: ")) {
-        errorMsg = e.toString().substring(11); // Remove "Exception: " prefix
+        errorMsg = e.toString().substring(11);
       }
       return (false, errorMsg);
     }
   }
 }
 
-// 3. State Provider untuk Subarea yang dipilih user di Peta
+// State Provider untuk Subarea yang dipilih user di Peta
 @riverpod
 class SelectedSubarea extends _$SelectedSubarea {
   @override
   ParkSubareaVisual? build() {
-    return null; // Default state: null (tidak ada yang dipilih)
+    return null;
   }
 
-  // Method untuk mengubah state (pengganti .state =)
+  /// Mengubah subarea yang sedang dipilih.
   void set(ParkSubareaVisual? value) {
     state = value;
   }

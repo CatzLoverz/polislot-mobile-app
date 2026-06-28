@@ -26,7 +26,7 @@ class ParkRepository {
       }
       throw Exception("Gagal memuat daftar area.");
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 
@@ -39,7 +39,7 @@ class ParkRepository {
       }
       throw Exception("Gagal memuat peta.");
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 
@@ -63,13 +63,7 @@ class ParkRepository {
       final response = await _dio.post('/validation', data: body);
       return response.data['message'] ?? "Validasi berhasil.";
     } catch (e) {
-      if (e is DioException && e.response?.data != null) {
-        final data = e.response?.data;
-        if (data is Map && data.containsKey('message')) {
-          throw Exception(data['message']);
-        }
-      }
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 }

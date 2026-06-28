@@ -36,7 +36,7 @@ class AuthController extends _$AuthController {
       if (connectivityResult.contains(ConnectivityResult.none)) {
         debugPrint("⚠️ No Internet di perangkat. Masuk Mode NoInternet.");
         connectionNotifier.setNoInternet();
-        return false; // Tetap kembalikan false agar bisa redirect atau stay di splash
+        return true; // Tetap kembalikan true agar bisa masuk ke dashboard secara offline
       }
 
       // 3. Cek Koneksi Server (Ping)

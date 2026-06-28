@@ -86,7 +86,7 @@ class ProfileRepository {
       // Gunakan Helper Error yang sama dengan AuthRepository
       throw Exception(DioErrorHandler.parse(e));
     } catch (e) {
-      throw Exception("Terjadi kesalahan: $e");
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 }

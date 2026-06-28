@@ -33,7 +33,7 @@ class CommentRepository {
       }
       return [];
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 
@@ -55,13 +55,7 @@ class CommentRepository {
 
       await _dio.post('/comment', data: formData);
     } catch (e) {
-      if (e is DioException && e.response?.data != null) {
-        final data = e.response?.data;
-        if (data is Map && data.containsKey('message')) {
-          throw Exception(data['message']);
-        }
-      }
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 
@@ -96,13 +90,7 @@ class CommentRepository {
         ),
       );
     } catch (e) {
-      if (e is DioException && e.response?.data != null) {
-        final data = e.response?.data;
-        if (data is Map && data.containsKey('message')) {
-          throw Exception(data['message']);
-        }
-      }
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 
@@ -110,7 +98,7 @@ class CommentRepository {
     try {
       await _dio.delete('/comment/$commentId');
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 }

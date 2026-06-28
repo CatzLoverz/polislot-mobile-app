@@ -16,17 +16,19 @@ import 'features/mission/presentation/mission_controller.dart';
 import 'features/park/presentation/park_controller.dart';
 import 'features/reward/presentation/reward_controller.dart';
 import 'features/history/presentation/history_controller.dart';
+import 'core/services/mqtt_service.dart';
 
 
 void main() async {
   // 1. Wajib: Binding Widget
   WidgetsFlutterBinding.ensureInitialized();
 
-  // FIX: Force Hybrid Composition for Android Maps to prevent "Blank Map" issues on some devices
+  // Google Maps renderer
   final GoogleMapsFlutterPlatform mapsImplementation =
       GoogleMapsFlutterPlatform.instance;
   if (mapsImplementation is GoogleMapsFlutterAndroid) {
-    mapsImplementation.useAndroidViewSurface = true;
+    mapsImplementation.useAndroidViewSurface = false;
+    mapsImplementation.initializeWithRenderer(AndroidMapRenderer.latest);
   }
 
   try {
@@ -70,14 +72,15 @@ void main() async {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    "Error: $e",
+                  const Text(
+                    "Aplikasi tidak dapat dimulai saat ini. Silakan tutup lalu buka kembali aplikasi.",
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
+                    style: TextStyle(color: Colors.white70),
                   ),
                   const SizedBox(height: 30),
                   const Text(
-                    "Tips: Cek file .env dan assets/keys/public_key.pem",
+                    "Jika masalah berlanjut, periksa koneksi internet Anda atau hubungi dukungan.",
+                    textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.amber),
                   ),
                 ],
@@ -103,6 +106,8 @@ class _PoliSlotAppState extends ConsumerState<PoliSlotApp> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Inisialisasi MQTT service sejak awal agar koneksi terbentuk sebelum buka peta
+    Future.microtask(() => ref.read(mqttServiceProvider));
   }
 
   @override
@@ -114,6 +119,13 @@ class _PoliSlotAppState extends ConsumerState<PoliSlotApp> with WidgetsBindingOb
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
+      // Reconnect MQTT jika koneksi terputus saat di background
+      final mqttStatus = ref.read(mqttServiceProvider);
+      if (mqttStatus != MqttConnectionStatus.connected &&
+          mqttStatus != MqttConnectionStatus.connecting) {
+        ref.read(mqttServiceProvider.notifier).reconnect();
+      }
+
       if (isAppInitialized) {
         // Tunggu validasi token selesai terlebih dahulu
         final isValid = await ref.read(authControllerProvider.notifier).checkStartupSession();

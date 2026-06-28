@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:polislot_mobile_catz/core/utils/snackbar_utils.dart';
+import 'package:polislot_mobile_catz/core/network/dio_client.dart';
 import '../data/feedback_category_model.dart';
 import 'feedback_controller.dart';
 
@@ -53,7 +54,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       Navigator.pop(context);
     } else {
       final errorState = ref.read(feedbackFormControllerProvider);
-      final errorMsg = errorState.error?.toString().replaceAll('Exception: ', '') ?? "Gagal mengirim";
+      final errorMsg = DioErrorHandler.parse(errorState.error ?? "Gagal mengirim masukan");
       AppSnackBars.show(context, errorMsg, isError: true);
     }
   }
@@ -101,7 +102,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               
               itemAsString: (FeedbackCategory u) => u.name,
               compareFn: (i1, i2) => i1.id == i2.id, // Penting untuk membandingkan objek
-              onChanged: (FeedbackCategory? data) => setState(() => _selectedCategory = data),
+              onSelected: (FeedbackCategory? data) => setState(() => _selectedCategory = data),
               selectedItem: _selectedCategory,
               
               // 2. Gunakan 'decoratorProps' (pengganti dropdownDecoratorProps)

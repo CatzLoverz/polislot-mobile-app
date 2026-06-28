@@ -9,11 +9,17 @@ class FaqScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final faqState = ref.watch(faqControllerProvider);
-    final isOffline = ref.watch(connectionStatusProvider);
+    final connectionState = ref.watch(connectionStatusProvider);
     final Color primaryColor = const Color(0xFF1565C0);
 
-    // Ambil offline FAQs dari controller
-    final offlineFaqs = ref.read(faqControllerProvider.notifier).getOfflineFaqs();
+    final bool isOffline = connectionState != ConnectionStateType.online;
+    final bool isServerErr = connectionState == ConnectionStateType.serverUnreachable;
+
+    // Ambil FAQs dari controller berdasarkan status koneksi
+    final faqController = ref.read(faqControllerProvider.notifier);
+    final fallbackFaqs = isServerErr
+        ? faqController.getServerErrorFaqs()
+        : faqController.getOfflineFaqs();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
@@ -41,11 +47,11 @@ class FaqScreen extends ConsumerWidget {
             final _ = await ref.refresh(faqControllerProvider.future);
           } catch (_) {}
         },
-        child: isOffline != ConnectionStateType.online
-            ? _buildOfflineFaqList(offlineFaqs, primaryColor, isOffline)
+        child: isOffline
+            ? _buildOfflineFaqList(fallbackFaqs, primaryColor, connectionState)
             : faqState.when(
                 loading: () => _buildLoadingPlaceholder(),
-                error: (err, stack) => _buildOfflineFaqList(offlineFaqs, primaryColor, isOffline),
+                error: (err, stack) => _buildOfflineFaqList(fallbackFaqs, primaryColor, connectionState),
                 data: (faqs) {
                   if (faqs.isEmpty) {
                     return ListView(

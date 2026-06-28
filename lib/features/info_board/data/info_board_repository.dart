@@ -29,7 +29,7 @@ class InfoBoardRepository {
       }
       throw Exception(data['message'] ?? "Gagal memuat data");
     } catch (e) {
-      rethrow;
+      throw Exception(DioErrorHandler.parse(e));
     }
   }
 }

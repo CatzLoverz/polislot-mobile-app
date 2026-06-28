@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'reward_controller.dart';
 import '../data/reward_model.dart';
 import '../../../core/providers/connection_status_provider.dart';
+import '../../../core/network/dio_client.dart';
 import '../../history/presentation/history_controller.dart';
 import '../../history/data/history_model.dart';
 
@@ -131,28 +132,24 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                 const SizedBox(height: 18),
 
                 // ✅ ANIMASI: AnimatedSwitcher agar seragam dengan Mission Screen
-                AnimatedSwitcher(
+                  AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   child: connectionState != ConnectionStateType.online
                       ? _buildOfflinePlaceholder(connectionState)
                       : isRewardTab
                       // --- TAB REWARD ---
-                      ? rewardDataAsync.when(
-                          skipLoadingOnReload: true,
-                          skipLoadingOnRefresh: true,
-                          data: (data) =>
-                              _buildRewardList(data.rewards, currentPoints),
-                          loading: () => _buildRewardLoading(),
-                          error: (err, stack) => _buildOfflinePlaceholder(connectionState),
-                        )
+                      ? switch (rewardDataAsync) {
+                          AsyncData(:final value) =>
+                              _buildRewardList(value.rewards, currentPoints),
+                          AsyncError() => _buildOfflinePlaceholder(connectionState),
+                          _ => _buildRewardLoading(),
+                        }
                       // --- TAB RIWAYAT KOIN ---
-                      : historyDataAsync.when(
-                          skipLoadingOnReload: true,
-                          skipLoadingOnRefresh: true,
-                          data: (history) => _buildHistoryList(history),
-                          loading: () => _buildHistoryLoading(),
-                          error: (err, stack) => _buildOfflinePlaceholder(connectionState),
-                        ),
+                      : switch (historyDataAsync) {
+                          AsyncData(:final value) => _buildHistoryList(value),
+                          AsyncError() => _buildOfflinePlaceholder(connectionState),
+                          _ => _buildHistoryLoading(),
+                        },
                 ),
               ],
             ),
@@ -371,7 +368,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
 
   Widget _rewardCard(RewardItem item, int currentPoints) {
     final bool canExchange = currentPoints >= item.pointsRequired;
-    final IconData icon = item.type == 'Voucher'
+    final icon = item.type == 'Voucher'
         ? FontAwesomeIcons.ticket
         : FontAwesomeIcons.gift;
     final Color color = item.type == 'Voucher'
@@ -401,7 +398,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(child: Icon(icon, color: color, size: 28)),
+            child: Center(child: FaIcon(icon, color: color, size: 28)),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -451,7 +448,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
 
   // WIDGET: Card History
   Widget _historyCard(HistoryItem item) {
-    IconData icon;
+    dynamic icon;
     Color color;
     String titleText;
     String descText;
@@ -526,7 +523,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(child: Icon(icon, color: color, size: 24)),
+                child: Center(child: FaIcon(icon, color: color, size: 24)),
               ),
               const SizedBox(width: 14),
 
@@ -776,7 +773,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(DioErrorHandler.parse(e)),
             backgroundColor: Colors.red,
           ),
         );

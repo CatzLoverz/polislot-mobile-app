@@ -47,6 +47,22 @@ class ParkVisualData {
     required this.subareas,
   });
 
+  ParkVisualData copyWith({
+    int? areaId,
+    String? areaName,
+    String? areaCode,
+    ValidationCooldown? cooldown,
+    List<ParkSubareaVisual>? subareas,
+  }) {
+    return ParkVisualData(
+      areaId: areaId ?? this.areaId,
+      areaName: areaName ?? this.areaName,
+      areaCode: areaCode ?? this.areaCode,
+      cooldown: cooldown ?? this.cooldown,
+      subareas: subareas ?? this.subareas,
+    );
+  }
+
   factory ParkVisualData.fromJson(Map<String, dynamic> json) =>
       _$ParkVisualDataFromJson(json);
   Map<String, dynamic> toJson() => _$ParkVisualDataToJson(this);
@@ -69,6 +85,33 @@ class ParkSubareaVisual {
   @JsonKey(name: 'comment_count', defaultValue: 0)
   final int commentCount;
 
+  @JsonKey(name: 'is_validated', defaultValue: false)
+  final bool isValidated;
+
+  @JsonKey(name: 'has_user_report', defaultValue: false)
+  final bool hasUserReport;
+
+  @JsonKey(name: 'current_count', defaultValue: 0)
+  final int currentCount;
+
+  @JsonKey(name: 'max_slots', defaultValue: 0)
+  final int maxSlots;
+
+  @JsonKey(name: 'validation_expires_at')
+  final String? validationExpiresAt;
+
+  @JsonKey(name: 'last_validation_time')
+  final String? lastValidationTime;
+
+  @JsonKey(name: 'validation_remaining_seconds', defaultValue: 0)
+  final int validationRemainingSeconds;
+
+  @JsonKey(name: 'fallback_status', defaultValue: 'banyak')
+  final String fallbackStatus;
+
+  @JsonKey(name: 'fallback_status_color', defaultValue: '#31ce36')
+  final String fallbackStatusColor;
+
   ParkSubareaVisual({
     required this.id,
     required this.name,
@@ -76,7 +119,52 @@ class ParkSubareaVisual {
     required this.status,
     required this.amenities,
     required this.commentCount,
+    this.isValidated = false,
+    this.hasUserReport = false,
+    this.currentCount = 0,
+    this.maxSlots = 0,
+    this.validationExpiresAt,
+    this.lastValidationTime,
+    this.validationRemainingSeconds = 0,
+    this.fallbackStatus = 'banyak',
+    this.fallbackStatusColor = '#31ce36',
   });
+
+  ParkSubareaVisual copyWith({
+    int? id,
+    String? name,
+    List<LatLng>? polygonPoints,
+    String? status,
+    List<String>? amenities,
+    int? commentCount,
+    bool? isValidated,
+    bool? hasUserReport,
+    int? currentCount,
+    int? maxSlots,
+    String? validationExpiresAt,
+    String? lastValidationTime,
+    int? validationRemainingSeconds,
+    String? fallbackStatus,
+    String? fallbackStatusColor,
+  }) {
+    return ParkSubareaVisual(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      polygonPoints: polygonPoints ?? this.polygonPoints,
+      status: status ?? this.status,
+      amenities: amenities ?? this.amenities,
+      commentCount: commentCount ?? this.commentCount,
+      isValidated: isValidated ?? this.isValidated,
+      hasUserReport: hasUserReport ?? this.hasUserReport,
+      currentCount: currentCount ?? this.currentCount,
+      maxSlots: maxSlots ?? this.maxSlots,
+      validationExpiresAt: validationExpiresAt ?? this.validationExpiresAt,
+      lastValidationTime: lastValidationTime ?? this.lastValidationTime,
+      validationRemainingSeconds: validationRemainingSeconds ?? this.validationRemainingSeconds,
+      fallbackStatus: fallbackStatus ?? this.fallbackStatus,
+      fallbackStatusColor: fallbackStatusColor ?? this.fallbackStatusColor,
+    );
+  }
 
   factory ParkSubareaVisual.fromJson(Map<String, dynamic> json) =>
       _$ParkSubareaVisualFromJson(json);
@@ -123,7 +211,26 @@ class ValidationCooldown {
   @JsonKey(name: 'wait_minutes')
   final int waitMinutes;
 
-  ValidationCooldown({required this.canValidate, required this.waitMinutes});
+  @JsonKey(name: 'remaining_seconds', defaultValue: 0)
+  final int remainingSeconds;
+
+  ValidationCooldown({
+    required this.canValidate,
+    required this.waitMinutes,
+    this.remainingSeconds = 0,
+  });
+
+  ValidationCooldown copyWith({
+    bool? canValidate,
+    int? waitMinutes,
+    int? remainingSeconds,
+  }) {
+    return ValidationCooldown(
+      canValidate: canValidate ?? this.canValidate,
+      waitMinutes: waitMinutes ?? this.waitMinutes,
+      remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+    );
+  }
 
   factory ValidationCooldown.fromJson(Map<String, dynamic> json) =>
       _$ValidationCooldownFromJson(json);

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/providers/connection_status_provider.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/comment_model.dart';
 import 'comment_controller.dart';
@@ -89,15 +90,10 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     } else {
       if (mounted) {
         // Ambil error message dari Controller
-        final errorMsg =
-            ref
-                .read(commentActionControllerProvider)
-                .error
-                ?.toString()
-                .replaceAll('Exception: ', '') ??
-            (_isEditing
-                ? "Gagal mengupdate komentar."
-                : "Gagal mengirim komentar.");
+        final errorMsg = DioErrorHandler.parse(
+            ref.read(commentActionControllerProvider).error ??
+            (_isEditing ? "Gagal mengupdate komentar." : "Gagal mengirim komentar.")
+        );
 
         AppSnackBars.show(context, errorMsg, isError: true);
       }
@@ -255,32 +251,27 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
               },
               child: isOffline != ConnectionStateType.online
                   ? _buildScrollablePlaceholder(_buildOfflineCard(isOffline))
-                  : commentListAsync.when(
-                      skipLoadingOnReload: true,
-                      skipLoadingOnRefresh: true,
-                      data: (comments) {
-                        if (comments.isEmpty) {
-                          return _buildScrollablePlaceholder(
-                            const Text("Belum ada komentar."),
-                          );
-                        }
-                        return ListView.separated(
+                  : switch (commentListAsync) {
+                      AsyncData(:final value) when value.isEmpty =>
+                        _buildScrollablePlaceholder(
+                          const Text("Belum ada komentar."),
+                        ),
+                      AsyncData(:final value) => ListView.separated(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.all(16),
-                          itemCount: comments.length,
-                          separatorBuilder: (_, _) =>
+                          itemCount: value.length,
+                          separatorBuilder: (context, index) =>
                               const SizedBox(height: 16),
                           itemBuilder: (context, index) {
-                            final comment = comments[index];
+                            final comment = value[index];
                             final isMe = currentUser?.id == comment.user.id;
                             return _buildCommentCard(comment, isMe: isMe);
                           },
-                        );
-                      },
-                      loading: () => _buildCommentLoading(),
-                      error: (err, stack) =>
-                          _buildScrollablePlaceholder(_buildOfflineCard(isOffline)),
-                    ),
+                        ),
+                      AsyncError() =>
+                        _buildScrollablePlaceholder(_buildOfflineCard(isOffline)),
+                      _ => _buildCommentLoading(),
+                    },
             ),
           ),
           _buildInputSection(actionState.isLoading),
@@ -438,7 +429,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                   width: double.infinity,
                   height: 200,
                   fit: BoxFit.cover,
-                  errorBuilder: (ctx, _, _) => const SizedBox.shrink(),
+                  errorBuilder: (ctx, error, stack) => const SizedBox.shrink(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -615,7 +606,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: 5,
-      separatorBuilder: (_, _) => const SizedBox(height: 16),
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         return Container(
           padding: const EdgeInsets.all(16),

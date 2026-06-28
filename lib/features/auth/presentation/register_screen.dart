@@ -4,6 +4,7 @@ import 'package:polislot_mobile_catz/core/utils/snackbar_utils.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/validator_utils.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/network/dio_client.dart';
 import '../../../core/widgets/custom_textfield.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/enums/otp_type.dart';
@@ -141,7 +142,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     } else {
       final state = ref.read(authControllerProvider);
       if (state.hasError) {
-        String msg = state.error.toString().replaceAll('Exception: ', '');
+        String msg = DioErrorHandler.parse(state.error ?? "Pendaftaran gagal.");
         AppSnackBars.show(context, msg, isError: true);
       }
     }

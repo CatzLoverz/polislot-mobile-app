@@ -44,19 +44,23 @@ class UserStats {
 class MissionItem {
   @JsonKey(name: 'mission_id')
   final int id;
-  
+
   final String title;
   final String description;
   final int points;
-  
+
   @JsonKey(name: 'metric_code')
   final String metricCode;
-  
+
+  /// Tipe misi dari backend: 'TARGET', 'SEQUENCE', atau 'SEQUENCE_STREAK'
+  @JsonKey(name: 'mission_type')
+  final String missionType;
+
   final double percentage;
-  
+
   @JsonKey(name: 'is_completed')
   final bool isCompleted;
-  
+
   @JsonKey(name: 'completed_at')
   final String? completedAt;
 
@@ -66,6 +70,7 @@ class MissionItem {
     required this.description,
     required this.points,
     required this.metricCode,
+    required this.missionType,
     required this.percentage,
     required this.isCompleted,
     this.completedAt,
@@ -73,6 +78,25 @@ class MissionItem {
 
   factory MissionItem.fromJson(Map<String, dynamic> json) => _$MissionItemFromJson(json);
   Map<String, dynamic> toJson() => _$MissionItemToJson(this);
+
+  // --- Helper: apakah tipe ini berbasis hari (sequence)? ---
+  bool get isSequenceType =>
+      missionType == 'SEQUENCE' || missionType == 'SEQUENCE_STREAK';
+
+  // --- Helper: apakah tipe ini streak (harus berturut-turut)? ---
+  bool get isStreakType => missionType == 'SEQUENCE_STREAK';
+
+  // --- Helper: label singkat untuk badge di UI ---
+  String get missionTypeLabel {
+    switch (missionType) {
+      case 'SEQUENCE':
+        return 'Sequence';
+      case 'SEQUENCE_STREAK':
+        return 'Streak';
+      default:
+        return 'Target';
+    }
+  }
 }
 
 @JsonSerializable()

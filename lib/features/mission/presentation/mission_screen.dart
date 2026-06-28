@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'mission_controller.dart';
 import '../data/mission_model.dart';
 import '../../../core/providers/connection_status_provider.dart';
@@ -45,13 +44,37 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
   IconData _getMissionIcon(String metricCode) {
     switch (metricCode.toUpperCase()) {
       case 'VALIDATION_ACTION':
-        return FontAwesomeIcons.squareCheck;
+        return Icons.check_box_rounded;
       case 'PROFILE_UPDATE':
-        return FontAwesomeIcons.userPen;
+        return Icons.manage_accounts_rounded;
       case 'LOGIN_ACTION':
-        return FontAwesomeIcons.rightToBracket;
+        return Icons.login_rounded;
       default:
-        return FontAwesomeIcons.star;
+        return Icons.star_rounded;
+    }
+  }
+
+  /// Warna badge sesuai tipe misi
+  Color _getMissionTypeColor(String missionType) {
+    switch (missionType) {
+      case 'SEQUENCE_STREAK':
+        return Colors.deepOrange;
+      case 'SEQUENCE':
+        return Colors.indigo;
+      default:
+        return const Color(0xFF1352C8);
+    }
+  }
+
+  /// Ikon badge sesuai tipe misi
+  IconData _getMissionTypeIcon(String missionType) {
+    switch (missionType) {
+      case 'SEQUENCE_STREAK':
+        return Icons.local_fire_department_rounded;
+      case 'SEQUENCE':
+        return Icons.calendar_view_week_rounded;
+      default:
+        return Icons.flag_rounded;
     }
   }
 
@@ -135,15 +158,16 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
                     duration: const Duration(milliseconds: 300),
                     child: connectionState != ConnectionStateType.online
                         ? _buildOfflinePlaceholder(connectionState)
-                        : missionDataAsync.when(
-                            skipLoadingOnReload: true,
-                            skipLoadingOnRefresh: true,
-                            data: (data) => isMissionTab
-                                ? _buildMissionsList(data.missions)
-                                : _buildLeaderboard(data.leaderboard),
-                            error: (err, stack) => _buildOfflinePlaceholder(connectionState),
-                            loading: () => _buildMissionLoading(),
-                          ),
+                        : switch (missionDataAsync) {
+                            // Jika sudah ada data (termasuk saat loading ulang), tampilkan data lama
+                            AsyncData(:final value) => isMissionTab
+                                ? _buildMissionsList(value.missions)
+                                : _buildLeaderboard(value.leaderboard),
+                            // Error tanpa data sebelumnya
+                            AsyncError() => _buildOfflinePlaceholder(connectionState),
+                            // Loading pertama kali (belum ada data)
+                            _ => _buildMissionLoading(),
+                          },
                   ),
                 ],
               ),
@@ -440,6 +464,51 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _getMissionTypeColor(m.missionType).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _getMissionTypeColor(m.missionType).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _getMissionTypeIcon(m.missionType),
+                      size: 11,
+                      color: _getMissionTypeColor(m.missionType),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      m.missionTypeLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: _getMissionTypeColor(m.missionType),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (m.isStreakType) ...[
+                const SizedBox(width: 6),
+                Text(
+                  'Harus berturut-turut!',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.deepOrange.shade400,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 10),
