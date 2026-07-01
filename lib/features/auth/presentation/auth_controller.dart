@@ -142,14 +142,21 @@ class AuthController extends _$AuthController {
     try { await ref.read(authRepositoryInstanceProvider).forgotPasswordOtpResend(email: email); return true; } catch (_) { return false; }
   }
   
-  Future<bool> resetPassword({required String email, required String password, required String confirmPassword}) async {
+  Future<bool> resetPassword({required String email, required String password, required String confirmPassword, required String token}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(() async {
-      await ref.read(authRepositoryInstanceProvider).resetPassword(email: email, password: password, confirmPassword: confirmPassword);
-      return state.value;
+      await ref.read(authRepositoryInstanceProvider).resetPassword(email: email, password: password, confirmPassword: confirmPassword, token: token);
+      return null;
     });
-    if (result.hasError) { state = AsyncError(result.error!, result.stackTrace!); return false; }
-    state = AsyncData(state.value); return true;
+    if (result.hasError) { 
+      state = AsyncError(result.error!, result.stackTrace!); 
+      return false; 
+    }
+    
+    // Hapus sesi lokal karena backend sudah menghapus semua token ($user->tokens()->delete())
+    await ref.read(authRepositoryInstanceProvider).logout();
+    state = const AsyncData(null); 
+    return true;
   }
 
   void updateUser(User newUser) { state = AsyncData(newUser); }

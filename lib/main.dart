@@ -1,5 +1,6 @@
-// import 'dart:async';
 // import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -102,16 +103,72 @@ class PoliSlotApp extends ConsumerStatefulWidget {
 }
 
 class _PoliSlotAppState extends ConsumerState<PoliSlotApp> with WidgetsBindingObserver {
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Inisialisasi MQTT service sejak awal agar koneksi terbentuk sebelum buka peta
     Future.microtask(() => ref.read(mqttServiceProvider));
+    // Inisialisasi Deep Link listener
+    _initDeepLinks();
+  }
+
+  /// Menginisialisasi listener untuk Deep Link dari skema polislot://
+  Future<void> _initDeepLinks() async {
+    _appLinks = AppLinks();
+
+    // Handle deep link saat aplikasi dibuka dari keadaan tertutup (cold start)
+    try {
+      final initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) {
+        _handleDeepLink(initialUri);
+      }
+    } catch (e) {
+      debugPrint('Error membaca initial deep link: $e');
+    }
+
+    // Handle deep link saat aplikasi sudah berjalan di background (warm start)
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      (uri) => _handleDeepLink(uri),
+      onError: (e) => debugPrint('Error stream deep link: $e'),
+    );
+  }
+
+  /// Memproses URI deep link dan mengarahkan ke layar yang sesuai
+  void _handleDeepLink(Uri uri) {
+    debugPrint('Deep link diterima: $uri');
+
+    if (uri.scheme == 'polislot' && uri.host == 'reset-password') {
+      final email = uri.queryParameters['email'];
+      final token = uri.queryParameters['token'];
+
+      if (email != null && token != null) {
+        if (!isAppInitialized) {
+          // Cold start: Splash belum selesai, simpan untuk dikonsumsi nanti
+          pendingDeepLink = {'email': email, 'token': token};
+          debugPrint('Deep link disimpan sebagai pending: $pendingDeepLink');
+        } else {
+          // Warm start: Aplikasi sudah berjalan, navigasi langsung
+          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            AppRoutes.resetPassword,
+            (route) => false,
+            arguments: {
+              'email': email,
+              'token': token,
+              'fromDeepLink': true,
+            },
+          );
+        }
+      }
+    }
   }
 
   @override
   void dispose() {
+    _linkSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

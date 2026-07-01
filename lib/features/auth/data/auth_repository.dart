@@ -191,6 +191,7 @@ class AuthRepository {
     required String email,
     required String password,
     required String confirmPassword,
+    required String token,
   }) async {
     try {
       await _dio.post(
@@ -199,6 +200,7 @@ class AuthRepository {
           'email': email,
           'password': password,
           'password_confirmation': confirmPassword,
+          'token': token,
         },
       );
       // Dio validates 200-299 automatically

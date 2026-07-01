@@ -8,7 +8,8 @@ import 'auth_controller.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String? email;
-  const ResetPasswordScreen({super.key, this.email});
+  final String? token;
+  const ResetPasswordScreen({super.key, this.email, this.token});
 
   @override
   ConsumerState<ResetPasswordScreen> createState() =>
@@ -20,6 +21,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   late String _email;
+  late String _token;
 
   // Warna sesuai file lama (Dikembalikan)
   static const Color _deepBlue = Color(0xFF0D47A1);
@@ -28,6 +30,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   void initState() {
     super.initState();
     _email = widget.email ?? '';
+    _token = widget.token ?? '';
 
     // Safety check jika email kosong (reload/navigasi manual)
     if (_email.isEmpty) {
@@ -81,6 +84,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           email: _email,
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
+          token: _token,
         );
 
     // 2. Cek Mounted (Async Gap Fix)

@@ -105,6 +105,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     isAppInitialized = true;
 
+    // ✅ Cek apakah ada Deep Link yang tertunda (diterima saat cold start)
+    if (pendingDeepLink != null) {
+      final deepLink = pendingDeepLink!;
+      pendingDeepLink = null; // Konsumsi sekali saja
+
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.resetPassword,
+        arguments: {
+          'email': deepLink['email'],
+          'token': deepLink['token'],
+          'fromDeepLink': true,
+        },
+      );
+      return;
+    }
+
     if (isLoggedIn) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else if (!hasSeenPrivacy) {

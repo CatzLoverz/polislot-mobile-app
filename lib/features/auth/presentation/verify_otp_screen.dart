@@ -84,7 +84,10 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
         Navigator.pushNamed(
           context,
           AppRoutes.resetPassword,
-          arguments: {'email': _email},
+          arguments: {
+            'email': _email,
+            'token': _otpController.text, // Kirim OTP sebagai token
+          },
         );
       }
     } else {
