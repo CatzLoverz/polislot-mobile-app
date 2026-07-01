@@ -358,7 +358,7 @@
       "label": "GeneratedPluginRegistrant",
       "file_type": "code",
       "source_file": "ios/Runner/GeneratedPluginRegistrant.m",
-      "source_location": "L51",
+      "source_location": "L57",
       "_origin": "ast",
       "id": "runner_generatedpluginregistrant_generatedpluginregistrant",
       "community": 74,
@@ -368,7 +368,7 @@
       "label": "-registerWithRegistry",
       "file_type": "code",
       "source_file": "ios/Runner/GeneratedPluginRegistrant.m",
-      "source_location": "L53",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "runner_generatedpluginregistrant_generatedpluginregistrant_registerwithregistry",
       "community": 74,
@@ -421,7 +421,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "network_auth_interceptor_authinterceptor",
-      "community": 38,
+      "community": 67,
       "norm_label": "authinterceptor"
     },
     {
@@ -431,7 +431,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "interceptor",
-      "community": 38,
+      "community": 67,
       "norm_label": "interceptor"
     },
     {
@@ -501,7 +501,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "none_connectionstatusprovider",
-      "community": 7,
+      "community": 62,
       "norm_label": "connectionstatusprovider"
     },
     {
@@ -545,13 +545,33 @@
       "norm_label": "_islogoutdialogshowing"
     },
     {
+      "label": "_genericMessage",
+      "file_type": "code",
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "network_dio_client_genericmessage",
+      "community": 63,
+      "norm_label": "_genericmessage"
+    },
+    {
+      "label": "static const String",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "_origin": "ast",
+      "id": "static_const_string",
+      "community": 6,
+      "norm_label": "static const string"
+    },
+    {
       "label": "build",
       "file_type": "code",
       "source_file": "lib/core/network/dio_client.dart",
       "source_location": null,
       "_origin": "ast",
       "id": "network_dio_client_build",
-      "community": 7,
+      "community": 62,
       "norm_label": "build"
     },
     {
@@ -565,6 +585,26 @@
       "norm_label": "parse"
     },
     {
+      "label": "_statusMessage",
+      "file_type": "code",
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "network_dio_client_statusmessage",
+      "community": 63,
+      "norm_label": "_statusmessage"
+    },
+    {
+      "label": "_sanitize",
+      "file_type": "code",
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "network_dio_client_sanitize",
+      "community": 63,
+      "norm_label": "_sanitize"
+    },
+    {
       "label": "package:connectivity_plus/connectivity_plus.dart",
       "file_type": "code",
       "source_file": null,
@@ -573,6 +613,16 @@
       "id": "package_connectivity_plus_connectivity_plus_dart",
       "community": 63,
       "norm_label": "package:connectivity_plus/connectivity_plus.dart"
+    },
+    {
+      "label": "package:flutter/foundation.dart",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "_origin": "ast",
+      "id": "package_flutter_foundation_dart",
+      "community": 63,
+      "norm_label": "package:flutter/foundation.dart"
     },
     {
       "label": "package:flutter/material.dart",
@@ -755,16 +805,6 @@
       "norm_label": "splash"
     },
     {
-      "label": "static const String",
-      "file_type": "code",
-      "source_file": null,
-      "source_location": null,
-      "_origin": "ast",
-      "id": "static_const_string",
-      "community": 6,
-      "norm_label": "static const string"
-    },
-    {
       "label": "privacyPolicy",
       "file_type": "code",
       "source_file": "lib/core/routes/app_routes.dart",
@@ -931,7 +971,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "core_wrapper_connectivity_wrapper_dart",
-      "community": 7,
+      "community": 62,
       "norm_label": "../../core/wrapper/connectivity_wrapper.dart"
     },
     {
@@ -1081,7 +1121,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "security_encryption_interceptor_encryptioninterceptor",
-      "community": 38,
+      "community": 67,
       "norm_label": "encryptioninterceptor"
     },
     {
@@ -1151,7 +1191,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "dart_convert",
-      "community": 30,
+      "community": 38,
       "norm_label": "dart:convert"
     },
     {
@@ -1171,18 +1211,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_encrypt_encrypt_dart",
-      "community": 38,
+      "community": 39,
       "norm_label": "package:encrypt/encrypt.dart"
-    },
-    {
-      "label": "package:flutter/foundation.dart",
-      "file_type": "code",
-      "source_file": null,
-      "source_location": null,
-      "_origin": "ast",
-      "id": "package_flutter_foundation_dart",
-      "community": 38,
-      "norm_label": "package:flutter/foundation.dart"
     },
     {
       "label": "key_manager.dart",
@@ -1201,7 +1231,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "security_key_manager",
-      "community": 38,
+      "community": 39,
       "norm_label": "key_manager.dart"
     },
     {
@@ -1211,7 +1241,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "security_key_manager_keymanager",
-      "community": 38,
+      "community": 39,
       "norm_label": "keymanager"
     },
     {
@@ -1221,7 +1251,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "security_key_manager_publickey",
-      "community": 38,
+      "community": 39,
       "norm_label": "_publickey"
     },
     {
@@ -1231,7 +1261,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "static_rsapublickey",
-      "community": 38,
+      "community": 39,
       "norm_label": "static rsapublickey?"
     },
     {
@@ -1241,7 +1271,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "security_key_manager_loadpublickey",
-      "community": 38,
+      "community": 39,
       "norm_label": "loadpublickey"
     },
     {
@@ -1251,7 +1281,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_flutter_services_dart",
-      "community": 38,
+      "community": 39,
       "norm_label": "package:flutter/services.dart"
     },
     {
@@ -1261,7 +1291,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_pointycastle_asymmetric_api_dart",
-      "community": 38,
+      "community": 39,
       "norm_label": "package:pointycastle/asymmetric/api.dart"
     },
     {
@@ -1655,6 +1685,16 @@
       "norm_label": "isappinitialized"
     },
     {
+      "label": "pendingDeepLink",
+      "file_type": "code",
+      "source_file": "lib/core/utils/navigator_key.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "utils_navigator_key_pendingdeeplink",
+      "community": 72,
+      "norm_label": "pendingdeeplink"
+    },
+    {
       "label": "NavigatorState",
       "file_type": "code",
       "source_file": null,
@@ -1771,7 +1811,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "widgets_animated_logo_animatedlogo",
-      "community": 57,
+      "community": 34,
       "norm_label": "animatedlogo"
     },
     {
@@ -1781,7 +1821,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "statefulwidget",
-      "community": 57,
+      "community": 95,
       "norm_label": "statefulwidget"
     },
     {
@@ -1791,7 +1831,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "widgets_animated_logo_animatedlogostate",
-      "community": 57,
+      "community": 34,
       "norm_label": "_animatedlogostate"
     },
     {
@@ -1811,7 +1851,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "singletickerproviderstatemixin",
-      "community": 57,
+      "community": 41,
       "norm_label": "singletickerproviderstatemixin"
     },
     {
@@ -1871,7 +1911,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "animation",
-      "community": 34,
+      "community": 29,
       "norm_label": "animation"
     },
     {
@@ -1941,7 +1981,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "widgets_animated_parking_logo_animatedparkinglogo",
-      "community": 57,
+      "community": 29,
       "norm_label": "animatedparkinglogo"
     },
     {
@@ -1951,7 +1991,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "widgets_animated_parking_logo_animatedparkinglogostate",
-      "community": 57,
+      "community": 29,
       "norm_label": "_animatedparkinglogostate"
     },
     {
@@ -2071,7 +2111,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "widgets_custom_button_custombutton",
-      "community": 32,
+      "community": 15,
       "norm_label": "custombutton"
     },
     {
@@ -2081,7 +2121,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "statelesswidget",
-      "community": 32,
+      "community": 15,
       "norm_label": "statelesswidget"
     },
     {
@@ -2191,7 +2231,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "widgets_custom_textfield_customtextfield",
-      "community": 32,
+      "community": 15,
       "norm_label": "customtextfield"
     },
     {
@@ -2331,7 +2371,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "wrapper_connectivity_wrapper_appconnectivitywrapper",
-      "community": 7,
+      "community": 62,
       "norm_label": "appconnectivitywrapper"
     },
     {
@@ -2341,7 +2381,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "consumerwidget",
-      "community": 7,
+      "community": 62,
       "norm_label": "consumerwidget"
     },
     {
@@ -2361,7 +2401,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "wrapper_connectivity_wrapper_build",
-      "community": 7,
+      "community": 62,
       "norm_label": "build"
     },
     {
@@ -2451,7 +2491,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "dio",
-      "community": 45,
+      "community": 42,
       "norm_label": "dio"
     },
     {
@@ -3101,7 +3141,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "core_routes_app_routes_dart",
-      "community": 25,
+      "community": 53,
       "norm_label": "core/routes/app_routes.dart"
     },
     {
@@ -3131,7 +3171,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "auth_controller_dart",
-      "community": 53,
+      "community": 25,
       "norm_label": "auth_controller.dart"
     },
     {
@@ -3161,7 +3201,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_login_regis_screen_loginregisscreen",
-      "community": 41,
+      "community": 95,
       "norm_label": "loginregisscreen"
     },
     {
@@ -3171,7 +3211,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_login_regis_screen_loginregisscreenstate",
-      "community": 41,
+      "community": 95,
       "norm_label": "_loginregisscreenstate"
     },
     {
@@ -3181,7 +3221,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "tickerproviderstatemixin",
-      "community": 41,
+      "community": 95,
       "norm_label": "tickerproviderstatemixin"
     },
     {
@@ -3755,6 +3795,16 @@
       "norm_label": "email"
     },
     {
+      "label": "token",
+      "file_type": "code",
+      "source_file": "lib/features/auth/presentation/reset_password_screen.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "presentation_reset_password_screen_token",
+      "community": 53,
+      "norm_label": "token"
+    },
+    {
       "label": "_passwordController",
       "file_type": "code",
       "source_file": "lib/features/auth/presentation/reset_password_screen.dart",
@@ -4215,6 +4265,16 @@
       "norm_label": "static const list"
     },
     {
+      "label": "_serverErrorFaqs",
+      "file_type": "code",
+      "source_file": "lib/features/faq/presentation/faq_controller.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "presentation_faq_controller_servererrorfaqs",
+      "community": 18,
+      "norm_label": "_servererrorfaqs"
+    },
+    {
       "label": "build",
       "file_type": "code",
       "source_file": "lib/features/faq/presentation/faq_controller.dart",
@@ -4233,6 +4293,16 @@
       "id": "presentation_faq_controller_getofflinefaqs",
       "community": 18,
       "norm_label": "getofflinefaqs"
+    },
+    {
+      "label": "getServerErrorFaqs",
+      "file_type": "code",
+      "source_file": "lib/features/faq/presentation/faq_controller.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "presentation_faq_controller_getservererrorfaqs",
+      "community": 18,
+      "norm_label": "getservererrorfaqs"
     },
     {
       "label": "refresh",
@@ -4281,7 +4351,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_faq_screen_faqscreen",
-      "community": 7,
+      "community": 62,
       "norm_label": "faqscreen"
     },
     {
@@ -4743,6 +4813,16 @@
       "id": "package_dropdown_search_dropdown_search_dart",
       "community": 13,
       "norm_label": "package:dropdown_search/dropdown_search.dart"
+    },
+    {
+      "label": "package:polislot_mobile_catz/core/network/dio_client.dart",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "_origin": "ast",
+      "id": "package_polislot_mobile_catz_core_network_dio_client_dart",
+      "community": 13,
+      "norm_label": "package:polislot_mobile_catz/core/network/dio_client.dart"
     },
     {
       "label": "feedback_controller.dart",
@@ -5241,7 +5321,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_home_screen_marqueetext",
-      "community": 57,
+      "community": 95,
       "norm_label": "_marqueetext"
     },
     {
@@ -6691,7 +6771,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_mission_screen_marqueetext",
-      "community": 57,
+      "community": 95,
       "norm_label": "_marqueetext"
     },
     {
@@ -7621,7 +7701,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "data_park_model_map",
-      "community": 49,
+      "community": 72,
       "norm_label": "map"
     },
     {
@@ -7881,7 +7961,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_comment_screen_commentscreen",
-      "community": 41,
+      "community": 96,
       "norm_label": "commentscreen"
     },
     {
@@ -7891,18 +7971,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_comment_screen_commentscreenstate",
-      "community": 7,
+      "community": 96,
       "norm_label": "_commentscreenstate"
-    },
-    {
-      "label": "commentListControllerProvider",
-      "file_type": "code",
-      "source_file": null,
-      "source_location": null,
-      "_origin": "ast",
-      "id": "none_commentlistcontrollerprovider",
-      "community": 7,
-      "norm_label": "commentlistcontrollerprovider"
     },
     {
       "label": "commentActionControllerProvider",
@@ -7911,8 +7981,18 @@
       "source_location": null,
       "_origin": "ast",
       "id": "none_commentactioncontrollerprovider",
-      "community": 7,
+      "community": 96,
       "norm_label": "commentactioncontrollerprovider"
+    },
+    {
+      "label": "commentListControllerProvider",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "_origin": "ast",
+      "id": "none_commentlistcontrollerprovider",
+      "community": 96,
+      "norm_label": "commentlistcontrollerprovider"
     },
     {
       "label": "subareaId",
@@ -8101,7 +8181,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_comment_screen_build",
-      "community": 7,
+      "community": 96,
       "norm_label": "build"
     },
     {
@@ -8471,7 +8551,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_park_screen_validationcountdownbutton",
-      "community": 57,
+      "community": 107,
       "norm_label": "_validationcountdownbutton"
     },
     {
@@ -8481,7 +8561,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_park_screen_validationcountdownbuttonstate",
-      "community": 57,
+      "community": 107,
       "norm_label": "_validationcountdownbuttonstate"
     },
     {
@@ -8491,7 +8571,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_park_screen_subareacountdowntext",
-      "community": 57,
+      "community": 100,
       "norm_label": "_subareacountdowntext"
     },
     {
@@ -8501,7 +8581,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_park_screen_subareacountdowntextstate",
-      "community": 57,
+      "community": 100,
       "norm_label": "_subareacountdowntextstate"
     },
     {
@@ -8511,7 +8591,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_park_screen_subareadetailpanel",
-      "community": 7,
+      "community": 62,
       "norm_label": "_subareadetailpanel"
     },
     {
@@ -9391,7 +9471,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_profile_screen_build",
-      "community": 40,
+      "community": 97,
       "norm_label": "build"
     },
     {
@@ -9401,7 +9481,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "route_approutes_profileedit",
-      "community": 40,
+      "community": 97,
       "norm_label": "approutes.profileedit"
     },
     {
@@ -9411,7 +9491,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "route_approutes_feedback",
-      "community": 40,
+      "community": 97,
       "norm_label": "approutes.feedback"
     },
     {
@@ -9421,7 +9501,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "route_approutes_faq",
-      "community": 40,
+      "community": 97,
       "norm_label": "approutes.faq"
     },
     {
@@ -9431,7 +9511,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "route_approutes_profilereward",
-      "community": 40,
+      "community": 97,
       "norm_label": "approutes.profilereward"
     },
     {
@@ -9561,7 +9641,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "sections_profile_edit_section_ruleitem",
-      "community": 32,
+      "community": 15,
       "norm_label": "_ruleitem"
     },
     {
@@ -9841,7 +9921,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "sections_profile_main_section_profilemainsection",
-      "community": 41,
+      "community": 15,
       "norm_label": "profilemainsection"
     },
     {
@@ -9851,7 +9931,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "sections_profile_main_section_profilemainsectionstate",
-      "community": 41,
+      "community": 15,
       "norm_label": "_profilemainsectionstate"
     },
     {
@@ -10821,7 +10901,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_privacy_policy_screen_privacypolicyscreen",
-      "community": 41,
+      "community": 95,
       "norm_label": "privacypolicyscreen"
     },
     {
@@ -10831,7 +10911,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_privacy_policy_screen_privacypolicyscreenstate",
-      "community": 41,
+      "community": 95,
       "norm_label": "_privacypolicyscreenstate"
     },
     {
@@ -10961,7 +11041,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_splash_screen_splashscreen",
-      "community": 41,
+      "community": 32,
       "norm_label": "splashscreen"
     },
     {
@@ -10971,7 +11051,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_splash_screen_splashscreenstate",
-      "community": 41,
+      "community": 32,
       "norm_label": "_splashscreenstate"
     },
     {
@@ -10981,7 +11061,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "presentation_splash_screen_gradienttext",
-      "community": 32,
+      "community": 15,
       "norm_label": "_gradienttext"
     },
     {
@@ -11225,6 +11305,46 @@
       "norm_label": "googlemapsflutterplatform"
     },
     {
+      "label": "_appLinks",
+      "file_type": "code",
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "lib_main_applinks",
+      "community": 5,
+      "norm_label": "_applinks"
+    },
+    {
+      "label": "AppLinks",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "_origin": "ast",
+      "id": "applinks",
+      "community": 5,
+      "norm_label": "applinks"
+    },
+    {
+      "label": "_linkSubscription",
+      "file_type": "code",
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "lib_main_linksubscription",
+      "community": 5,
+      "norm_label": "_linksubscription"
+    },
+    {
+      "label": "StreamSubscription",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "_origin": "ast",
+      "id": "streamsubscription",
+      "community": 5,
+      "norm_label": "streamsubscription"
+    },
+    {
       "label": "main",
       "file_type": "code",
       "source_file": "lib/main.dart",
@@ -11255,6 +11375,26 @@
       "norm_label": "initstate"
     },
     {
+      "label": "_initDeepLinks",
+      "file_type": "code",
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "lib_main_initdeeplinks",
+      "community": 5,
+      "norm_label": "_initdeeplinks"
+    },
+    {
+      "label": "_handleDeepLink",
+      "file_type": "code",
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "lib_main_handledeeplink",
+      "community": 5,
+      "norm_label": "_handledeeplink"
+    },
+    {
       "label": "dispose",
       "file_type": "code",
       "source_file": "lib/main.dart",
@@ -11283,6 +11423,16 @@
       "id": "lib_main_build",
       "community": 5,
       "norm_label": "build"
+    },
+    {
+      "label": "package:app_links/app_links.dart",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "_origin": "ast",
+      "id": "package_app_links_app_links_dart",
+      "community": 5,
+      "norm_label": "package:app_links/app_links.dart"
     },
     {
       "label": "package:google_maps_flutter_android/google_maps_flutter_android.dart",
@@ -11398,7 +11548,7 @@
       "label": "fl_register_plugins()",
       "file_type": "code",
       "source_file": "linux/flutter/generated_plugin_registrant.cc",
-      "source_location": "L12",
+      "source_location": "L13",
       "_origin": "ast",
       "id": "flutter_generated_plugin_registrant_fl_register_plugins",
       "community": 16,
@@ -11408,7 +11558,7 @@
       "label": "FlPluginRegistry",
       "file_type": "code",
       "source_file": "linux/flutter/generated_plugin_registrant.cc",
-      "source_location": "L12",
+      "source_location": "L13",
       "_origin": "ast",
       "id": "flpluginregistry",
       "community": 16,
@@ -11687,11 +11837,22 @@
       "norm_label": "foundation"
     },
     {
-      "label": "connectivity_plus",
+      "label": "app_links",
       "file_type": "code",
       "type": "module",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
       "source_location": "L8",
+      "_origin": "ast",
+      "id": "app_links",
+      "community": 33,
+      "norm_label": "app_links"
+    },
+    {
+      "label": "connectivity_plus",
+      "file_type": "code",
+      "type": "module",
+      "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
+      "source_location": "L9",
       "_origin": "ast",
       "id": "connectivity_plus",
       "community": 33,
@@ -11702,7 +11863,7 @@
       "file_type": "code",
       "type": "module",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
-      "source_location": "L9",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "file_selector_macos",
       "community": 33,
@@ -11713,7 +11874,7 @@
       "file_type": "code",
       "type": "module",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
-      "source_location": "L10",
+      "source_location": "L11",
       "_origin": "ast",
       "id": "geolocator_apple",
       "community": 33,
@@ -11724,7 +11885,7 @@
       "file_type": "code",
       "type": "module",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
-      "source_location": "L11",
+      "source_location": "L12",
       "_origin": "ast",
       "id": "package_info_plus",
       "community": 33,
@@ -11735,7 +11896,7 @@
       "file_type": "code",
       "type": "module",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
-      "source_location": "L12",
+      "source_location": "L13",
       "_origin": "ast",
       "id": "shared_preferences_foundation",
       "community": 33,
@@ -11746,7 +11907,7 @@
       "file_type": "code",
       "type": "module",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
-      "source_location": "L13",
+      "source_location": "L14",
       "_origin": "ast",
       "id": "url_launcher_macos",
       "community": 33,
@@ -11756,7 +11917,7 @@
       "label": "RegisterGeneratedPlugins()",
       "file_type": "code",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
-      "source_location": "L15",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "flutter_generatedpluginregistrant_registergeneratedplugins",
       "community": 33,
@@ -11766,7 +11927,7 @@
       "label": "FlutterPluginRegistry",
       "file_type": "code",
       "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
-      "source_location": "L15",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "flutterpluginregistry",
       "community": 33,
@@ -12105,7 +12266,7 @@
       "label": "RegisterPlugins()",
       "file_type": "code",
       "source_file": "windows/flutter/generated_plugin_registrant.cc",
-      "source_location": "L14",
+      "source_location": "L15",
       "_origin": "ast",
       "id": "flutter_generated_plugin_registrant_registerplugins",
       "community": 8,
@@ -12115,7 +12276,7 @@
       "label": "PluginRegistry",
       "file_type": "code",
       "source_file": "windows/flutter/generated_plugin_registrant.cc",
-      "source_location": "L14",
+      "source_location": "L15",
       "_origin": "ast",
       "id": "pluginregistry",
       "community": 8,
@@ -12855,7 +13016,7 @@
       "label": "Tech Stack",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L14",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "readme_tech_stack",
       "community": 36,
@@ -12865,7 +13026,7 @@
       "label": "External Prerequisite Service",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L25",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "readme_external_prerequisite_service",
       "community": 36,
@@ -12875,7 +13036,7 @@
       "label": "Struktur Direktori",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L31",
+      "source_location": "L35",
       "_origin": "ast",
       "id": "readme_struktur_direktori",
       "community": 36,
@@ -12885,7 +13046,7 @@
       "label": "Panduan Instalasi (Kompilasi)",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L63",
+      "source_location": "L68",
       "_origin": "ast",
       "id": "readme_panduan_instalasi_kompilasi",
       "community": 36,
@@ -12895,7 +13056,7 @@
       "label": "1. Persiapan Awal",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L65",
+      "source_location": "L70",
       "_origin": "ast",
       "id": "readme_1_persiapan_awal",
       "community": 36,
@@ -12905,7 +13066,7 @@
       "label": "2. Kloning Repository",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L71",
+      "source_location": "L76",
       "_origin": "ast",
       "id": "readme_2_kloning_repository",
       "community": 36,
@@ -12915,7 +13076,7 @@
       "label": "3. Mengunduh Dependencies",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L78",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "readme_3_mengunduh_dependencies",
       "community": 36,
@@ -12925,7 +13086,7 @@
       "label": "4. Konfigurasi Environment & Asset",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L84",
+      "source_location": "L89",
       "_origin": "ast",
       "id": "readme_4_konfigurasi_environment_asset",
       "community": 36,
@@ -12935,7 +13096,7 @@
       "label": "5. Code Generation (Riverpod & JSON Serializable)",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L92",
+      "source_location": "L101",
       "_origin": "ast",
       "id": "readme_5_code_generation_riverpod_json_serializable",
       "community": 36,
@@ -12945,7 +13106,7 @@
       "label": "6. Jalankan Aplikasi",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L98",
+      "source_location": "L107",
       "_origin": "ast",
       "id": "readme_6_jalankan_aplikasi",
       "community": 36,
@@ -13174,7 +13335,7 @@
       "file_type": "code",
       "source_file": "lib/core/security/key_manager.dart",
       "source_location": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "exception",
       "id": "c_laragon_www_polislot_mobile_catz_lib_core_security_key_manager_dart_exception"
     },
@@ -13183,7 +13344,7 @@
       "file_type": "code",
       "source_file": "lib/core/security/key_manager.dart",
       "source_location": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "package:flutter/services.dart",
       "id": "lib_core_security_key_manager_dart_package_flutter_services_dart"
     },
@@ -13192,7 +13353,7 @@
       "file_type": "code",
       "source_file": "lib/core/security/key_manager.dart",
       "source_location": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "package:encrypt/encrypt.dart",
       "id": "lib_core_security_key_manager_dart_package_encrypt_encrypt_dart"
     },
@@ -13327,7 +13488,7 @@
       "file_type": "code",
       "source_file": "lib/core/wrapper/connectivity_wrapper.dart",
       "source_location": null,
-      "community": 7,
+      "community": 62,
       "norm_label": "stack",
       "id": "c_laragon_www_polislot_mobile_catz_lib_core_wrapper_connectivity_wrapper_dart_stack"
     },
@@ -16326,6 +16487,16 @@
       "source_location": null,
       "weight": 1.0,
       "source": "network_dio_client",
+      "target": "network_dio_client_genericmessage"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "network_dio_client",
       "target": "network_dio_client_islogoutdialogshowing"
     },
     {
@@ -16337,6 +16508,26 @@
       "weight": 1.0,
       "source": "network_dio_client",
       "target": "network_dio_client_parse"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "network_dio_client",
+      "target": "network_dio_client_sanitize"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "network_dio_client",
+      "target": "network_dio_client_statusmessage"
     },
     {
       "relation": "imports",
@@ -16357,6 +16548,16 @@
       "weight": 1.0,
       "source": "network_dio_client",
       "target": "package_flutter_dotenv_flutter_dotenv_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "network_dio_client",
+      "target": "package_flutter_foundation_dart"
     },
     {
       "relation": "imports",
@@ -16397,6 +16598,17 @@
       "weight": 1.0,
       "source": "network_dio_client",
       "target": "security_encryption_interceptor_dart"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/network/dio_client.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "context": "variable_type",
+      "source": "network_dio_client",
+      "target": "static_const_string"
     },
     {
       "relation": "imports",
@@ -17247,6 +17459,28 @@
       "target": "annotation_riverpod"
     },
     {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/routes/app_routes.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "context": "variable_type",
+      "source": "routes_app_routes",
+      "target": "static_const_string"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/utils/validator_utils.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "context": "variable_type",
+      "source": "utils_validator_utils",
+      "target": "static_const_string"
+    },
+    {
       "relation": "imports",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -17255,6 +17489,46 @@
       "weight": 1.0,
       "source": "presentation_auth_controller",
       "target": "package_connectivity_plus_connectivity_plus_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/data/auth_repository.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "data_auth_repository",
+      "target": "package_flutter_foundation_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/presentation/auth_controller.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_auth_controller",
+      "target": "package_flutter_foundation_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/security/encryption_interceptor.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "security_encryption_interceptor",
+      "target": "package_flutter_foundation_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/services/mqtt_service.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "services_mqtt_service",
+      "target": "package_flutter_foundation_dart"
     },
     {
       "relation": "imports",
@@ -18338,28 +18612,6 @@
       "target": "routes_app_routes_verifyotp"
     },
     {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/core/routes/app_routes.dart",
-      "source_location": null,
-      "weight": 1.0,
-      "context": "variable_type",
-      "source": "routes_app_routes",
-      "target": "static_const_string"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/core/utils/validator_utils.dart",
-      "source_location": null,
-      "weight": 1.0,
-      "context": "variable_type",
-      "source": "utils_validator_utils",
-      "target": "static_const_string"
-    },
-    {
       "relation": "defines",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -18600,16 +18852,6 @@
       "target": "package_encrypt_encrypt_dart"
     },
     {
-      "relation": "imports",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/core/security/encryption_interceptor.dart",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "security_encryption_interceptor",
-      "target": "package_flutter_foundation_dart"
-    },
-    {
       "relation": "defines",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -18718,36 +18960,6 @@
       "weight": 1.0,
       "source": "security_key_manager",
       "target": "package_encrypt_encrypt_dart"
-    },
-    {
-      "relation": "imports",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/features/auth/data/auth_repository.dart",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "data_auth_repository",
-      "target": "package_flutter_foundation_dart"
-    },
-    {
-      "relation": "imports",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/features/auth/presentation/auth_controller.dart",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "presentation_auth_controller",
-      "target": "package_flutter_foundation_dart"
-    },
-    {
-      "relation": "imports",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/core/services/mqtt_service.dart",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "services_mqtt_service",
-      "target": "package_flutter_foundation_dart"
     },
     {
       "relation": "defines",
@@ -19133,6 +19345,16 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_main",
+      "target": "dart_async"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "lib/features/home/presentation/home_screen.dart",
       "source_location": null,
       "weight": 1.0,
@@ -19331,6 +19553,17 @@
       "weight": 1.0,
       "context": "variable_type",
       "source": "utils_navigator_key",
+      "target": "data_park_model_map"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/utils/navigator_key.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "context": "variable_type",
+      "source": "utils_navigator_key",
       "target": "globalkey"
     },
     {
@@ -19373,6 +19606,16 @@
       "weight": 1.0,
       "source": "utils_navigator_key",
       "target": "utils_navigator_key_navigatorkey"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/core/utils/navigator_key.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "utils_navigator_key",
+      "target": "utils_navigator_key_pendingdeeplink"
     },
     {
       "relation": "references",
@@ -21548,6 +21791,96 @@
       "source_location": null,
       "weight": 1.0,
       "source": "data_reward_repository",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/park/presentation/comment_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_comment_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/presentation/forgot_password_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_forgot_password_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/presentation/login_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_login_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/park/presentation/park_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_park_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/presentation/register_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_register_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/presentation/reset_password_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_reset_password_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/reward/presentation/reward_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_reward_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/presentation/verify_otp_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_verify_otp_screen",
+      "target": "core_network_dio_client_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/profile/presentation/sections/profile_edit_section.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "sections_profile_edit_section",
       "target": "core_network_dio_client_dart"
     },
     {
@@ -24345,6 +24678,16 @@
       "target": "presentation_reset_password_screen_resetpasswordscreenstate"
     },
     {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/auth/presentation/reset_password_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_reset_password_screen",
+      "target": "presentation_reset_password_screen_token"
+    },
+    {
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -24808,6 +25151,16 @@
       "source_location": null,
       "weight": 1.0,
       "source": "presentation_faq_controller",
+      "target": "presentation_faq_controller_getservererrorfaqs"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/faq/presentation/faq_controller.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_faq_controller",
       "target": "presentation_faq_controller_offlinefaqs"
     },
     {
@@ -24819,6 +25172,16 @@
       "weight": 1.0,
       "source": "presentation_faq_controller",
       "target": "presentation_faq_controller_refresh"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/faq/presentation/faq_controller.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_faq_controller",
+      "target": "presentation_faq_controller_servererrorfaqs"
     },
     {
       "relation": "references",
@@ -25365,6 +25728,16 @@
       "weight": 1.0,
       "source": "presentation_feedback_screen",
       "target": "package_dropdown_search_dropdown_search_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/features/feedback/presentation/feedback_screen.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "presentation_feedback_screen",
+      "target": "package_polislot_mobile_catz_core_network_dio_client_dart"
     },
     {
       "relation": "defines",
@@ -29870,7 +30243,7 @@
       "weight": 1.0,
       "context": "riverpod_reference",
       "source": "presentation_comment_screen_build",
-      "target": "none_commentlistcontrollerprovider"
+      "target": "none_commentactioncontrollerprovider"
     },
     {
       "relation": "references",
@@ -29881,7 +30254,7 @@
       "weight": 1.0,
       "context": "riverpod_reference",
       "source": "presentation_comment_screen_build",
-      "target": "none_commentactioncontrollerprovider"
+      "target": "none_commentlistcontrollerprovider"
     },
     {
       "relation": "references",
@@ -34066,6 +34439,17 @@
       "target": "core_utils_navigator_key_dart"
     },
     {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "context": "variable_type",
+      "source": "lib_main",
+      "target": "applinks"
+    },
+    {
       "relation": "defines",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -34204,6 +34588,16 @@
       "source_location": null,
       "weight": 1.0,
       "source": "lib_main",
+      "target": "lib_main_applinks"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_main",
       "target": "lib_main_build"
     },
     {
@@ -34244,7 +34638,37 @@
       "source_location": null,
       "weight": 1.0,
       "source": "lib_main",
+      "target": "lib_main_handledeeplink"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_main",
+      "target": "lib_main_initdeeplinks"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_main",
       "target": "lib_main_initstate"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_main",
+      "target": "lib_main_linksubscription"
     },
     {
       "relation": "defines",
@@ -34294,6 +34718,16 @@
       "source_location": null,
       "weight": 1.0,
       "source": "lib_main",
+      "target": "package_app_links_app_links_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lib_main",
       "target": "package_google_maps_flutter_android_google_maps_flutter_android_dart"
     },
     {
@@ -34315,6 +34749,17 @@
       "weight": 1.0,
       "source": "lib_main",
       "target": "package_intl_date_symbol_data_local_dart"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/main.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "context": "variable_type",
+      "source": "lib_main",
+      "target": "streamsubscription"
     },
     {
       "relation": "references",
@@ -34675,6 +35120,17 @@
       "confidence_score": 1.0,
       "source": "runner_my_application_my_application_class_init",
       "target": "myapplicationclass"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "macos/Flutter/GeneratedPluginRegistrant.swift",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "flutter_generatedpluginregistrant",
+      "target": "app_links",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -36531,21 +36987,21 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
-      "source_location": "L64",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "launchimage_imageset_contents",
-      "target": "macos_runner_assets_xcassets_appicon_appiconset_contents_json_appicon_appiconset_contents_info"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
       "source_location": "L2",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "launchimage_imageset_contents",
       "target": "macos_runner_assets_xcassets_appicon_appiconset_contents_json_appicon_appiconset_contents_images"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "source_location": "L64",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "launchimage_imageset_contents",
+      "target": "macos_runner_assets_xcassets_appicon_appiconset_contents_json_appicon_appiconset_contents_info"
     },
     {
       "relation": "contains",
@@ -36630,5 +37086,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "c1d3ecc73865e465fef8219133d4b1f14ca85637"
+  "built_at_commit": "05e3da9d7dcf300365bf6cd4a26efe4307046341"
 }
