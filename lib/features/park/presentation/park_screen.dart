@@ -1440,7 +1440,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                subarea.status.toUpperCase(),
+                                (subarea.status.toLowerCase() == 'banyak' ? 'Banyak Tersedia' : subarea.status).toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -1523,7 +1523,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                           ),
                         ),
                       const SizedBox(height: 4),
-                      if ((hasCountdown || subarea.maxSlots > 0) && subarea.status.toLowerCase() != 'netral')
+                      if ((hasCountdown || subarea.maxSlots > 0) && subarea.status.toLowerCase() != 'netral' && subarea.fallbackStatus.toLowerCase() != 'netral')
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -1532,7 +1532,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                               const SizedBox(width: 8),
                             if (subarea.maxSlots > 0)
                               Text(
-                                'Terisi: ${subarea.currentCount}/${subarea.maxSlots} slot',
+                                'Tersedia: ${subarea.maxSlots > subarea.currentCount ? subarea.maxSlots - subarea.currentCount : 0} | Terisi: ${subarea.currentCount}',
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: Colors.grey,
