@@ -47,7 +47,22 @@ class AppRoutes {
   // 🚦 ROUTE GENERATOR
   // ===========================================================================
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
-    switch (settings.name) {
+    // 1. Parsing URI untuk menangkap parameter dari Deep Link
+    final uri = Uri.parse(settings.name ?? '');
+    
+    String routeName = uri.path;
+    if (routeName.isEmpty && uri.host.isNotEmpty) {
+      // Jika datang dari deep link polislot://routeName
+      routeName = '/${uri.host}';
+    }
+
+    // Normalisasi penamaan dari URL external
+    if (routeName == '/forgot-password') routeName = forgotPassword;
+    if (routeName == '/reset-password') routeName = resetPassword;
+
+    final queryParams = uri.queryParameters;
+
+    switch (routeName) {
       // --- SPLASH ---
       case splash:
         return _materialRoute(const SplashScreen());
@@ -69,13 +84,10 @@ class AppRoutes {
 
       // --- VERIFY OTP (Reusable) ---
       case verifyOtp:
-        // Ambil argument yang dikirim dari RegisterScreen atau ForgotPasswordScreen
         final args = settings.arguments as Map<String, dynamic>?;
-
         return _slideRoute(
           VerifyOtpScreen(
-            email: args?['email'],
-            // Default ke register jika tidak ada tipe yang dikirim
+            email: args?['email'] ?? queryParams['email'],
             otpType: args?['type'] ?? OtpType.register,
           ),
         );
@@ -87,8 +99,8 @@ class AppRoutes {
       // --- RESET PASSWORD ---
       case resetPassword:
         final args = settings.arguments as Map<String, dynamic>?;
-        // Nanti bisa kirim email/token ke sini
-        return _slideRoute(ResetPasswordScreen(email: args?['email']));
+        // Ambil email dari arguments (internal) atau queryParams (Deep Link)
+        return _slideRoute(ResetPasswordScreen(email: args?['email'] ?? queryParams['email']));
 
       // --- MAIN / HOME ---
       case main:
