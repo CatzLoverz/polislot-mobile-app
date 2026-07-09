@@ -91,7 +91,7 @@ flutter pub get
   ```env
   API_BASE_URL=http://<ip-backend-anda>/api
   MQTT_HOST=<domain-atau-ip-broker>
-  MQTT_WSS_PORT=443
+  MQTT_PORT=443
   MQTT_USERNAME=<username-mqtt>
   MQTT_PASSWORD=<password-mqtt>
   GOOGLE_MAPS_API_KEY=<api-key-anda>

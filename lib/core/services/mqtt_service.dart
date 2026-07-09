@@ -52,9 +52,10 @@ class MqttService extends _$MqttService {
     }
 
     final host = dotenv.env['MQTT_HOST'] ?? '';
-    final portStr = dotenv.env['MQTT_WSS_PORT'] ?? '443';
+    final portStr = dotenv.env['MQTT_PORT'] ?? '443';
     final username = dotenv.env['MQTT_USERNAME'] ?? '';
     final password = dotenv.env['MQTT_PASSWORD'] ?? '';
+    final scheme = dotenv.env['MQTT_SCHEME'] ?? 'wss';
 
     if (host.isEmpty) {
       debugPrint('[MQTT] MQTT_HOST kosong, koneksi dibatalkan.');
@@ -65,10 +66,8 @@ class MqttService extends _$MqttService {
     final clientId =
         'polislot_mobile_${DateTime.now().millisecondsSinceEpoch}';
 
-    // MqttServerClient untuk Android/iOS dengan WebSocket Secure (wss://)
-    // Kunci: sertakan path /mqtt langsung dalam URL host
-    // Jangan set secure = true jika menggunakan wss:// prefix (sudah otomatis TLS)
-    final wsUrl = 'wss://$host/mqtt';
+    // MqttServerClient untuk Android/iOS dengan WebSocket (ws:// atau wss://)
+    final wsUrl = '$scheme://$host/mqtt';
     _client = MqttServerClient.withPort(wsUrl, clientId, port)
       ..useWebSocket = true
       ..logging(on: kDebugMode)
@@ -96,7 +95,7 @@ class MqttService extends _$MqttService {
     state = MqttConnectionStatus.connecting;
 
     try {
-      debugPrint('[MQTT] Menghubungkan ke wss://$host:$port ...');
+      debugPrint('[MQTT] Menghubungkan ke $wsUrl:$port ...');
       await _client!.connect();
     } on NoConnectionException catch (e) {
       debugPrint('[MQTT] NoConnectionException: $e');

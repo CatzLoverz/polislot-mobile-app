@@ -1,0 +1,33 @@
+# Dependencies (WAJIB DIABAIKAN)
+.dart_tool/
+.pub-cache/
+.pub/
+
+
+# Flutter Build & Output
+build/
+coverage/
+symbols/
+debug_symbols/
+
+# Git & IDE
+.git/
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Lock & Config & Manifest Files
+pubspec.lock
+.flutter-plugins-dependencies
+.metadata
+
+# Generated Code (Riverpod, Freezed, etc.)
+*.g.dart
+*.freezed.dart
+
+# File Log & Temp
+*.log
+.env
+.env.*
