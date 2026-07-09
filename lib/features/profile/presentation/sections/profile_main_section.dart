@@ -31,8 +31,8 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
         vsync: this, duration: const Duration(milliseconds: 800));
 
     _fadeAnims = List.generate(5, (i) {
-      final start = i * 0.15;
-      final end = start + 0.5;
+      final start = (i * 0.15).clamp(0.0, 1.0);
+      final end = (start + 0.5).clamp(0.0, 1.0);
       return CurvedAnimation(
         parent: _menuAnimCtrl,
         curve: Interval(start, end, curve: Curves.easeOut),
@@ -40,8 +40,8 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
     });
 
     _slideAnims = List.generate(5, (i) {
-      final start = i * 0.15;
-      final end = start + 0.5;
+      final start = (i * 0.15).clamp(0.0, 1.0);
+      final end = (start + 0.5).clamp(0.0, 1.0);
       return Tween<Offset>(
         begin: const Offset(0, 0.2),
         end: Offset.zero,
