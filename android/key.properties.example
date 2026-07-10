@@ -1,6 +1,7 @@
 # file: android/key.properties.example
 # Salin file ini menjadi key.properties dan sesuaikan isinya dengan path di komputer Anda.
 # Jangan pernah melakukan commit key.properties ke version control (Git).
+# isi value langsung tanpa memberi tanda petik ("")
 
 storePassword=
 keyPassword=
