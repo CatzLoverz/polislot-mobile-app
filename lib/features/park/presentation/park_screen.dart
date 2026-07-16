@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -354,7 +355,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+              colors: [AppColors.primary, AppColors.primaryGradientEnd],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -438,7 +439,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                       _currentMapType == MapType.normal
                           ? Icons.satellite_alt
                           : Icons.map,
-                      color: const Color(0xFF1565C0),
+                      color: AppColors.primary,
                     ),
                     onPressed: () {
                       setState(() {
@@ -481,14 +482,14 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Color(0xFF1565C0),
+                                color: AppColors.primary,
                               ),
                             ),
                             SizedBox(width: 8),
                             Text(
                               "Memuat data...",
                               style: TextStyle(
-                                color: Color(0xFF1565C0),
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -509,7 +510,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1565C0),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
@@ -585,7 +586,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                         },
                         child: const Icon(
                           Icons.center_focus_strong,
-                          color: Color(0xFF1565C0),
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -597,7 +598,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
                         onPressed: () => _showLegendDialog(context),
                         child: const Icon(
                           Icons.info_outline_rounded,
-                          color: Color(0xFF1565C0),
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -678,7 +679,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
           "Keterangan Status SubArea",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1565C0),
+            color: AppColors.primary,
           ),
         ),
         content: SingleChildScrollView(
@@ -735,7 +736,7 @@ class _ParkScreenState extends ConsumerState<ParkScreen> {
               "Tutup",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1565C0),
+                color: AppColors.primary,
               ),
             ),
           ),
@@ -1027,7 +1028,7 @@ class _ValidationSheetState extends ConsumerState<_ValidationSheet> {
                         ? null
                         : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1565C0),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -1209,7 +1210,7 @@ class _ValidationCountdownButtonState
       icon: const Icon(Icons.add_location_alt_outlined, size: 18),
       label: Text(buttonLabel),
       style: ElevatedButton.styleFrom(
-        backgroundColor: canValidate ? const Color(0xFF1565C0) : Colors.grey,
+        backgroundColor: canValidate ? AppColors.primary : Colors.grey,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1403,7 +1404,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A253A),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -1413,7 +1414,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                         label: const Text("Rute"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue.shade50,
-                          foregroundColor: const Color(0xFF1565C0),
+                          foregroundColor: AppColors.primary,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -1635,7 +1636,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                           children: [
                             Badge(
                               label: Text(subarea.commentCount.toString()),
-                              backgroundColor: const Color(0xFF1565C0),
+                              backgroundColor: AppColors.primary,
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
@@ -1646,7 +1647,7 @@ class _SubareaDetailPanel extends ConsumerWidget {
                                 ),
                                 child: const Icon(
                                   Icons.chat_bubble_outline_rounded,
-                                  color: Color(0xFF1565C0),
+                                  color: AppColors.primary,
                                   size: 20,
                                 ),
                               ),

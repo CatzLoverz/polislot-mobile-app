@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../../core/routes/app_routes.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/enums/otp_type.dart';
 import '../../../core/utils/snackbar_utils.dart'; // ✅ Import Helper SnackBar
 import '../../../core/network/dio_client.dart';
@@ -141,13 +141,13 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
         title: Text(
           appBarTitle,
           style: const TextStyle(
-            color: AppTheme.primaryColor, // Warna Biru
+            color: AppColors.primary, // Warna Biru
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.primaryColor),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -162,7 +162,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF0D47A1), // Biru Gelap (Sesuai file lama)
+                color: AppColors.primaryVariant, // Biru Gelap (Sesuai file lama)
               ),
             ),
             const SizedBox(height: 8),
@@ -178,7 +178,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
               _email,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primaryColor, // <-- Warna Biru
+                color: AppColors.primary, // <-- Warna Biru
                 fontSize: 16,
               ),
             ),
@@ -189,7 +189,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
               data: Theme.of(context).copyWith(
                 textButtonTheme: TextButtonThemeData(
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF1352C8),
+                    foregroundColor: AppColors.primaryDark,
                     textStyle: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -197,36 +197,36 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                 textTheme: Theme.of(context).textTheme.copyWith(
                   headlineSmall: const TextStyle(
                     // Dialog Title (M3)
-                    color: Color(0xFF1352C8),
+                    color: AppColors.primaryDark,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
                   titleLarge: const TextStyle(
                     // Dialog Title (Legacy/M2)
-                    color: Color(0xFF1352C8),
+                    color: AppColors.primaryDark,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
                   titleMedium: const TextStyle(
                     // Potential Subtitle/Content
-                    color: Color(0xFF1352C8),
+                    color: AppColors.primaryDark,
                     fontSize: 16,
                   ),
                   bodyLarge: const TextStyle(
                     // Dialog Body (M3)
-                    color: Color(0xFF1352C8),
+                    color: AppColors.primaryDark,
                     fontSize: 16,
                   ),
                   bodyMedium: const TextStyle(
                     // Dialog Content
-                    color: Color(0xFF1352C8),
+                    color: AppColors.primaryDark,
                     fontSize: 16,
                   ),
                 ),
                 colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: const Color(0xFF1352C8),
+                  primary: AppColors.primaryDark,
                   surface: Colors.white, // Ensure standard surface
-                  onSurface: const Color(0xFF1352C8), // Fallback text color
+                  onSurface: AppColors.primaryDark, // Fallback text color
                 ),
               ),
               child: MaterialPinField(
@@ -238,11 +238,11 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                   borderRadius: BorderRadius.circular(10),
                   cellSize: const Size(45, 50),
                   borderColor: Colors.grey.shade300,
-                  focusedBorderColor: const Color(0xFF1352C8),
-                  filledBorderColor: const Color(0xFF1352C8),
+                  focusedBorderColor: AppColors.primaryDark,
+                  filledBorderColor: AppColors.primaryDark,
                   fillColor: Colors.white,
                   textStyle: const TextStyle(
-                    color: Color(0xFF1352C8),
+                    color: AppColors.primaryDark,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
@@ -261,7 +261,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
               child: ElevatedButton(
                 onPressed: (isLoadingVerify || _isResending) ? null : _verify,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -298,14 +298,14 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                         height: 16,
                         width: 16,
                         child: CircularProgressIndicator(
-                          color: AppTheme.primaryColor,
+                          color: AppColors.primary,
                           strokeWidth: 2,
                         ),
                       )
                     : const Text(
                         "Kirim Ulang Kode",
                         style: TextStyle(
-                          color: AppTheme.primaryColor,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

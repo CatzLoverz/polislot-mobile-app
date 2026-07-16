@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/snackbar_utils.dart';
@@ -165,7 +166,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
     final isUpdating = ref.watch(profileControllerProvider).isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
         title: const Text(
           "Ubah Profil",
@@ -174,7 +175,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+              colors: [AppColors.primary, AppColors.primaryGradientEnd],
             ),
           ),
         ),
@@ -203,7 +204,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
                         ? const Icon(
                             Icons.person,
                             size: 60,
-                            color: Color(0xFF1565C0),
+                            color: AppColors.primary,
                           )
                         : null,
                   ),
@@ -213,7 +214,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+                          colors: [AppColors.primary, AppColors.primaryGradientEnd],
                         ),
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -240,7 +241,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
             const Text(
               "Ganti Kata Sandi (Opsional)",
               style: TextStyle(
-                color: Color(0xFF1565C0),
+                color: AppColors.primary,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -254,7 +255,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureCurrentPass ? Icons.visibility_off : Icons.visibility,
-                  color: const Color(0xFF1565C0),
+                  color: AppColors.primary,
                 ),
                 onPressed: () =>
                     setState(() => _obscureCurrentPass = !_obscureCurrentPass),
@@ -346,12 +347,12 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
 
             isUpdating
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF1565C0)),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 : ElevatedButton(
                     onPressed: _handleUpdate,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1565C0),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -372,7 +373,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
             OutlinedButton(
               onPressed: () => Navigator.pop(context),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF1565C0), width: 1.5),
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -382,7 +383,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
                 "Batal",
                 style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF1565C0),
+                  color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -409,7 +410,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
           Text(
             label,
             style: const TextStyle(
-              color: Color(0xFF1565C0),
+              color: AppColors.primary,
               fontWeight: FontWeight.w500,
             ),
           ),

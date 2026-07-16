@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'faq_controller.dart';
 import '../../../core/providers/connection_status_provider.dart';
@@ -10,7 +11,7 @@ class FaqScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final faqState = ref.watch(faqControllerProvider);
     final connectionState = ref.watch(connectionStatusProvider);
-    final Color primaryColor = const Color(0xFF1565C0);
+    final Color primaryColor = AppColors.primary;
 
     final bool isOffline = connectionState != ConnectionStateType.online;
     final bool isServerErr = connectionState == ConnectionStateType.serverUnreachable;
@@ -22,7 +23,7 @@ class FaqScreen extends ConsumerWidget {
         : faqController.getOfflineFaqs();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
         title: const Text(
           "Pusat Bantuan (FAQ)",
@@ -31,7 +32,7 @@ class FaqScreen extends ConsumerWidget {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+              colors: [AppColors.primary, AppColors.primaryGradientEnd],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

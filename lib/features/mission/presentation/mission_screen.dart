@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'mission_controller.dart';
 import '../data/mission_model.dart';
@@ -62,7 +63,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
       case 'SEQUENCE':
         return Colors.indigo;
       default:
-        return const Color(0xFF1352C8);
+        return AppColors.primaryDark;
     }
   }
 
@@ -120,10 +121,10 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
         UserStats(totalCompleted: 0, lifetimePoints: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFFF3F6FB),
+        backgroundColor: AppColors.scaffold,
         centerTitle: true,
         elevation: 0,
         title: const Text(
@@ -244,7 +245,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+          colors: [AppColors.primary, AppColors.primaryGradientEnd],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -327,11 +328,11 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
               width: MediaQuery.of(context).size.width * 0.45,
               margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: const Color(0xFF1565C0),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1565C0).withValues(alpha: 0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -438,12 +439,12 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1352C8).withValues(alpha: 0.1),
+                  color: AppColors.primaryDark.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   _getMissionIcon(m.metricCode),
-                  color: const Color(0xFF1352C8),
+                  color: AppColors.primaryDark,
                   size: 20,
                 ),
               ),
@@ -517,7 +518,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1352C8),
+              color: AppColors.primaryDark,
             ),
           ),
           const SizedBox(height: 6),
@@ -725,7 +726,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
 
   Widget _leaderboardTile(LeaderboardItem user) {
     final bgColor = user.isCurrentUser
-        ? const Color(0xFF1352C8).withValues(alpha: 0.1)
+        ? AppColors.primaryDark.withValues(alpha: 0.1)
         : Colors.transparent;
 
     return Container(
@@ -802,7 +803,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
             "${user.points} Koin",
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1352C8),
+              color: AppColors.primaryDark,
             ),
           ),
         ],
@@ -836,7 +837,7 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+          colors: [AppColors.primary, AppColors.primaryGradientEnd],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [

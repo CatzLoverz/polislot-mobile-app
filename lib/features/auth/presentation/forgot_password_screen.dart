@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/enums/otp_type.dart';
 import '../../../core/network/dio_client.dart';
@@ -64,13 +64,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         title: Text(
           'Lupa Password',
           style: const TextStyle(
-            color: AppTheme.primaryColor, // Warna Biru
+            color: AppColors.primary, // Warna Biru
             fontWeight: FontWeight.bold,
             fontSize: 18,
           )
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.primaryColor),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -123,7 +123,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   onPressed: isLoading ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: isLoading

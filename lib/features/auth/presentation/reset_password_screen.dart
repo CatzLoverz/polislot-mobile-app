@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/validator_utils.dart';
 import '../../../core/network/dio_client.dart';
@@ -24,8 +25,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   late String _token;
 
   // Warna sesuai file lama (Dikembalikan)
-  static const Color _deepBlue = Color(0xFF0D47A1);
-
   @override
   void initState() {
     super.initState();
@@ -122,9 +121,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         title: const Text('Atur Ulang Password'),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: _deepBlue),
+        iconTheme: const IconThemeData(color: AppColors.primaryVariant),
         titleTextStyle: const TextStyle(
-          color: _deepBlue,
+          color: AppColors.primaryVariant,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
@@ -167,7 +166,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _deepBlue, width: 2),
+                      borderSide: const BorderSide(color: AppColors.primaryVariant, width: 2),
                     ),
                     // Suffix Icon dihapus sesuai permintaan
                   ),
@@ -209,7 +208,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _deepBlue, width: 2),
+                      borderSide: const BorderSide(color: AppColors.primaryVariant, width: 2),
                     ),
                   ),
                 ),
@@ -219,7 +218,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ElevatedButton(
                   onPressed: isLoading ? null : _resetPassword,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _deepBlue,
+                    backgroundColor: AppColors.primaryVariant,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'reward_controller.dart';
@@ -95,9 +96,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
     final currentPoints = rewardDataAsync.asData?.value.currentPoints ?? 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF3F6FB),
+        backgroundColor: AppColors.scaffold,
         elevation: 0,
         automaticallyImplyLeading: false,
         centerTitle: true,
@@ -164,7 +165,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+          colors: [AppColors.primary, AppColors.primaryGradientEnd],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -257,11 +258,11 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
               child: Container(
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1565C0),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1565C0).withValues(alpha: 0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -410,7 +411,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: Color(0xFF1A253A),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -419,7 +420,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                 Text(
                   "${item.pointsRequired} Koin",
                   style: const TextStyle(
-                    color: Color(0xFF1565C0),
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),
@@ -430,7 +431,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
           ElevatedButton(
             onPressed: canExchange ? () => _showRedeemConfirmation(item) : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1565C0),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -537,7 +538,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: Color(0xFF1A253A),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -657,7 +658,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
             "Cara Penukaran Hadiah",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1352C8),
+              color: AppColors.primaryDark,
             ),
           ),
           content: const Text(
@@ -671,7 +672,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
               child: const Text(
                 "Tutup",
                 style: TextStyle(
-                  color: Color(0xFF1352C8),
+                  color: AppColors.primaryDark,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -737,7 +738,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                 _processRedeem(item);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1352C8),
+                backgroundColor: AppColors.primaryDark,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -835,7 +836,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
               onPressed: () => Navigator.pop(context),
               child: const Text(
                 "Tutup",
-                style: TextStyle(color: Color(0xFF1352C8)),
+                style: TextStyle(color: AppColors.primaryDark),
               ),
             ),
           ],

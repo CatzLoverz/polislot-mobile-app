@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -44,7 +45,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text(
           "Konfirmasi Logout",
           style: TextStyle(
-            color: Color(0xFF1565C0),
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -75,7 +76,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // ✅ CUKUP TAMPILKAN MENU UTAMA
     // Navigasi ke Edit/Feedback sekarang via Navigator.pushNamed (Slide Animation)
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 2,

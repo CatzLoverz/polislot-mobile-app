@@ -15,6 +15,7 @@ import '../../park/presentation/park_controller.dart';
 import '../../park/data/park_model.dart';
 import '../../park/presentation/park_screen.dart';
 import 'main_screen.dart';
+import '../../../core/theme/app_colors.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -81,7 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             "Papan Informasi",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1352C8),
+              color: AppColors.primaryDark,
             ),
           ),
           content: ConstrainedBox(
@@ -152,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               child: const Text(
                 "Tutup",
                 style: TextStyle(
-                  color: Color(0xFF1352C8),
+                  color: AppColors.primaryDark,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -173,9 +174,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final connectionState = ref.watch(connectionStatusProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF3F6FB),
+        backgroundColor: AppColors.scaffold,
         elevation: 0,
         automaticallyImplyLeading: false,
         centerTitle: true,
@@ -306,7 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFEFE0),
+              color: AppColors.warningLight,
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -327,7 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Color(0xFF1A253A),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -338,7 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   style: const TextStyle(
                     fontWeight: FontWeight.w400,
                     fontSize: 12,
-                    color: Color(0xFF454F63),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -417,7 +418,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ? Colors.orange.shade700
                         : (isError
                               ? Colors.red.shade700
-                              : const Color(0xFF1A253A)),
+                              : AppColors.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -433,7 +434,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   style: const TextStyle(
                     fontWeight: FontWeight.w400,
                     fontSize: 12,
-                    color: Color(0xFF454F63),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -488,7 +489,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+          colors: [AppColors.primary, AppColors.primaryGradientEnd],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -547,7 +548,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+          colors: [AppColors.primary, AppColors.primaryGradientEnd],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -631,14 +632,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Color(0xFF1A253A),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         area.description,
                         style: const TextStyle(
-                          color: Color(0xFF454F63),
+                          color: AppColors.textSecondary,
                           fontSize: 12,
                           height: 1.3,
                         ),
@@ -650,7 +651,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               Container(
                 width: 80,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF1565C0),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.only(
                     topRight: Radius.circular(12),
                     bottomRight: Radius.circular(12),
@@ -838,14 +839,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         children: [
           const Row(
             children: [
-              Icon(Icons.emoji_events_rounded, color: Color(0xFF1352C8)),
+              Icon(Icons.emoji_events_rounded, color: AppColors.primaryDark),
               SizedBox(width: 8),
               Text(
                 "Peringkat Teratas",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Color(0xFF1A253A),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -1014,14 +1015,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           children: [
             const Row(
               children: [
-                Icon(Icons.emoji_events_rounded, color: Color(0xFF1352C8)),
+                Icon(Icons.emoji_events_rounded, color: AppColors.primaryDark),
                 SizedBox(width: 8),
                 Text(
                   "Peringkat Teratas",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Color(0xFF1A253A),
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],

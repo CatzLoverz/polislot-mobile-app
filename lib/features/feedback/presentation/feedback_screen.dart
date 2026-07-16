@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:polislot_mobile_catz/core/utils/snackbar_utils.dart';
@@ -72,12 +73,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     final isSubmitting = formState.isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
         title: const Text("Masukan Pengguna", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF2196F3)])
+            gradient: LinearGradient(colors: [AppColors.primary, AppColors.primaryGradientEnd])
           )
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -85,7 +86,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text("Kirim Masukan & Saran", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1565C0))),
+          const Text("Kirim Masukan & Saran", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
           const SizedBox(height: 16),
 
           // ✅ DROPDOWN SEARCH (SYNTAX TERBARU v9/v10)
@@ -129,18 +130,18 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     title: Text(
                       item.name, 
                       style: TextStyle(
-                        color: isSelected ? const Color(0xFF1565C0) : Colors.black87,
+                        color: isSelected ? AppColors.primary : Colors.black87,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
-                    trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF1565C0)) : null,
+                    trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
                   );
                 },
                 // Loading Builder
                 loadingBuilder: (context, searchEntry) => const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20.0),
-                    child: CircularProgressIndicator(color: Color(0xFF1565C0)),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   ),
                 ),
                 // Error Builder
@@ -159,11 +160,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           
           // Tombol Kirim
           isSubmitting 
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF1565C0)))
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
               : ElevatedButton(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1565C0),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
@@ -176,11 +177,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           OutlinedButton(
             onPressed: () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF1565C0)),
+              side: const BorderSide(color: AppColors.primary),
               minimumSize: const Size.fromHeight(50),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
             ),
-            child: const Text("Kembali", style: TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
+            child: const Text("Kembali", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
           )
         ],
       ),
@@ -193,7 +194,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.w500)),
+          Text(label, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14),

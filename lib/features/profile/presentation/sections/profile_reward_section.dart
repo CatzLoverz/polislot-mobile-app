@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../reward/presentation/reward_controller.dart';
@@ -41,12 +42,12 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
     final isOffline = ref.watch(connectionStatusProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FB),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+              colors: [AppColors.primary, AppColors.primaryGradientEnd],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -223,10 +224,10 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF1565C0).withValues(alpha: 0.15),
+              color: AppColors.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: FaIcon(icon, color: const Color(0xFF1565C0), size: 30),
+            child: FaIcon(icon, color: AppColors.primary, size: 30),
           ),
           const SizedBox(width: 14),
           Expanded(

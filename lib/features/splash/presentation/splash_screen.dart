@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
@@ -156,13 +157,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF0D47A1),
+                  AppColors.primaryVariant,
                   Color.lerp(
-                    const Color(0xFF1976D2),
-                    const Color(0xFF42A5F5),
+                    AppColors.primary,
+                    AppColors.primaryGradientEnd,
                     _glowPulseController.value,
                   )!,
-                  const Color(0xFF64B5F6),
+                  AppColors.primaryGradientEnd,
                 ],
               ),
             ),

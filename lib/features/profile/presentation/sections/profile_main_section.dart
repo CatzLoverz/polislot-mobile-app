@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/auth_controller.dart';
 
@@ -67,7 +68,7 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
 
     // Loading state jika data user belum siap
     if (authState.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF1565C0)));
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     // ✅ DAFTAR MENU
@@ -88,7 +89,7 @@ class _ProfileMainSectionState extends ConsumerState<ProfileMainSection> with Ti
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF2196F3)]),
+              gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryGradientEnd]),
               borderRadius: BorderRadius.circular(16),
               boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 8, offset: Offset(0, 4))],
             ),

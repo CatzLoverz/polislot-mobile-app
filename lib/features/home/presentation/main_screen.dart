@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import 'home_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../profile/presentation/providers/profile_ui_provider.dart';
@@ -78,7 +79,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             title: const Text(
               "Keluar Aplikasi",
               style: TextStyle(
-                color: Color(0xFF1565C0),
+                color: AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -151,7 +152,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         if (shouldExit) SystemNavigator.pop();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF3F6FB),
+        backgroundColor: AppColors.scaffold,
         body: RepaintBoundary(
           child: PageView(
             controller: _pageController,
@@ -187,7 +188,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               child: GNav(
                 gap: 8,
-                color: const Color(0xFF5A6BB5),
+                color: AppColors.navInactive,
                 activeColor: Colors.white,
                 textStyle: const TextStyle(
                   color: Colors.white,
@@ -201,7 +202,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 ),
                 duration: const Duration(milliseconds: 300),
                 tabBackgroundGradient: const LinearGradient(
-                  colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+                  colors: [AppColors.primary, AppColors.primaryGradientEnd],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

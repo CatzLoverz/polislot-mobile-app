@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/providers/connection_status_provider.dart';
@@ -176,7 +177,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         title: const Text(
           "Hapus Komentar?",
           style: TextStyle(
-            color: Color(0xFF1565C0),
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -214,12 +215,12 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         .value; // Get Current User
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+              colors: [AppColors.primary, AppColors.primaryGradientEnd],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -333,14 +334,14 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : const Color(0xFF1A253A)),
+              color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : AppColors.textPrimary),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             isServerErr ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." : (isError ? "Gagal memuat komentar.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."),
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF454F63), height: 1.4),
+            style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
           ),
         ],
       ),
@@ -475,7 +476,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                     const Text(
                       "Mengedit Komentar",
                       style: TextStyle(
-                        color: Color(0xFF1565C0),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -534,7 +535,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF1565C0), // Blue Background
+                      color: AppColors.primary, // Blue Background
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -573,7 +574,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF1565C0), // Blue Background
+                      color: AppColors.primary, // Blue Background
                       shape: BoxShape.circle,
                     ),
                     child: isLoading
