@@ -58,6 +58,12 @@ class MissionItem {
 
   final double percentage;
 
+  @JsonKey(name: 'threshold')
+  final int threshold;
+
+  @JsonKey(name: 'current_value')
+  final int currentValue;
+
   @JsonKey(name: 'is_completed')
   final bool isCompleted;
 
@@ -72,6 +78,8 @@ class MissionItem {
     required this.metricCode,
     required this.missionType,
     required this.percentage,
+    required this.threshold,
+    required this.currentValue,
     required this.isCompleted,
     this.completedAt,
   });
@@ -95,6 +103,32 @@ class MissionItem {
         return 'Streak';
       default:
         return 'Target';
+    }
+  }
+
+  // --- Helper: unit progress (hari untuk sequence, kali untuk target) ---
+  String get unitLabel => isSequenceType ? 'hari' : 'kali';
+
+  // --- Helper: pesan aksi pre-determined sesuai metric + type ---
+  String get actionMessage {
+    switch (metricCode.toUpperCase()) {
+      case 'VALIDATION_ACTION':
+        if (missionType == 'SEQUENCE_STREAK') {
+          return 'Lakukan validasi parkir setiap hari berturut-turut';
+        }
+        if (missionType == 'SEQUENCE') {
+          return 'Lakukan validasi parkir tiap hari';
+        }
+        return 'Lakukan validasi parkir sebanyak mungkin';
+      case 'LOGIN_ACTION':
+        if (missionType == 'SEQUENCE_STREAK') {
+          return 'Buka aplikasi setiap hari berturut-turut';
+        }
+        return 'buka aplikasi secara rutin';
+      case 'PROFILE_UPDATE':
+        return 'Perbarui foto profil atau avatar kamu';
+      default:
+        return 'Selesaikan misi ini untuk mendapatkan koin';
     }
   }
 }

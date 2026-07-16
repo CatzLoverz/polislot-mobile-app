@@ -513,6 +513,15 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
           ),
           const SizedBox(height: 10),
           Text(
+            m.actionMessage,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1352C8),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
             m.description,
             style: const TextStyle(
               color: Colors.black54,
@@ -537,11 +546,13 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
               ),
               const SizedBox(width: 10),
               Text(
-                "${(displayPercent * 100).toInt()}%",
+                m.isCompleted
+                    ? 'Tercapai! ✓'
+                    : '${m.currentValue}/${m.threshold} ${m.unitLabel}',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: progressColor,
+                  color: m.isCompleted ? Colors.green : progressColor,
                 ),
               ),
             ],
