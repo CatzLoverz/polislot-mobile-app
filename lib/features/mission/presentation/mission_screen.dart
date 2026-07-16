@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'mission_controller.dart';
 import '../data/mission_model.dart';
@@ -190,54 +191,10 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
   }
 
   Widget _buildOfflinePlaceholder(ConnectionStateType connectionState) {
-    final bool isError = connectionState != ConnectionStateType.online;
-    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.grey.shade100),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isServerErr ? Icons.dns_rounded : (isError ? Icons.wifi_off_rounded : Icons.error_outline_rounded),
-              size: 40,
-              color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.grey.shade500),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isServerErr ? "Server Bermasalah" : (isError ? "Anda Sedang Offline" : "Terjadi Kesalahan"),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: isServerErr ? Colors.orange.shade800 : (isError ? Colors.grey.shade800 : Colors.grey.shade800),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isServerErr ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." : (isError ? "Gagal memuat data misi.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."),
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
-        ],
-      ),
+    return EmptyStateWidget(
+      connectionState: connectionState,
+      layout: EmptyStateLayout.center,
+      emptyDataMessage: "Terjadi Kesalahan.\nTarik layar ke bawah untuk memuat ulang.",
     );
   }
 

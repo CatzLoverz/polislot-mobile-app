@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/custom_card.dart';
+import '../../../../core/widgets/empty_state_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../reward/presentation/reward_controller.dart';
@@ -43,20 +46,8 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
 
     return Scaffold(
       backgroundColor: AppColors.scaffold,
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryGradientEnd],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-        ),
-        title: const Text(
-          "Riwayat Penukaran",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+      appBar: CustomAppBar(
+        title: const Text("Riwayat Penukaran"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -106,9 +97,6 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
 
   // ✅ Widget Offline / Error (Konsisten dengan Screen Lain)
   Widget _buildOfflinePlaceholder(ConnectionStateType connectionState) {
-    final bool isError = connectionState == ConnectionStateType.online;
-    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -117,59 +105,12 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.red.shade50),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isServerErr ? Icons.dns_rounded : (isError ? Icons.error_outline_rounded : Icons.wifi_off_rounded),
-                            size: 40,
-                            color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.red.shade400),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          isServerErr ? "Server Bermasalah" : (isError ? "Terjadi Kesalahan" : "Anda Sedang Offline"),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: isServerErr ? Colors.orange.shade800 : (isError ? Colors.red.shade800 : Colors.grey.shade800),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isServerErr ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." : (isError ? "Gagal memuat riwayat penukaran.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: Center(
+                child: EmptyStateWidget(
+                  connectionState: connectionState,
+                  layout: EmptyStateLayout.center,
+                  emptyDataMessage: "Gagal memuat riwayat penukaran.\nTarik layar ke bawah untuk memuat ulang.",
+                ),
               ),
             ),
           ),
@@ -205,20 +146,10 @@ class _ProfileRewardSectionState extends ConsumerState<ProfileRewardSection>
       statusText = "MENUNGGU";
     }
 
-    return Container(
+    return CustomCard(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x11000000),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
+      borderRadius: 14,
       child: Row(
         children: [
           Container(

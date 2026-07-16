@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/snackbar_utils.dart';
@@ -167,19 +168,12 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
 
     return Scaffold(
       backgroundColor: AppColors.scaffold,
-      appBar: AppBar(
-        title: const Text(
-          "Ubah Profil",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      appBar: CustomAppBar(
+        title: const Text("Ubah Profil"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryGradientEnd],
-            ),
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SafeArea(
         child: ListView(

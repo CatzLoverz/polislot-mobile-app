@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/custom_app_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'faq_controller.dart';
 import '../../../core/providers/connection_status_provider.dart';
@@ -24,22 +25,8 @@ class FaqScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.scaffold,
-      appBar: AppBar(
-        title: const Text(
-          "Pusat Bantuan (FAQ)",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryGradientEnd],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 4,
+      appBar: const CustomAppBar(
+        title: Text("Pusat Bantuan (FAQ)"),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
