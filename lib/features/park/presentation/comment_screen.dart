@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/custom_card.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/providers/connection_status_provider.dart';
@@ -216,27 +219,8 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.scaffold,
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryGradientEnd],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-        ),
-        title: Text(
-          "Komentar ${widget.subareaName}", // Dynamic Title
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: CustomAppBar(
+        title: Text("Komentar ${widget.subareaName}"),
       ),
       body: Column(
         children: [
@@ -251,11 +235,16 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                     .refresh();
               },
               child: isOffline != ConnectionStateType.online
-                  ? _buildScrollablePlaceholder(_buildOfflineCard(isOffline))
+                  ? _buildScrollablePlaceholder(
+                      EmptyStateWidget(connectionState: isOffline),
+                    )
                   : switch (commentListAsync) {
                       AsyncData(:final value) when value.isEmpty =>
                         _buildScrollablePlaceholder(
-                          const Text("Belum ada komentar."),
+                          const EmptyStateWidget(
+                            emptyDataMessage: "Belum ada komentar. Jadilah yang pertama!",
+                            layout: EmptyStateLayout.center,
+                          ),
                         ),
                       AsyncData(:final value) => ListView.separated(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -270,7 +259,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                           },
                         ),
                       AsyncError() =>
-                        _buildScrollablePlaceholder(_buildOfflineCard(isOffline)),
+                        _buildScrollablePlaceholder(
+                          EmptyStateWidget(connectionState: isOffline, isApiError: true),
+                        ),
                       _ => _buildCommentLoading(),
                     },
             ),
@@ -295,156 +286,88 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     );
   }
 
-  Widget _buildOfflineCard(ConnectionStateType connectionState) {
-    final bool isError = connectionState == ConnectionStateType.online;
-    final isServerErr = connectionState == ConnectionStateType.serverUnreachable;
-
-    return Container(
-      margin: const EdgeInsets.all(24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isServerErr ? Colors.orange.shade50 : (isError ? Colors.red.shade50 : Colors.red.shade50),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isServerErr ? Icons.dns_rounded : (isError ? Icons.error_outline_rounded : Icons.wifi_off_rounded),
-              size: 32,
-              color: isServerErr ? Colors.orange.shade400 : (isError ? Colors.red.shade400 : Colors.red.shade400),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isServerErr ? "Server Bermasalah" : (isError ? "Terjadi Kesalahan" : "Anda Sedang Offline"),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isServerErr ? Colors.orange.shade700 : (isError ? Colors.red.shade700 : AppColors.textPrimary),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isServerErr ? "Sistem sedang dalam perbaikan.\nTarik layar ke bawah untuk memuat ulang." : (isError ? "Gagal memuat komentar.\nTarik layar ke bawah untuk memuat ulang." : "Pastikan internet Anda aktif.\nTarik layar ke bawah untuk memuat ulang."),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildCommentCard(Comment comment, {required bool isMe}) {
-    // Use Helper from Model
     final avatarUrl = comment.user.fullAvatarUrl;
     final imageUrl = comment.fullImageUrl;
 
-    return InkWell(
-      onLongPress: isMe ? () => _showOptionsDialog(comment) : null,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.grey.shade200,
-                  backgroundImage: avatarUrl != null
-                      ? NetworkImage(avatarUrl)
-                      : null,
-                  child: avatarUrl == null
-                      ? const Icon(Icons.person, color: Colors.grey)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        comment.user.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Date and Time
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+    return CustomCard(
+      onTap: isMe ? () => _showOptionsDialog(comment) : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl == null
+                    ? const Icon(Icons.person, color: Colors.grey)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      comment.date,
+                      comment.user.name,
                       style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      comment.time,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
                 ),
-              ],
+              ),
+              // Date and Time
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    comment.date,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    comment.time,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (imageUrl != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                imageUrl,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, error, stack) => const SizedBox.shrink(),
+              ),
             ),
             const SizedBox(height: 12),
-            if (imageUrl != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, error, stack) => const SizedBox.shrink(),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Text(
-              comment.content,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-                height: 1.4,
-              ),
-            ),
           ],
-        ),
+          Text(
+            comment.content,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }

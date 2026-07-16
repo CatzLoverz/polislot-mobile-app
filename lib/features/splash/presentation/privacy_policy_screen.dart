@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/custom_button.dart';
+import '../../../core/widgets/custom_card.dart';
 import '../../auth/presentation/auth_controller.dart';
 
 class PrivacyPolicyScreen extends ConsumerStatefulWidget {
@@ -165,12 +166,9 @@ class _PrivacyPolicyScreenState extends ConsumerState<PrivacyPolicyScreen>
 
                       // Scrollable Content
                       Expanded(
-                        child: Container(
+                        child: CustomCard(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                          borderRadius: 16,
                           child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
