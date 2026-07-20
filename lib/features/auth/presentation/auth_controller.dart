@@ -142,10 +142,10 @@ class AuthController extends _$AuthController {
     try { await ref.read(authRepositoryInstanceProvider).forgotPasswordOtpResend(email: email); return true; } catch (_) { return false; }
   }
   
-  Future<bool> resetPassword({required String email, required String password, required String confirmPassword, required String token}) async {
+  Future<bool> resetPassword({required String email, required String password, required String confirmPassword, required String token, required String resetType}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(() async {
-      await ref.read(authRepositoryInstanceProvider).resetPassword(email: email, password: password, confirmPassword: confirmPassword, token: token);
+      await ref.read(authRepositoryInstanceProvider).resetPassword(email: email, password: password, confirmPassword: confirmPassword, token: token, resetType: resetType);
       return null;
     });
     if (result.hasError) { 

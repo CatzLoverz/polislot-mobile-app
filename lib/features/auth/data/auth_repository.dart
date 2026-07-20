@@ -192,10 +192,15 @@ class AuthRepository {
     required String password,
     required String confirmPassword,
     required String token,
+    required String resetType, // 'otp' atau 'deep_link'
   }) async {
     try {
+      final endpoint = resetType == 'otp'
+          ? '/reset-pass-attempt'
+          : '/reset-pass-token';
+
       await _dio.post(
-        '/reset-pass-attempt',
+        endpoint,
         data: {
           'email': email,
           'password': password,

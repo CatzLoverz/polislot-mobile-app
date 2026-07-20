@@ -10,7 +10,13 @@ import 'auth_controller.dart';
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String? email;
   final String? token;
-  const ResetPasswordScreen({super.key, this.email, this.token});
+  final String resetType; // 'otp' atau 'deep_link'
+  const ResetPasswordScreen({
+    super.key,
+    this.email,
+    this.token,
+    this.resetType = 'otp',
+  });
 
   @override
   ConsumerState<ResetPasswordScreen> createState() =>
@@ -84,6 +90,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
           token: _token,
+          resetType: widget.resetType,
         );
 
     // 2. Cek Mounted (Async Gap Fix)

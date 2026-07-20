@@ -99,10 +99,12 @@ class AppRoutes {
       // --- RESET PASSWORD ---
       case resetPassword:
         final args = settings.arguments as Map<String, dynamic>?;
-        // Ambil email dan token dari arguments (internal) atau queryParams (Deep Link)
+        // Ambil email dan token dari arguments (internal/OTP) atau queryParams (Deep Link)
+        final isDeepLink = args?['fromDeepLink'] == true || queryParams.containsKey('token');
         return _slideRoute(ResetPasswordScreen(
           email: args?['email'] ?? queryParams['email'],
           token: args?['token'] ?? queryParams['token'],
+          resetType: isDeepLink ? 'deep_link' : 'otp',
         ));
 
       // --- MAIN / HOME ---
