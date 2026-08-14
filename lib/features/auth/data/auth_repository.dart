@@ -187,6 +187,23 @@ class AuthRepository {
     }
   }
 
+  /// Memverifikasi validitas link reset password (email + token) ke server
+  /// sebelum form reset password disubmit. Khusus deep link.
+  Future<void> checkResetToken({
+    required String email,
+    required String token,
+  }) async {
+    try {
+      await _dio.post(
+        '/reset-pass-check',
+        data: {'email': email, 'token': token},
+      );
+      // Dio validates 200-299 automatically
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    }
+  }
+
   Future<void> resetPassword({
     required String email,
     required String password,

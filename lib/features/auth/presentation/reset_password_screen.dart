@@ -45,18 +45,44 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       return;
     }
 
-    // Validasi format email khusus deep link (URL bisa dimanipulasi)
-    if (widget.resetType == 'deep_link' && !ValidatorUtils.isValidEmail(_email)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        AppSnackBars.show(context, "Link pemulihan tidak valid.", isError: true);
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.loginRegis,
-          (route) => false,
-        );
-      });
+    // Jika lewat deep link, validasi email + token ke server saat screen terbuka
+    if (widget.resetType == 'deep_link') {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _verifyLink());
     }
+  }
+
+  /// Validasi link reset password: cek format email lokal lalu verifikasi ke server.
+  Future<void> _verifyLink() async {
+    if (!mounted) return;
+
+    // 1. Validasi format email secara lokal dulu
+    if (!ValidatorUtils.isValidEmail(_email)) {
+      _handleInvalidLink("Link pemulihan tidak valid.");
+      return;
+    }
+
+    // 2. Verifikasi email + token ke server
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .checkResetToken(email: _email, token: _token);
+
+    if (!mounted) return;
+
+    if (!success) {
+      final error = DioErrorHandler.parse(
+        ref.read(authControllerProvider).error ?? "Link pemulihan tidak valid.",
+      );
+      _handleInvalidLink(error);
+    }
+  }
+
+  void _handleInvalidLink(String errorMessage) {
+    AppSnackBars.show(context, errorMessage, isError: true);
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.loginRegis,
+      (route) => false,
+    );
   }
 
   @override
