@@ -689,7 +689,14 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            "Konfirmasi Penukaran",
+            style: TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -714,15 +721,9 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
                       ),
                     ),
                   ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Konfirmasi Penukaran",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 8),
+                if (item.fullImageUrl.isNotEmpty) const SizedBox(height: 16),
                 Text(
                   "Tukar ${item.pointsRequired} poin untuk ${item.name}?",
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -730,7 +731,7 @@ class _RewardScreenState extends ConsumerState<RewardScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+              child: const Text("Batal"),
             ),
             ElevatedButton(
               onPressed: () {

@@ -166,4 +166,16 @@ class AuthController extends _$AuthController {
     await ref.read(authRepositoryInstanceProvider).logout();
     state = const AsyncData(null);
   }
+
+  Future<bool> deleteAccount(String confirmation) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(authRepositoryInstanceProvider).deleteAccount(confirmation: confirmation);
+      state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
 }

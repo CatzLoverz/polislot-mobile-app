@@ -239,6 +239,17 @@ class AuthRepository {
     await prefs.clear();
   }
 
+  Future<void> deleteAccount({required String confirmation}) async {
+    try {
+      await _dio.delete('/profile', data: {'confirmation': confirmation});
+    } catch (e) {
+      throw Exception(DioErrorHandler.parse(e));
+    } finally {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    }
+  }
+
   Future<User> _handleAuthResponse(dynamic data) async {
     Map<String, dynamic>? payload;
     if (data is Map<String, dynamic>) {

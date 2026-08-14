@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/routes/app_routes.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -158,6 +159,97 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
           ref.read(profileControllerProvider).error ?? "Gagal memperbarui profil"
       );
       AppSnackBars.show(context, error, isError: true);
+    }
+  }
+
+  void _showDeleteAccountDialog() {
+    final user = ref.read(authControllerProvider).value;
+    final confirmController = TextEditingController();
+    final matches = ValueNotifier(false);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          "Konfirmasi Hapus Akun",
+          style: TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Akun Anda akan dihapus permanen beserta seluruh data. Tindakan ini tidak dapat dibatalkan.",
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Ketik email (${user?.email}) atau nama pengguna Anda untuk konfirmasi.",
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmController,
+              onChanged: (value) {
+                final input = value.trim().toLowerCase();
+                matches.value = input == user?.email.toLowerCase() ||
+                    input == user?.name.toLowerCase();
+              },
+              decoration: InputDecoration(
+                hintText: "Email atau nama pengguna",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Batal"),
+          ),
+          ValueListenableBuilder(
+            valueListenable: matches,
+            builder: (_, isMatch, __) => ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: isMatch
+                  ? () {
+                      Navigator.pop(dialogContext);
+                      _handleDeleteAccount(confirmController.text.trim());
+                    }
+                  : null,
+              child: const Text("Ya, Hapus"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteAccount(String confirmation) async {
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .deleteAccount(confirmation);
+
+    if (!mounted) return;
+
+    if (success) {
+      ref.invalidate(authControllerProvider);
+      Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+        AppRoutes.loginRegis,
+        (route) => false,
+      );
+    } else {
+      AppSnackBars.show(context, "Gagal menghapus akun.", isError: true);
     }
   }
 
@@ -365,19 +457,19 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
             const SizedBox(height: 12),
 
             OutlinedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: _showDeleteAccountDialog,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                side: const BorderSide(color: Colors.red, width: 1.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: const Text(
-                "Batal",
+                "Hapus Akun",
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.primary,
+                  color: Colors.red,
                   fontWeight: FontWeight.bold,
                 ),
               ),

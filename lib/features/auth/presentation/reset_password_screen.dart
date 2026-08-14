@@ -42,6 +42,20 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.pop(context);
       });
+      return;
+    }
+
+    // Validasi format email khusus deep link (URL bisa dimanipulasi)
+    if (widget.resetType == 'deep_link' && !ValidatorUtils.isValidEmail(_email)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        AppSnackBars.show(context, "Link pemulihan tidak valid.", isError: true);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.loginRegis,
+          (route) => false,
+        );
+      });
     }
   }
 
