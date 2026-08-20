@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart'; // Untuk debugPrint
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -97,13 +98,39 @@ class AuthRepository {
     }
   }
 
-  // --- METHOD AUTH LAINNYA (PASTIKAN TETAP ADA) ---
+
+  Future<Map<String, String>> _getDeviceInfo() async {
+    final deviceInfo = <String, String>{};
+    try {
+      final plugin = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        final info = await plugin.androidInfo;
+        deviceInfo['device_name'] = info.brand;
+        deviceInfo['device_model'] = info.model;
+        deviceInfo['device_os'] = 'Android ${info.version.release}';
+      } else if (Platform.isIOS) {
+        final info = await plugin.iosInfo;
+        deviceInfo['device_name'] = info.name;
+        deviceInfo['device_model'] = info.model;
+        deviceInfo['device_os'] = 'iOS ${info.systemVersion}';
+      }
+    } catch (e) {
+      debugPrint("Gagal mengambil device info: $e");
+    }
+    return deviceInfo;
+  }
 
   Future<User> login({required String email, required String password}) async {
     try {
+      final deviceInfo = await _getDeviceInfo();
+      final data = {
+        'email': email,
+        'password': password,
+        ...deviceInfo,
+      };
       final response = await _dio.post(
         '/login-attempt',
-        data: {'email': email, 'password': password},
+        data: data,
       );
       return _handleAuthResponse(response.data);
     } catch (e) {

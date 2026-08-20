@@ -216,7 +216,7 @@ class _ProfileEditSectionState extends ConsumerState<ProfileEditSection> {
           ),
           ValueListenableBuilder(
             valueListenable: matches,
-            builder: (_, isMatch, __) => ElevatedButton(
+            builder: (_, isMatch, _) => ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,

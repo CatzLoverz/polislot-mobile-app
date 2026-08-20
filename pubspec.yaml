@@ -57,6 +57,8 @@ dependencies:
   geolocator: ^14.0.2
   mqtt_client: ^10.11.11
   app_links: ^7.2.0
+  device_info_plus: ^13.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
