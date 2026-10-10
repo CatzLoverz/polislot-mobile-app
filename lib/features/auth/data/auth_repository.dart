@@ -132,7 +132,7 @@ class AuthRepository {
         '/login-attempt',
         data: data,
       );
-      return _handleAuthResponse(response.data);
+      return await _handleAuthResponse(response.data);
     } catch (e) {
       throw Exception(DioErrorHandler.parse(e));
     }
@@ -169,7 +169,7 @@ class AuthRepository {
         '/register-otp-verify',
         data: {'email': email, 'otp': otp},
       );
-      return _handleAuthResponse(response.data);
+      return await _handleAuthResponse(response.data);
     } catch (e) {
       throw Exception(DioErrorHandler.parse(e));
     }
